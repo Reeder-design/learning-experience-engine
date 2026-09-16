@@ -62,6 +62,10 @@ function collectAssetRefs(component) {
   if (component.type === 'media-presentation') {
     for (const media of component.content?.media || []) add(media.src);
   }
+  if (component.type === 'branching-scenario') {
+    for (const node of component.content?.nodes || []) add(node.image);
+    for (const outcome of component.content?.outcomes || []) add(outcome.image);
+  }
 
   return [...refs];
 }
@@ -90,7 +94,7 @@ function copyAssets(componentFile, outputDir, refs) {
 }
 
 function validate(component) {
-  const supported = new Set(['carousel', 'hotspot-reveal', 'assessment', 'media-presentation']);
+  const supported = new Set(['carousel', 'hotspot-reveal', 'assessment', 'media-presentation', 'branching-scenario']);
   if (!component || typeof component !== 'object') throw new Error('Component JSON must be an object.');
   if (component.schemaVersion !== '0.1') throw new Error('component.schemaVersion must be "0.1".');
   if (!component.id || !component.title || !component.type) throw new Error('Component requires id, title, and type.');
@@ -108,6 +112,22 @@ function validate(component) {
   }
   if (component.type === 'media-presentation' && !(component.content.media || []).length) {
     throw new Error('Media presentation requires content.media.');
+  }
+  if (component.type === 'branching-scenario') {
+    if (!component.content.startNodeId) throw new Error('Branching scenario requires content.startNodeId.');
+    if (!(component.content.nodes || []).length) throw new Error('Branching scenario requires content.nodes.');
+    if (!(component.content.outcomes || []).length) throw new Error('Branching scenario requires content.outcomes.');
+    const destinations = new Set([
+      ...(component.content.nodes || []).map((node) => node.id),
+      ...(component.content.outcomes || []).map((outcome) => outcome.id),
+    ]);
+    if (!destinations.has(component.content.startNodeId)) throw new Error('Branching scenario startNodeId must reference an existing node.');
+    for (const node of component.content.nodes || []) {
+      if (!(node.choices || []).length) throw new Error(`Scenario node ${node.id || '(untitled)'} requires at least one choice.`);
+      for (const choice of node.choices || []) {
+        if (!destinations.has(choice.targetId)) throw new Error(`Scenario choice ${choice.id || '(untitled)'} targets missing ID: ${choice.targetId}`);
+      }
+    }
   }
 }
 
