@@ -93,12 +93,14 @@ function main() {
   ensureDir(path.join(outputDir, 'lessons'));
   ensureDir(path.join(outputDir, 'assessments'));
 
+  const normalizedAssets = normalizeAssets(assetDocument);
   const sourceUnits = Array.isArray(courseDocument.lessons) ? courseDocument.lessons : [];
   const normalizedUnitRefs = [];
   let lessonCount = 0;
   let assessmentCount = 0;
   let blockCount = 0;
   let questionCount = 0;
+  let linkedAssetReferenceCount = 0;
 
   for (const ref of sourceUnits) {
     if (!ref?.file) continue;
@@ -127,8 +129,12 @@ function main() {
         source: normalizedRelativePath,
       });
     } else {
-      const normalized = normalizeLesson(sourceDocument, order, ref.file);
+      const normalized = normalizeLesson(sourceDocument, order, ref.file, normalizedAssets);
       blockCount += normalized.blocks.length;
+      linkedAssetReferenceCount += normalized.blocks.reduce(
+        (total, block) => total + (Array.isArray(block.assets) ? block.assets.length : 0),
+        0,
+      );
       lessonCount += 1;
       writeJson(path.join(outputDir, normalizedRelativePath), normalized);
       normalizedUnitRefs.push({
@@ -140,7 +146,6 @@ function main() {
     }
   }
 
-  const normalizedAssets = normalizeAssets(assetDocument);
   const normalizedCourse = normalizeCourse(courseDocument, normalizedUnitRefs, sourceManifest);
 
   writeJson(path.join(outputDir, 'course.json'), normalizedCourse);
@@ -171,10 +176,12 @@ function main() {
       blocks: blockCount,
       questions: questionCount,
       assets: normalizedAssets.length,
+      linkedAssetReferences: linkedAssetReferenceCount,
     },
     notes: [
       'This is a draft authoring-tool-neutral representation derived from a Rise export.',
-      'Unknown or not-yet-normalized Rise data remains preserved under source/raw fields and in the original extracted project.',
+      'Human-editable content is separated from source fidelity data. Original Rise data remains in the extracted project and normalized source.rawRef values point back to it.',
+      'Media references are linked to normalized asset IDs when a packaged asset can be matched.',
       'The schema will be reviewed after Storyline web output is inspected.',
     ],
   });
@@ -188,7 +195,9 @@ function main() {
   console.log(`Blocks: ${blockCount}`);
   console.log(`Questions: ${questionCount}`);
   console.log(`Assets: ${normalizedAssets.length}`);
-  console.log(`Schema: ${SCHEMA_VERSION} (draft Rise-informed)\n`);
+  console.log(`Linked asset references: ${linkedAssetReferenceCount}`);
+  console.log(`Schema: ${SCHEMA_VERSION} (draft Rise-informed)`);
+  console.log(`Normalizer: ${NORMALIZER_VERSION}\n`);
   console.log('Created:');
   console.log('  normalized/course.json');
   console.log('  normalized/lessons/');
