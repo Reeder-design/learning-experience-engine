@@ -8,26 +8,42 @@
   <link rel="icon" type="image/svg+xml" href="../assets/experience-engine-favicon.svg">
   <link rel="stylesheet" href="studio.css">
   <link rel="stylesheet" href="asset-library.css">
+  <link rel="stylesheet" href="help.css">
 </head>
 <body>
   <div class="studio-app">
     <header class="studio-header">
-      <a class="brand" href="../">
-        <span class="brand-mark">LX</span>
-        <span><strong>Learning Experience Engine</strong><small>Component Studio</small></span>
-      </a>
+      <div class="studio-header-left">
+        <a class="back-link" href="../">← Engine home</a>
+        <span class="studio-header-divider" aria-hidden="true"></span>
+        <a class="brand" href="../">
+          <span class="brand-mark">LX</span>
+          <span><strong>Learning Experience Engine</strong><small>Component Studio</small></span>
+        </a>
+        <nav class="header-nav" aria-label="Studio navigation">
+          <a class="nav-link global-help-link" href="../user-guide/">User Guide</a>
+        </nav>
+      </div>
       <div class="header-actions">
         <button type="button" class="ghost" data-copy>Copy JSON</button>
         <button type="button" class="primary" data-download>Export JSON</button>
+        <button type="button" class="help-bubble" data-help-topic="export" aria-label="Help with export">?</button>
       </div>
     </header>
+
+    <div class="workflow-strip" aria-label="Authoring workflow">
+      <span class="workflow-step"><strong>1</strong><span>Choose</span></span><span class="workflow-arrow">→</span>
+      <span class="workflow-step"><strong>2</strong><span>Author + Assets</span></span><span class="workflow-arrow">→</span>
+      <span class="workflow-step"><strong>3</strong><span>Preview + Export</span></span>
+    </div>
 
     <main class="studio-layout">
       <aside class="studio-sidebar">
         <div class="sidebar-section">
-          <span class="eyebrow">Create</span>
-          <h1>Build an interaction</h1>
-          <p>Choose a component, enter learning content, and preview the experience as you build.</p>
+          <span class="eyebrow">Step 1 · Choose</span>
+          <div class="section-title-row"><h1>Build an interaction</h1><button type="button" class="help-bubble" data-help-topic="choose">?</button></div>
+          <p>Choose the component that best matches what the learner needs to do.</p>
+          <div class="sidebar-help">New here? <a href="../user-guide/#getting-started">Start with the 4-step guide →</a></div>
         </div>
         <nav class="component-picker" aria-label="Component type">
           <button type="button" data-type="carousel" class="active"><span>▤</span><strong>Carousel</strong><small>Browse grouped content</small></button>
@@ -40,10 +56,14 @@
       <section class="editor-column">
         <div class="panel editor-panel">
           <div class="panel-head">
-            <div><span class="eyebrow">Author</span><h2 data-editor-title>Carousel</h2></div>
+            <div>
+              <span class="eyebrow">Step 2 · Author</span>
+              <div class="section-title-row"><h2 data-editor-title>Carousel</h2><button type="button" class="help-bubble" data-help-topic="component">?</button></div>
+            </div>
             <span class="status-chip">Engine-native</span>
           </div>
 
+          <div class="basics-head"><strong>Basics</strong><button type="button" class="help-bubble" data-help-topic="basics">?</button></div>
           <div class="general-fields">
             <label><span>Title</span><input type="text" data-field="title" value="Customer Signals"></label>
             <label><span>Description</span><textarea rows="2" data-field="description">A reusable learning interaction created directly in the Learning Experience Engine.</textarea></label>
@@ -54,14 +74,17 @@
         </div>
 
         <details class="panel json-panel">
-          <summary><span>Generated JSON</span><small>The engine file behind this interaction</small></summary>
+          <summary>
+            <span class="json-summary-copy"><span>Generated JSON</span><small>The engine file behind this interaction</small></span>
+            <button type="button" class="help-bubble" data-help-topic="json" aria-label="Help with generated JSON">?</button>
+          </summary>
           <pre data-json-output></pre>
         </details>
       </section>
 
       <section class="preview-column">
         <div class="preview-toolbar">
-          <div><span class="eyebrow">Preview</span><strong data-preview-type>Carousel</strong></div>
+          <div><span class="eyebrow">Step 3 · Preview</span><div class="preview-title-wrap"><strong data-preview-type>Carousel</strong><button type="button" class="help-bubble" data-help-topic="preview">?</button></div></div>
           <span class="preview-state" data-preview-state>In progress</span>
         </div>
         <div class="preview-frame">
@@ -80,5 +103,6 @@
   <script src="studio.js"></script>
   <script src="asset-library.js"></script>
   <script src="project-package.js"></script>
+  <script src="help.js"></script>
 </body>
 </html>
