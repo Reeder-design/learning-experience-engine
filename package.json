@@ -12,6 +12,8 @@
     "extract-storyline": "node tools/storyline-extractor/index.js",
     "normalize-storyline": "node tools/storyline-normalizer/index.js",
     "build-web": "node builders/web/index.js",
+    "build-stateful-web": "node builders/stateful-web/index.js",
+    "preview-storyline": "node tools/storyline-preview/index.js",
     "build": "echo \"Build system not implemented yet\"",
     "build-rise": "echo \"Rise Code Block builder not implemented yet\"",
     "validate-public": "echo \"Public validation not implemented yet\""
