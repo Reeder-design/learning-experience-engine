@@ -1,0 +1,18 @@
+{
+  "id": "assessment-shell",
+  "version": "0.1.0",
+  "family": "stateful",
+  "description": "Presentation and feedback shell for native and variable-driven assessment slides.",
+  "detects": [
+    "normalized native assessment signal",
+    "or question-like content with multiple interactive response objects"
+  ],
+  "capabilities": [
+    "assessment question progress",
+    "score display when a Score variable exists",
+    "answer-choice affordances",
+    "correct/incorrect feedback layer styling",
+    "live score updates"
+  ],
+  "fallback": "generic-stateful-renderer"
+}
