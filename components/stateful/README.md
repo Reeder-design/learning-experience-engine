@@ -9,6 +9,7 @@ Current adapters:
 - `carousel` — detects a horizontally arranged image strip and rebuilds it as an accessible paged carousel.
 - `hotspot-reveal` — detects multiple clickable objects that reveal layers and adds labeled hotspots, viewed-state feedback, and layer-close controls.
 - `assessment-shell` — detects native or question-like assessment slides and adds assessment progress, score feedback, and answer/feedback styling.
+- `media-presentation` — detects video/audio objects and adds native playback plus segment navigation for multi-part media experiences.
 
 ## Design rules
 
