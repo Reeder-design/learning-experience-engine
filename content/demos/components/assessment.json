@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "0.1",
+  "id": "demo-discovery-assessment",
+  "title": "Discovery Judgment Check",
+  "type": "assessment",
+  "description": "A fictional sales-enablement knowledge check using engine-native assessment content.",
+  "instruction": "Choose the best response for each question. Feedback appears after you answer.",
+  "theme": "portfolio",
+  "completion": { "strategy": "answer", "required": true },
+  "content": {
+    "questions": [
+      {
+        "id": "q1",
+        "prompt": "A customer says their current network works most of the time, but outages stop a critical workflow. What should the seller explore first?",
+        "type": "single-select",
+        "options": [
+          { "id": "q1-a", "text": "The operational impact and frequency of the outages", "correct": true, "feedback": "Correct. Start by understanding the business and operational impact before jumping to a solution." },
+          { "id": "q1-b", "text": "Which product model they want to purchase", "correct": false, "feedback": "That moves to product selection before the underlying need is understood." },
+          { "id": "q1-c", "text": "Whether they have seen the latest product presentation", "correct": false, "feedback": "A presentation may help later, but it does not clarify the customer's problem." }
+        ]
+      },
+      {
+        "id": "q2",
+        "prompt": "Which question is most likely to reveal a meaningful mobility requirement?",
+        "type": "single-select",
+        "options": [
+          { "id": "q2-a", "text": "How do workers and connected devices move through the environment during a normal shift?", "correct": true, "feedback": "Correct. This connects mobility to the actual workflow and environment." },
+          { "id": "q2-b", "text": "How many slides should be in the proposal?", "correct": false, "feedback": "That is unrelated to the customer's mobility requirement." },
+          { "id": "q2-c", "text": "Would you like us to send a brochure?", "correct": false, "feedback": "That may be a follow-up action, but it does not uncover the requirement." }
+        ]
+      }
+    ]
+  }
+}
