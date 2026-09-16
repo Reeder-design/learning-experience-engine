@@ -35,12 +35,13 @@ A reusable framework for building data-driven instructional design interactions,
 
 ### Engine-native component authoring
 
-New interactions can now be authored without importing an Articulate file.
+New interactions can be authored without importing an Articulate file.
 
 - `schemas/component.schema.json` defines a compact authoring-tool-neutral component contract
 - `builders/component-web/` renders component JSON into a standalone themed interaction
 - `content/demos/components/` contains sanitized reusable examples
-- `docs/component-studio/` provides the first browser authoring interface
+- `docs/component-studio/` provides browser authoring for reusable component patterns
+- `docs/scenario-builder/` provides specialized browser authoring for branching decision simulations
 - component completion dispatches a common `lx:component-complete` browser event for future course tracking/LMS integrations
 
 Current engine-native component types:
@@ -49,6 +50,7 @@ Current engine-native component types:
 - `hotspot-reveal` — positioned exploration points with reveal content and viewed-state tracking
 - `assessment` — single-select questions, immediate feedback, basic scoring, and completion
 - `media-presentation` — ordered video/audio segments, transcripts, and media-end completion
+- `branching-scenario` — decision nodes, learner choices, immediate coaching feedback, score changes, explicit branches/outcomes, replay, and outcome-based completion
 
 ### Reusable Storyline-derived stateful adapters
 
@@ -61,18 +63,67 @@ The stateful runtime can also automatically enhance recognized patterns imported
 
 ### Component Studio
 
-Component Studio is the first user-facing authoring UI for the Learning Experience Engine.
+Component Studio is the browser authoring UI for compact reusable interactions.
 
-It currently supports:
+Current UX flow:
 
-- choosing an interaction type
-- editing titles, descriptions, instructions, and component-specific content through form fields
-- adding/removing carousel items, hotspots, questions/options, and media segments
-- live browser preview
-- generated engine JSON preview
-- copying or exporting JSON for use in the component builder/private content workflows
+```text
+Choose interaction
+→ Load project assets
+→ Author
+→ Preview
+→ Export
+```
 
-When GitHub Pages is enabled from `/docs`, the Studio is available from the engine landing page.
+It supports local project assets/source context, portable relative paths, live learner preview, generated JSON, JSON export, and portable project ZIP import/export.
+
+### Course Composer
+
+Course Composer assembles full learning experiences.
+
+Current UX flow:
+
+```text
+Course basics
+→ Upload project assets
+→ Build course content
+→ Preview
+→ Export
+```
+
+The authoring canvas keeps all course sections visible/editable in one view rather than using a select-one/edit-elsewhere sidebar model. Current section types include text, image, video, resources, and imported engine-native components.
+
+### Scenario Builder
+
+Scenario Builder creates branching simulations and judgment-practice interactions.
+
+Current UX flow:
+
+```text
+Scenario basics
+→ Upload project assets
+→ Build decisions
+→ Preview
+→ Export
+```
+
+Scenario Builder currently supports:
+
+- one visible/editable authoring canvas for all decision nodes and outcomes
+- decision nodes with title, speaker/role, situation text, and optional visuals
+- learner choices with explicit target dropdowns
+- immediate choice feedback
+- optional decision-quality score changes
+- multiple outcomes
+- continuous path validation for duplicate IDs, missing destinations, unreachable content, and outcome reachability
+- inline preview and focused preview
+- replay and path-history review
+- local assets/source context
+- generated component JSON
+- JSON export
+- complete project ZIP import/export
+
+The first scenario contract intentionally uses one simple decision-quality score. Arbitrary multi-variable conditions/state are not yet exposed in the v0.1 authoring UI.
 
 ### Shared engine systems
 
@@ -82,7 +133,8 @@ When GitHub Pages is enabled from `/docs`, the Studio is available from the engi
 - Portfolio-aligned theme and reusable SVG icon set
 - Responsive layouts and keyboard-accessible interaction patterns
 - Public/private content architecture
-- GitHub Actions smoke tests for engine-native component builds and Studio/runtime syntax
+- GitHub Pages browser authoring apps
+- GitHub Actions smoke/regression tests for builders, browser runtime syntax, static navigation, help alignment, and workflow UX rules
 
 ## Repository Structure
 
@@ -94,10 +146,10 @@ When GitHub Pages is enabled from `/docs`, the Studio is available from the engi
 - `engine/` — shared rendering, tracking, asset, and validation logic as it develops
 - `builders/web/` — document/block course web builder
 - `builders/stateful-web/` — stateful experience web builder
-- `builders/component-web/` — engine-native component web builder
+- `builders/component-web/` — engine-native component web builder, including branching-scenario runtime
 - `tools/` — Rise/Storyline inspection, extraction, normalization, migration, and preview utilities
 - `scripts/` — validation and automation scripts
-- `docs/` — GitHub Pages landing page and Component Studio
+- `docs/` — GitHub Pages landing page, Component Studio, Course Composer, Scenario Builder, and User Guides
 - `tests/` — automated smoke/regression tests
 - `dist/public/` — generated public-safe output
 
@@ -127,21 +179,21 @@ The long-term direction is to make the third path the preferred authoring workfl
 
 All models are intended to share themes, assets, assessment concepts, completion/tracking, and output builders wherever practical.
 
-## Typical authoring workflow
+## Typical authoring workflows
 
 ```text
-ChatGPT or Component Studio
+Component Studio / Scenario Builder / ChatGPT
           ↓
 engine-native component JSON
           ↓
-Learning Experience Engine
+Course Composer or component web builder
           ↓
 themed browser preview
           ↓
 future Web / Rise / Storyline / LMS outputs
 ```
 
-For confidential work, the component JSON and assets remain in the sibling `learning-content-private/` workspace while reusable engine code stays public.
+For confidential work, component/course JSON and assets remain in the sibling `learning-content-private/` workspace while reusable engine code stays public.
 
 ## Confidentiality
 
@@ -153,4 +205,6 @@ See `CONFIDENTIALITY.md` for project rules.
 
 ## Status
 
-Active prototype / early engine development. The Rise and Storyline import pipelines, normalized schemas, themed web renderers, first reusable stateful adapters, engine-native component builder, Component Studio, and automated component smoke tests are functioning. Full Storyline animation fidelity, advanced assessment models, course composition UI, persistent authoring projects, LMS packaging, Rise Code Block output, Storyline Web Object output, xAPI/SCORM tracking, and public-safe validation are still under development.
+Active prototype / early engine development. The Rise and Storyline import pipelines, normalized schemas, themed web renderers, first reusable stateful adapters, engine-native component builder, Component Studio, Course Composer, Scenario Builder v0.1, local project packaging, GitHub Pages authoring interfaces, and automated smoke/regression checks are functioning.
+
+Still under development: richer scenario variables/conditions, direct authoring-tool handoffs, full Storyline animation fidelity, advanced assessment models, persistent cloud authoring projects, LMS packaging, Rise Code Block output, Storyline Web Object output, xAPI/SCORM tracking, Theme Manager, and comprehensive public-safe validation.
