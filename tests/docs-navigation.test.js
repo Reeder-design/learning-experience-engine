@@ -6,13 +6,16 @@ const files = [
   'docs/index.html',
   'docs/component-studio/index.html',
   'docs/component-studio/help.js',
+  'docs/course-composer/index.html',
   'docs/user-guide/index.html',
+  'docs/user-guide/course-composer.html',
 ];
 
 const forbidden = [
   /href=["']\.\/["']/g,
   /href=["']\.\.\/["']/g,
   /href=["'][^"']*component-studio\/["']/g,
+  /href=["'][^"']*course-composer\/["']/g,
   /href=["'][^"']*user-guide\/["']/g,
   /href=["'][^"']*user-guide\/#/g,
 ];
@@ -35,6 +38,26 @@ for (const requirement of ['display:inline-flex', 'align-items:center', 'justify
   if (!helpRule.includes(requirement)) {
     failed = true;
     console.error(`docs/component-studio/help.css: .help-bubble is missing ${requirement}`);
+  }
+}
+
+const composerCss = fs.readFileSync(path.join(root, 'docs/course-composer/composer.css'), 'utf8');
+const composerHelpRule = composerCss.match(/\.help-dot\{([^}]*)\}/)?.[1] || '';
+for (const requirement of ['display:inline-flex', 'align-items:center', 'justify-content:center', 'line-height:1']) {
+  if (!composerHelpRule.includes(requirement)) {
+    failed = true;
+    console.error(`docs/course-composer/composer.css: .help-dot is missing ${requirement}`);
+  }
+}
+
+for (const requiredFile of [
+  'docs/course-composer/composer.js',
+  'docs/course-composer/course-package.js',
+  'docs/user-guide/course-composer.html',
+]) {
+  if (!fs.existsSync(path.join(root, requiredFile))) {
+    failed = true;
+    console.error(`Missing Course Composer file: ${requiredFile}`);
   }
 }
 
