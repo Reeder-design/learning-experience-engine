@@ -1,7 +1,7 @@
 {
   "id": "portfolio",
   "name": "Portfolio",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Haley Reeder portfolio-aligned learning experience theme.",
   "fonts": {
     "heading": "Montserrat",
@@ -13,6 +13,7 @@
     "section": "icon-workflow",
     "text": "icon-learning-design",
     "image": "icon-multimedia",
+    "multimedia": "icon-multimedia",
     "audio": "icon-multimedia",
     "video": "icon-multimedia",
     "interaction": "icon-interaction",
