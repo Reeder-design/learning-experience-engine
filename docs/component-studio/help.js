@@ -89,7 +89,7 @@
   function position(button) {
     const rect = button.getBoundingClientRect();
     const width = Math.min(360, window.innerWidth - 28);
-    let left = Math.max(14, Math.min(window.innerWidth - width - 14, rect.left + rect.width / 2 - width / 2));
+    const left = Math.max(14, Math.min(window.innerWidth - width - 14, rect.left + rect.width / 2 - width / 2));
     let top = rect.bottom + 10;
     if (top + 220 > window.innerHeight) top = Math.max(14, rect.top - 220);
     popover.style.left = `${left}px`;
@@ -116,6 +116,7 @@
     button.setAttribute('aria-expanded', 'false');
     button.setAttribute('aria-label', button.getAttribute('aria-label') || 'Help for this section');
     button.addEventListener('click', (event) => {
+      event.preventDefault();
       event.stopPropagation();
       if (activeButton === button && popover?.classList.contains('open')) closePopover();
       else openPopover(button);
