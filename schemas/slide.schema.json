@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://reeder-design.github.io/learning-experience-engine/schemas/slide.schema.json",
+  "title": "Learning Experience Engine Slide",
+  "type": "object",
+  "required": ["schemaVersion", "id", "title", "kind", "layers"],
+  "properties": {
+    "schemaVersion": {"const": "0.1"},
+    "id": {"type": "string"},
+    "title": {"type": "string"},
+    "kind": {"const": "slide"},
+    "canvas": {
+      "type": "object",
+      "properties": {
+        "width": {"type": ["number", "null"]},
+        "height": {"type": ["number", "null"]}
+      },
+      "additionalProperties": true
+    },
+    "timeline": {
+      "type": "object",
+      "properties": {
+        "durationMs": {"type": ["number", "null"]}
+      },
+      "additionalProperties": true
+    },
+    "layers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "kind", "objects"],
+        "properties": {
+          "id": {"type": "string"},
+          "title": {"type": ["string", "null"]},
+          "kind": {"enum": ["base", "layer"]},
+          "timeline": {"type": "object", "additionalProperties": true},
+          "objects": {"type": "array", "items": {"type": "object", "additionalProperties": true}},
+          "events": {"type": "array", "items": {"type": "object", "additionalProperties": true}},
+          "source": {"type": "object", "additionalProperties": true}
+        },
+        "additionalProperties": true
+      }
+    },
+    "events": {"type": "array", "items": {"type": "object", "additionalProperties": true}},
+    "actionGroups": {"type": "object", "additionalProperties": true},
+    "interaction": {"type": "object", "additionalProperties": true},
+    "source": {"type": "object", "additionalProperties": true},
+    "metadata": {"type": "object", "additionalProperties": true}
+  },
+  "additionalProperties": true
+}
