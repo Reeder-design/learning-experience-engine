@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "0.1",
+  "id": "demo-workflow-hotspots",
+  "title": "Explore a Customer Workflow",
+  "type": "hotspot-reveal",
+  "description": "A fictional workflow exploration interaction authored directly for the Learning Experience Engine.",
+  "instruction": "Select each numbered hotspot to reveal the customer need behind that part of the workflow.",
+  "theme": "portfolio",
+  "completion": { "strategy": "view-all", "required": true },
+  "content": {
+    "background": { "image": null, "alt": "Abstract workflow map placeholder" },
+    "hotspots": [
+      { "id": "receiving", "x": 18, "y": 32, "label": "Receiving", "title": "Receiving dock", "body": "Incoming equipment must be scanned and logged quickly as it enters the site." },
+      { "id": "production", "x": 47, "y": 52, "label": "Production", "title": "Production floor", "body": "Operators depend on connected equipment and mobile tools while moving between work cells." },
+      { "id": "quality", "x": 69, "y": 28, "label": "Quality", "title": "Quality inspection", "body": "Inspection data needs to reach the right systems without slowing the production process." },
+      { "id": "shipping", "x": 82, "y": 70, "label": "Shipping", "title": "Shipping area", "body": "Finished goods are tracked through staging and outbound loading before leaving the site." }
+    ]
+  }
+}
