@@ -1,0 +1,17 @@
+{
+  "id": "media-presentation",
+  "version": "0.1.0",
+  "family": "stateful",
+  "description": "Video/audio presentation adapter for normalized stateful slides.",
+  "detects": [
+    "one or more base-layer objects referencing normalized video or audio assets"
+  ],
+  "capabilities": [
+    "native browser video/audio controls",
+    "multi-segment media navigation",
+    "automatic pausing of inactive media",
+    "responsive media presentation",
+    "keyboard-accessible segment controls"
+  ],
+  "fallback": "generic-stateful-renderer"
+}
