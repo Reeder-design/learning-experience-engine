@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#4A4238">
+  <title>Course Composer · Learning Experience Engine</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/experience-engine-favicon.svg">
+  <link rel="stylesheet" href="composer.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="header-left">
+        <a class="header-link" href="../index.html">← Engine home</a>
+        <span class="divider" aria-hidden="true"></span>
+        <a class="brand" href="../index.html"><span class="brand-mark">LX</span><span><strong>Learning Experience Engine</strong><small>Course Composer</small></span></a>
+        <nav class="header-nav" aria-label="Composer navigation">
+          <a class="header-link" href="../component-studio/index.html">Component Studio</a>
+          <a class="header-link" href="../user-guide/index.html#course-composer">? User Guide</a>
+        </nav>
+      </div>
+      <div class="header-actions">
+        <span class="save-state" data-save-state>Autosaved</span>
+        <button type="button" class="ghost" data-undo disabled>↶ Undo</button>
+        <button type="button" class="ghost" data-redo disabled>↷ Redo</button>
+        <button type="button" class="ghost" data-open-assets>Project Assets</button>
+        <button type="button" class="ghost" data-import-project>Open Project</button>
+        <button type="button" class="ghost" data-export-json>Export JSON</button>
+        <button type="button" class="primary" data-export-project>Export Project ZIP</button>
+      </div>
+    </header>
+
+    <div class="workflow-strip" aria-label="Course authoring workflow">
+      <span><strong>1</strong> Course basics</span><i>→</i>
+      <span><strong>2</strong> Build structure</span><i>→</i>
+      <span><strong>3</strong> Preview + export</span>
+    </div>
+
+    <main class="composer-layout">
+      <aside class="outline-pane">
+        <div class="pane-head">
+          <div><span class="eyebrow">Course structure</span><h1 data-outline-title>Untitled course</h1></div>
+          <button type="button" class="help-dot" data-help="outline" aria-label="Help with course structure">?</button>
+        </div>
+        <p class="pane-copy">Add content, import engine components, and drag sections into the learner sequence.</p>
+
+        <div class="add-grid" aria-label="Add course content">
+          <button type="button" data-add="text"><span>¶</span>Text</button>
+          <button type="button" data-add="image"><span>▧</span>Image</button>
+          <button type="button" data-add="video"><span>▶</span>Video</button>
+          <button type="button" data-add="resource"><span>↗</span>Resource</button>
+          <button type="button" class="wide" data-add="component"><span>◇</span>Component</button>
+        </div>
+
+        <div class="outline-list" data-outline-list aria-label="Course sections"></div>
+      </aside>
+
+      <section class="author-pane">
+        <details class="course-basics panel" open>
+          <summary>
+            <span><span class="eyebrow">Step 1</span><strong>Course basics</strong></span>
+            <button type="button" class="help-dot" data-help="basics" aria-label="Help with course basics">?</button>
+          </summary>
+          <div class="basics-body">
+            <label><span>Course title</span><input data-course-field="title" type="text"></label>
+            <label><span>Description</span><textarea data-course-field="description" rows="3"></textarea></label>
+            <label><span>Audience</span><input data-course-field="audience" type="text" placeholder="Sales representatives, partners"></label>
+            <div class="objectives-head"><strong>Learning objectives</strong><button type="button" class="mini" data-add-objective>+ Add objective</button></div>
+            <div class="objectives" data-objectives></div>
+          </div>
+        </details>
+
+        <div class="panel section-editor">
+          <div class="editor-head">
+            <div><span class="eyebrow">Step 2</span><div class="title-row"><h2 data-editor-title>Section editor</h2><button type="button" class="help-dot" data-help="section" aria-label="Help with section editor">?</button></div></div>
+            <span class="type-chip" data-editor-type>text</span>
+          </div>
+          <div data-section-editor></div>
+        </div>
+
+        <details class="panel json-panel">
+          <summary><span><strong>Generated course JSON</strong><small>Engine-native course definition</small></span><button type="button" class="help-dot" data-help="json" aria-label="Help with course JSON">?</button></summary>
+          <pre data-json-output></pre>
+        </details>
+      </section>
+
+      <section class="preview-pane">
+        <div class="preview-head">
+          <div><span class="eyebrow">Step 3 · Learner preview</span><div class="title-row"><strong data-preview-title>Untitled course</strong><button type="button" class="help-dot" data-help="preview" aria-label="Help with preview">?</button></div></div>
+          <span class="progress-pill" data-progress>1 / 1</span>
+        </div>
+        <div class="preview-frame">
+          <div class="course-hero">
+            <span class="course-label">Course</span>
+            <h2 data-preview-course-title></h2>
+            <p data-preview-course-description></p>
+            <div class="objective-preview" data-preview-objectives></div>
+          </div>
+          <div class="learner-stage" data-preview-stage></div>
+          <div class="preview-nav">
+            <button type="button" data-prev>← Previous</button>
+            <div class="preview-dots" data-preview-dots></div>
+            <button type="button" data-next>Next →</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <aside class="asset-drawer" data-asset-drawer aria-label="Project Assets">
+    <div class="drawer-head"><div><span class="eyebrow">Shared course library</span><h2>Project Assets</h2><p data-asset-summary>No files selected</p></div><button type="button" data-close-assets aria-label="Close">×</button></div>
+    <div class="asset-actions">
+      <button type="button" class="primary-soft" data-choose-folder>Choose project folder</button>
+      <button type="button" data-choose-files>Choose files</button>
+    </div>
+    <p class="drawer-help">Images, video, audio, captions, PDFs, and source-context files stay local to this browser session. Composer stores portable relative paths.</p>
+    <div class="asset-list" data-asset-list></div>
+    <div class="context-list"><h3>Source context</h3><div data-context-list></div></div>
+  </aside>
+  <div class="drawer-scrim" data-drawer-scrim></div>
+
+  <div class="help-popover" data-help-popover role="dialog" aria-hidden="true">
+    <button type="button" data-close-help aria-label="Close help">×</button><h3 data-help-title></h3><p data-help-body></p><a href="../user-guide/index.html#course-composer">Open User Guide →</a>
+  </div>
+
+  <input type="file" data-folder-input webkitdirectory multiple hidden>
+  <input type="file" data-files-input multiple hidden accept=".txt,.md,.csv,.json,.png,.jpg,.jpeg,.gif,.webp,.svg,.mp4,.webm,.mov,.m4v,.mp3,.wav,.m4a,.aac,.ogg,.vtt,.srt,.pdf,.doc,.docx,.ppt,.pptx">
+  <input type="file" data-component-input accept="application/json,.json" hidden>
+  <input type="file" data-project-input accept="application/zip,.zip,application/json,.json" hidden>
+
+  <script src="composer.js"></script>
+  <script src="course-package.js"></script>
+</body>
+</html>
