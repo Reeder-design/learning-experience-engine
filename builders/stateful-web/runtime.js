@@ -248,8 +248,25 @@
     });
 
     if (object.visual?.clipToBounds) element.style.overflow = 'hidden';
-    const source = object.assets?.[0] && assetUrl(object.assets[0]);
-    if (source) {
+    const primaryAssetId = object.assets?.[0] || null;
+    const primaryAsset = primaryAssetId ? assetMap.get(primaryAssetId) : null;
+    const source = primaryAssetId && assetUrl(primaryAssetId);
+    if (source && primaryAsset?.kind === 'video') {
+      const video = document.createElement('video');
+      video.src = source;
+      video.controls = true;
+      video.playsInline = true;
+      video.preload = 'metadata';
+      video.setAttribute('aria-label', object.accessibility?.altText || object.text || 'Video');
+      element.appendChild(video);
+    } else if (source && primaryAsset?.kind === 'audio') {
+      const audio = document.createElement('audio');
+      audio.src = source;
+      audio.controls = true;
+      audio.preload = 'metadata';
+      audio.setAttribute('aria-label', object.accessibility?.altText || object.text || 'Audio');
+      element.appendChild(audio);
+    } else if (source) {
       const image = document.createElement('img');
       image.src = source;
       image.alt = object.accessibility?.altText || object.text || '';
