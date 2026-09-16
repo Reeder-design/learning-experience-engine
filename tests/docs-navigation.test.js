@@ -54,12 +54,51 @@ for (const requiredFile of [
   'docs/course-composer/composer.js',
   'docs/course-composer/course-package.js',
   'docs/user-guide/course-composer.html',
+  'docs/component-studio/workflow-v2.css',
 ]) {
   if (!fs.existsSync(path.join(root, requiredFile))) {
     failed = true;
-    console.error(`Missing Course Composer file: ${requiredFile}`);
+    console.error(`Missing authoring UI file: ${requiredFile}`);
+  }
+}
+
+function assertOrder(file, markers) {
+  const source = fs.readFileSync(path.join(root, file), 'utf8');
+  let last = -1;
+  for (const marker of markers) {
+    const index = source.indexOf(marker);
+    if (index < 0) {
+      failed = true;
+      console.error(`${file}: missing workflow marker ${marker}`);
+      return;
+    }
+    if (index <= last) {
+      failed = true;
+      console.error(`${file}: workflow marker is out of order: ${marker}`);
+      return;
+    }
+    last = index;
+  }
+}
+
+assertOrder('docs/component-studio/index.html', ['id="choose"', 'id="assets"', 'id="author"', 'id="preview"', 'id="export"']);
+assertOrder('docs/course-composer/index.html', ['id="course-basics"', 'id="project-assets"', 'id="course-content"', 'id="course-preview"', 'id="course-export"']);
+
+const studioHtml = fs.readFileSync(path.join(root, 'docs/component-studio/index.html'), 'utf8');
+for (const marker of ['data-preview-focus', 'data-preview-refresh', 'data-copy', 'data-download', 'data-export-project']) {
+  if (!studioHtml.includes(marker)) {
+    failed = true;
+    console.error(`Component Studio is missing workflow action: ${marker}`);
+  }
+}
+
+const composerHtml = fs.readFileSync(path.join(root, 'docs/course-composer/index.html'), 'utf8');
+for (const marker of ['data-content-canvas', 'data-preview-start', 'data-preview-full', 'data-export-json', 'data-export-project']) {
+  if (!composerHtml.includes(marker)) {
+    failed = true;
+    console.error(`Course Composer is missing workflow action: ${marker}`);
   }
 }
 
 if (failed) process.exit(1);
-console.log('Static docs navigation and help-bubble alignment checks passed.');
+console.log('Static navigation, help alignment, and authoring workflow checks passed.');
