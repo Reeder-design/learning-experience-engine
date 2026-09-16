@@ -7,8 +7,10 @@ const files = [
   'docs/component-studio/index.html',
   'docs/component-studio/help.js',
   'docs/course-composer/index.html',
+  'docs/scenario-builder/index.html',
   'docs/user-guide/index.html',
   'docs/user-guide/course-composer.html',
+  'docs/user-guide/scenario-builder.html',
 ];
 
 const forbidden = [
@@ -16,6 +18,7 @@ const forbidden = [
   /href=["']\.\.\/["']/g,
   /href=["'][^"']*component-studio\/["']/g,
   /href=["'][^"']*course-composer\/["']/g,
+  /href=["'][^"']*scenario-builder\/["']/g,
   /href=["'][^"']*user-guide\/["']/g,
   /href=["'][^"']*user-guide\/#/g,
 ];
@@ -50,11 +53,25 @@ for (const requirement of ['display:inline-flex', 'align-items:center', 'justify
   }
 }
 
+const scenarioCss = fs.readFileSync(path.join(root, 'docs/scenario-builder/scenario-builder.css'), 'utf8');
+const scenarioHelpRule = scenarioCss.match(/\.help-dot\{([^}]*)\}/)?.[1] || '';
+for (const requirement of ['display:inline-flex', 'align-items:center', 'justify-content:center', 'line-height:1']) {
+  if (!scenarioHelpRule.includes(requirement)) {
+    failed = true;
+    console.error(`docs/scenario-builder/scenario-builder.css: .help-dot is missing ${requirement}`);
+  }
+}
+
 for (const requiredFile of [
   'docs/course-composer/composer.js',
   'docs/course-composer/course-package.js',
   'docs/user-guide/course-composer.html',
   'docs/component-studio/workflow-v2.css',
+  'docs/scenario-builder/scenario-builder.js',
+  'docs/scenario-builder/scenario-package.js',
+  'docs/user-guide/scenario-builder.html',
+  'builders/component-web/scenario-runtime.js',
+  'builders/component-web/scenario.css',
 ]) {
   if (!fs.existsSync(path.join(root, requiredFile))) {
     failed = true;
@@ -83,6 +100,7 @@ function assertOrder(file, markers) {
 
 assertOrder('docs/component-studio/index.html', ['id="choose"', 'id="assets"', 'id="author"', 'id="preview"', 'id="export"']);
 assertOrder('docs/course-composer/index.html', ['id="course-basics"', 'id="project-assets"', 'id="course-content"', 'id="course-preview"', 'id="course-export"']);
+assertOrder('docs/scenario-builder/index.html', ['id="basics-section"', 'id="assets-section"', 'id="build-section"', 'id="preview-section"', 'id="export-section"']);
 
 const studioHtml = fs.readFileSync(path.join(root, 'docs/component-studio/index.html'), 'utf8');
 for (const marker of ['data-preview-focus', 'data-preview-refresh', 'data-copy', 'data-download', 'data-export-project']) {
@@ -97,6 +115,14 @@ for (const marker of ['data-content-canvas', 'data-preview-start', 'data-preview
   if (!composerHtml.includes(marker)) {
     failed = true;
     console.error(`Course Composer is missing workflow action: ${marker}`);
+  }
+}
+
+const scenarioHtml = fs.readFileSync(path.join(root, 'docs/scenario-builder/index.html'), 'utf8');
+for (const marker of ['data-choose-folder', 'data-add-node', 'data-add-outcome', 'data-preview-start', 'data-preview-focus', 'data-copy-json', 'data-export-json', 'data-export-project']) {
+  if (!scenarioHtml.includes(marker)) {
+    failed = true;
+    console.error(`Scenario Builder is missing workflow action: ${marker}`);
   }
 }
 
