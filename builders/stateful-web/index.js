@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 const VERSION = '0.2.0';
+const COMPONENTS = ['carousel', 'hotspot-reveal', 'assessment-shell', 'media-presentation'];
 
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -159,7 +160,7 @@ function main() {
     builtAt: new Date().toISOString(),
     source: inputDir,
     theme: options.theme,
-    components: fs.existsSync(componentJs) ? ['carousel', 'hotspot-reveal', 'assessment-shell'] : [],
+    components: fs.existsSync(componentJs) ? COMPONENTS : [],
     scenes: scenes.length,
     slides: Object.keys(slides).length,
     assets: (assetDocument.assets || []).length,
@@ -167,7 +168,7 @@ function main() {
 
   console.log(`Built ${Object.keys(slides).length} slide(s) -> ${outputDir}`);
   console.log(`Theme: ${options.theme}`);
-  console.log(`Components: ${fs.existsSync(componentJs) ? 'carousel, hotspot-reveal, assessment-shell' : 'none'}`);
+  console.log(`Components: ${fs.existsSync(componentJs) ? COMPONENTS.join(', ') : 'none'}`);
 }
 
 main();
