@@ -167,6 +167,7 @@ function main() {
 
     fs.copyFileSync(path.join(__dirname, 'component.css'), path.join(outputDir, 'component.css'));
     fs.copyFileSync(path.join(__dirname, 'runtime.js'), path.join(outputDir, 'runtime.js'));
+    fs.copyFileSync(path.join(__dirname, 'scenario-runtime.js'), path.join(outputDir, 'scenario-runtime.js'));
 
     const json = JSON.stringify(payload).replace(/</g, '\\u003c');
     const html = `<!doctype html>
@@ -202,6 +203,7 @@ function main() {
   </main>
   <script>window.__LX_COMPONENT__=${json};</script>
   <script src="runtime.js"></script>
+  <script src="scenario-runtime.js"></script>
 </body>
 </html>`;
 
