@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "0.1",
+  "id": "demo-sales-conversation-carousel",
+  "title": "Discovery Conversation Signals",
+  "type": "carousel",
+  "description": "A fictional sales-enablement carousel showing how reusable interaction content can be authored directly in JSON.",
+  "instruction": "Use the arrows or page dots to review each customer signal.",
+  "theme": "portfolio",
+  "completion": { "strategy": "view-all", "required": true },
+  "content": {
+    "pageSize": 3,
+    "items": [
+      { "id": "signal-1", "title": "Coverage gaps", "body": "The customer describes inconsistent connectivity across part of the facility." },
+      { "id": "signal-2", "title": "Operational visibility", "body": "Teams need better insight into what is connected and where failures occur." },
+      { "id": "signal-3", "title": "Mobility", "body": "Devices and workers regularly move between work areas during normal operations." },
+      { "id": "signal-4", "title": "Reliability", "body": "Short interruptions create meaningful workflow or productivity impacts." },
+      { "id": "signal-5", "title": "Security", "body": "The organization wants more control over device access and network segmentation." },
+      { "id": "signal-6", "title": "Growth", "body": "The customer expects more connected devices, applications, or sites over time." }
+    ]
+  }
+}
