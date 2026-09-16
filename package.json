@@ -8,6 +8,7 @@
     "inspect-rise": "node tools/rise-inspector/index.js",
     "extract-rise": "node tools/rise-extractor/index.js",
     "normalize-rise": "node tools/rise-normalizer/index.js",
+    "build-web": "node builders/web/index.js",
     "build": "echo \"Build system not implemented yet\"",
     "build-rise": "echo \"Rise Code Block builder not implemented yet\"",
     "validate-public": "echo \"Public validation not implemented yet\""
