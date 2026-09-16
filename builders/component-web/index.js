@@ -166,6 +166,7 @@ function main() {
     if (fs.existsSync(icons)) fs.copyFileSync(icons, path.join(outputDir, 'icons.svg'));
 
     fs.copyFileSync(path.join(__dirname, 'component.css'), path.join(outputDir, 'component.css'));
+    fs.copyFileSync(path.join(__dirname, 'scenario.css'), path.join(outputDir, 'scenario.css'));
     fs.copyFileSync(path.join(__dirname, 'runtime.js'), path.join(outputDir, 'runtime.js'));
     fs.copyFileSync(path.join(__dirname, 'scenario-runtime.js'), path.join(outputDir, 'scenario-runtime.js'));
 
@@ -180,6 +181,7 @@ function main() {
   ${fs.existsSync(favicon) ? '<link rel="icon" type="image/svg+xml" href="favicon.svg">' : ''}
   ${fs.existsSync(themeCss) ? '<link rel="stylesheet" href="theme.css">' : ''}
   <link rel="stylesheet" href="component.css">
+  <link rel="stylesheet" href="scenario.css">
 </head>
 <body>
   <main class="component-page">
