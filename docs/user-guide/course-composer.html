@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#4A4238">
+  <title>Course Composer Guide · Learning Experience Engine</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/experience-engine-favicon.svg">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Open+Sans:wght@400;500;600;700&display=swap');
+    :root{--taupe:#4A4238;--charcoal:#4D5359;--pine:#508484;--mint:#79C99E;--lime:#97DB4F;--ink:#24302D;--muted:#6F777D;--line:rgba(80,132,132,.2);--off:#F7F8F5}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:'Open Sans',Arial,sans-serif;color:var(--ink);background:linear-gradient(#fff,var(--off))}.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 22px;color:#fff;background:linear-gradient(110deg,#2f3438,var(--taupe) 52%,#3f6868);box-shadow:0 10px 26px rgba(35,45,42,.15)}.topbar-left,.topbar-actions{display:flex;align-items:center;gap:9px}.brand,.nav{display:flex;align-items:center;gap:9px;color:#fff;text-decoration:none}.brand-mark{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--pine),var(--mint));font-family:Montserrat,sans-serif;font-weight:800}.brand strong,.brand small{display:block}.brand small{font-size:.68rem;color:#cdebd9}.nav{padding:8px 11px;border:1px solid rgba(255,255,255,.2);border-radius:999px;background:rgba(255,255,255,.06);font-size:.75rem;font-weight:800}.nav.primary{border:0;background:linear-gradient(135deg,var(--mint),var(--lime));color:#27312e}.layout{display:grid;grid-template-columns:250px minmax(0,820px);gap:42px;max-width:1130px;margin:0 auto;padding:42px 26px 90px}.toc{position:sticky;top:90px;align-self:start;padding:18px;border:1px solid var(--line);border-radius:18px;background:#fff}.toc strong{display:block;margin-bottom:9px;font-family:Montserrat,sans-serif}.toc a{display:block;padding:7px 8px;border-radius:8px;color:var(--muted);font-size:.79rem;text-decoration:none}.toc a:hover{background:#eef7f1;color:var(--pine)}.hero{padding:30px 0;border-bottom:1px solid var(--line)}.eyebrow{color:var(--pine);font-size:.66rem;font-weight:800;letter-spacing:.11em;text-transform:uppercase}.hero h1,.section h2,.section h3{font-family:Montserrat,sans-serif}.hero h1{margin:7px 0 12px;font-size:clamp(2.4rem,6vw,4.6rem);line-height:.96;letter-spacing:-.05em}.hero p,.section p,.section li{color:#52605b;line-height:1.7}.section{scroll-margin-top:92px;padding:32px 0;border-bottom:1px solid var(--line)}.section h2{margin:5px 0 10px;font-size:1.7rem}.section h3{margin:24px 0 7px;font-size:1rem}.steps{display:grid;gap:10px}.step{display:grid;grid-template-columns:34px 1fr;gap:12px;padding:14px;border:1px solid var(--line);border-radius:14px;background:#fff}.step>strong{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#edf6f1;color:var(--pine)}.step h3,.step p{margin:0}.callout{padding:14px 16px;border-left:5px solid var(--mint);border-radius:11px;background:#f3f9f5}.tree{padding:16px;border-radius:14px;background:#202826;color:#d8f0e3;overflow:auto;font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace}.grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}.card{padding:15px;border:1px solid var(--line);border-radius:14px;background:#fff}.card h3{margin:0 0 5px}.card p{margin:0;font-size:.84rem}.table{width:100%;border-collapse:collapse;font-size:.83rem}.table th,.table td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.button{display:inline-flex;padding:10px 14px;border-radius:999px;background:linear-gradient(135deg,var(--pine),#3f6868);color:#fff;text-decoration:none;font-weight:800;margin-top:18px}@media(max-width:820px){.layout{display:block}.toc{position:static;margin-bottom:24px}.topbar{flex-wrap:wrap}.topbar-actions{width:100%;overflow:auto}.grid{grid-template-columns:1fr}}@media(max-width:560px){.layout{padding:26px 17px 70px}.brand span:last-child{display:none}}
+  </style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-left"><a class="nav" href="../index.html">← Engine home</a><a class="brand" href="../index.html"><span class="brand-mark">LX</span><span><strong>Learning Experience Engine</strong><small>Course Composer Guide</small></span></a></div>
+  <div class="topbar-actions"><a class="nav" href="index.html">Component Studio Guide</a><a class="nav primary" href="../course-composer/index.html">Open Course Composer →</a></div>
+</header>
+<div class="layout">
+  <nav class="toc"><strong>Course Composer</strong><a href="#start">Getting started</a><a href="#basics">Course basics</a><a href="#structure">Course structure</a><a href="#content">Content types</a><a href="#components">Using components</a><a href="#assets">Project assets</a><a href="#preview">Preview</a><a href="#autosave">Autosave + undo</a><a href="#export">Save + export</a><a href="#privacy">Privacy</a></nav>
+  <main>
+    <section class="hero" id="start"><div class="eyebrow">User Guide</div><h1>Course Composer</h1><p>Course Composer assembles multiple pieces of learning content into one ordered, previewable Learning Experience Engine course. Use it for the course-level structure; use Component Studio when you need to build a reusable interaction.</p></section>
+
+    <section class="section"><div class="eyebrow">Workflow</div><h2>Build a course in three passes</h2><div class="steps"><div class="step"><strong>1</strong><div><h3>Course basics</h3><p>Set the title, description, audience, and learning objectives.</p></div></div><div class="step"><strong>2</strong><div><h3>Build structure</h3><p>Add text, images, video, resources, and reusable components. Reorder them in the left outline.</p></div></div><div class="step"><strong>3</strong><div><h3>Preview + export</h3><p>Walk through the learner sequence, then export course JSON or a complete project ZIP.</p></div></div></div></section>
+
+    <section class="section" id="basics"><div class="eyebrow">Step 1</div><h2>Course basics</h2><p>The course title and description are learner-facing. Audience is stored as structured metadata. Learning objectives appear in the learner preview and travel with the course JSON.</p><div class="callout"><strong>Autosave:</strong> Composer stores the current draft in your browser automatically. Project ZIP export is still the portable backup you should keep for important work.</div></section>
+
+    <section class="section" id="structure"><div class="eyebrow">Step 2</div><h2>Course structure</h2><p>The left outline is the learner sequence. Select an item to edit it. Drag items to reorder them, or use the arrow controls. Duplicate creates an independent copy; delete removes the item from the course.</p></section>
+
+    <section class="section" id="content"><div class="eyebrow">Content blocks</div><h2>Content types</h2><div class="grid"><article class="card"><h3>Text</h3><p>Headings and instructional copy for introductions, explanations, summaries, and transitions.</p></article><article class="card"><h3>Image</h3><p>Supporting text plus an image path and accessible alt text.</p></article><article class="card"><h3>Video</h3><p>Supporting text, video path, optional caption path, and transcript.</p></article><article class="card"><h3>Resource</h3><p>A PDF or other supporting document presented as a learner resource.</p></article><article class="card"><h3>Component</h3><p>An engine-native interaction imported from Component Studio JSON.</p></article></div></section>
+
+    <section class="section" id="components"><div class="eyebrow">Interactions</div><h2>Using Component Studio with Composer</h2><p>Add a <strong>Component</strong> section, then choose <strong>Import component JSON</strong>. Composer embeds that component definition into the course. Component asset paths can point to the same shared course Project Assets library.</p><pre class="tree">Component Studio
+  ↓ Export JSON
+Course Composer
+  ↓ Add Component → Import component JSON
+Course JSON
+  └── embedded component definition</pre><p>This is the first handoff. A later version will support sending a component directly from Studio into the currently open course.</p></section>
+
+    <section class="section" id="assets"><div class="eyebrow">Shared files</div><h2>Project Assets</h2><p>Project Assets belong to the whole course. Select a project folder or individual files, then click <strong>Use</strong> beside an asset to fill the currently selected path field.</p><pre class="tree">my-course/
+├── context/
+│   └── source-content.txt
+├── assets/
+│   ├── images/
+│   ├── video/
+│   ├── audio/
+│   ├── captions/
+│   └── documents/
+└── course.json</pre><p>Composer stores portable paths such as <code>assets/video/demo.mp4</code>, never an absolute Mac path.</p></section>
+
+    <section class="section" id="preview"><div class="eyebrow">Step 3</div><h2>Learner preview</h2><p>The right pane previews the course in learner order. Selecting an outline section jumps to it. Previous and Next move through the sequence. Imported carousel, hotspot, assessment, and media components receive a lightweight Composer preview.</p></section>
+
+    <section class="section" id="autosave"><div class="eyebrow">Safety</div><h2>Autosave, undo, and redo</h2><p>Composer autosaves the current course structure to browser local storage. Undo and redo track course-content edits during the session. Local asset files cannot be stored permanently by the browser; reopen the project folder or use an exported Project ZIP when resuming work later.</p></section>
+
+    <section class="section" id="export"><div class="eyebrow">Project files</div><h2>Save and export</h2><table class="table"><tr><th>Option</th><th>Result</th></tr><tr><td>Export JSON</td><td>A course JSON file containing course metadata, ordered units, and embedded components.</td></tr><tr><td>Export Project ZIP</td><td><code>course.json</code> plus the local context and asset files currently loaded.</td></tr><tr><td>Open Project</td><td>Reopens a Composer course JSON or a Composer project ZIP.</td></tr></table></section>
+
+    <section class="section" id="privacy"><div class="eyebrow">Confidential work</div><h2>Privacy</h2><p>Course Composer is a static browser application. Files you explicitly choose are read locally for preview and packaging; choosing them does not commit them to the public GitHub repository. Keep confidential course folders in the private local workspace.</p><a class="button" href="../course-composer/index.html">Open Course Composer →</a></section>
+  </main>
+</div>
+</body>
+</html>
