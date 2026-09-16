@@ -1,0 +1,136 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Open+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+  --taupe:#4A4238;
+  --charcoal:#4D5359;
+  --pine-blue:#508484;
+  --mint-leaf:#79C99E;
+  --yellow-green:#97DB4F;
+  --white:#FFFFFF;
+  --off-white:#F7F8F5;
+  --light-gray:#E8EBE8;
+  --medium-gray:#C9CECB;
+  --muted-text:#6F777D;
+  --ink:#24302D;
+  --line:rgba(80,132,132,.20);
+  --font-heading:"Montserrat",Arial,sans-serif;
+  --font-body:"Open Sans",Arial,sans-serif;
+  --radius-sm:8px;
+  --radius-md:18px;
+  --radius-lg:28px;
+  --radius-pill:999px;
+  --shadow-sm:0 10px 26px rgba(52,74,66,.07);
+  --shadow:0 20px 55px rgba(52,74,66,.13);
+  --focus:0 0 0 3px rgba(151,219,79,.48);
+}
+
+body {
+  color:var(--ink);
+  font-family:var(--font-body);
+  background:
+    radial-gradient(circle at 8% 2%,rgba(121,201,158,.13),transparent 28rem),
+    radial-gradient(circle at 92% 18%,rgba(151,219,79,.08),transparent 25rem),
+    linear-gradient(180deg,#fff 0%,#fbfcfa 58%,#f5f7f4 100%);
+}
+
+h1,h2,h3,h4 { font-family:var(--font-heading); color:var(--ink); }
+
+.course-nav {
+  background:
+    radial-gradient(circle at 12% 15%,rgba(121,201,158,.16),transparent 20rem),
+    linear-gradient(155deg,#2f3438 0%,#4A4238 48%,#3f6868 100%);
+  border-right:1px solid rgba(255,255,255,.10);
+  box-shadow:18px 0 42px rgba(35,45,42,.12);
+}
+
+.course-nav::after {
+  content:"";
+  position:absolute;
+  right:0; top:0; bottom:0; width:1px;
+  background:linear-gradient(180deg,transparent,rgba(121,201,158,.42),rgba(151,219,79,.24),transparent);
+}
+
+.brand-mark,
+.unit-icon,
+.block-icon,
+.hero-icon,
+.nav-icon {
+  color:var(--pine-blue);
+  background:linear-gradient(145deg,#fff,#eef5f1);
+  border:1px solid var(--line);
+  box-shadow:var(--shadow-sm);
+}
+
+.course-nav .brand-mark,
+.course-nav .nav-icon {
+  color:#c9eed8;
+  background:rgba(255,255,255,.08);
+  border-color:rgba(255,255,255,.13);
+  box-shadow:none;
+}
+
+.course-nav a:hover,
+.course-nav a.active {
+  background:linear-gradient(135deg,rgba(121,201,158,.20),rgba(80,132,132,.32));
+  border-color:rgba(121,201,158,.28);
+}
+
+.course-nav a.active { box-shadow:inset 0 0 0 1px rgba(255,255,255,.08); }
+
+.course-hero {
+  background:
+    radial-gradient(circle at 88% 18%,rgba(151,219,79,.18),transparent 18rem),
+    radial-gradient(circle at 16% 82%,rgba(121,201,158,.15),transparent 24rem),
+    linear-gradient(145deg,rgba(255,255,255,.96),rgba(238,245,241,.82));
+  border:1px solid var(--line);
+  box-shadow:var(--shadow);
+}
+
+.progress-fill { background:linear-gradient(90deg,var(--pine-blue),var(--mint-leaf),var(--yellow-green)); }
+
+.eyebrow,
+.section-number,
+.block-label { color:var(--pine-blue); }
+
+.block,
+.question,
+.unit-footer,
+.notice {
+  border-color:var(--line);
+  box-shadow:var(--shadow-sm);
+}
+
+.block.interaction,
+.question { background:rgba(255,255,255,.91); }
+
+.block.interaction { border-top:5px solid var(--mint-leaf); }
+.question { border-top:5px solid var(--yellow-green); }
+.media-card { border-top:5px solid var(--pine-blue); }
+.custom-block { border-top:5px solid var(--taupe); }
+
+.tab-list button[aria-selected="true"],
+.primary-action {
+  color:#fff;
+  background:linear-gradient(135deg,var(--pine-blue),#3f6868);
+  border-color:transparent;
+  box-shadow:0 9px 22px rgba(63,104,104,.18);
+}
+
+.tab-list button:hover,
+.pill-link:hover,
+.unit-next:hover,
+.menu-button:hover { transform:translateY(-2px); }
+
+.interaction details[open] > summary { color:var(--pine-blue); }
+.interaction-grid article { background:linear-gradient(145deg,#f7fbf8,#eaf7f0); border:1px solid rgba(121,201,158,.32); }
+.media-placeholder { background:linear-gradient(145deg,#f8faf8,#eef5f1); border-color:rgba(80,132,132,.35); }
+.notice { background:#fbf9e8; border-color:rgba(151,219,79,.48); }
+
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible { outline:none; box-shadow:var(--focus); }
+
+@media (prefers-reduced-motion:reduce) {
+  html { scroll-behavior:auto; }
+  * { transition:none !important; animation:none !important; }
+}
