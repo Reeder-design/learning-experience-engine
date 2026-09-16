@@ -50,9 +50,11 @@ jobs:
           node --check builders/component-web/runtime.js
           node --check docs/component-studio/studio.js
           node --check docs/component-studio/asset-library.js
+          node --check docs/component-studio/workflow.js
           node --check docs/component-studio/project-package.js
           node --check docs/component-studio/help.js
           node --check docs/course-composer/composer.js
+          node --check docs/course-composer/workflow.js
           node --check docs/course-composer/course-package.js
 
       - name: Validate static docs navigation
