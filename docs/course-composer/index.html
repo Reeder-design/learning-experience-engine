@@ -24,7 +24,6 @@
         <span class="save-state" data-save-state>Autosaved</span>
         <button type="button" class="ghost" data-undo disabled>↶ Undo</button>
         <button type="button" class="ghost" data-redo disabled>↷ Redo</button>
-        <button type="button" class="ghost" data-open-assets>Project Assets</button>
         <button type="button" class="ghost" data-import-project>Open Project</button>
         <button type="button" class="ghost" data-export-json>Export JSON</button>
         <button type="button" class="primary" data-export-project>Export Project ZIP</button>
@@ -34,7 +33,8 @@
     <div class="workflow-strip" aria-label="Course authoring workflow">
       <span><strong>1</strong> Course basics</span><i>→</i>
       <span><strong>2</strong> Build structure</span><i>→</i>
-      <span><strong>3</strong> Preview + export</span>
+      <span><strong>3</strong> Assets</span><i>→</i>
+      <span><strong>4</strong> Preview + export</span>
     </div>
 
     <main class="composer-layout">
@@ -79,6 +79,18 @@
           <div data-section-editor></div>
         </div>
 
+        <div class="panel asset-workflow-card">
+          <div class="asset-workflow-copy">
+            <span class="eyebrow">Step 3 · Assets</span>
+            <strong>Connect course files & source context</strong>
+            <p>Add shared images, video, audio, captions, PDFs, and source files after the course structure is in place and before you review the learner experience.</p>
+          </div>
+          <div class="asset-workflow-actions">
+            <button type="button" class="asset-workflow-button" data-open-assets>Project Assets →</button>
+            <button type="button" class="help-dot" data-help="assets" aria-label="Help with project assets">?</button>
+          </div>
+        </div>
+
         <details class="panel json-panel">
           <summary><span><strong>Generated course JSON</strong><small>Engine-native course definition</small></span><button type="button" class="help-dot" data-help="json" aria-label="Help with course JSON">?</button></summary>
           <pre data-json-output></pre>
@@ -87,7 +99,7 @@
 
       <section class="preview-pane">
         <div class="preview-head">
-          <div><span class="eyebrow">Step 3 · Learner preview</span><div class="title-row"><strong data-preview-title>Untitled course</strong><button type="button" class="help-dot" data-help="preview" aria-label="Help with preview">?</button></div></div>
+          <div><span class="eyebrow">Step 4 · Learner preview</span><div class="title-row"><strong data-preview-title>Untitled course</strong><button type="button" class="help-dot" data-help="preview" aria-label="Help with preview">?</button></div></div>
           <span class="progress-pill" data-progress>1 / 1</span>
         </div>
         <div class="preview-frame">
