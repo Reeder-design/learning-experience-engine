@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "0.1",
+  "id": "demo-media-presentation",
+  "title": "Guided Media Walkthrough",
+  "type": "media-presentation",
+  "description": "A reusable multi-segment media component. Replace the sample media paths with private or public assets as appropriate.",
+  "instruction": "Watch or listen to each segment. Completion is recorded when every segment reaches the end.",
+  "theme": "portfolio",
+  "completion": { "strategy": "media-end", "required": true },
+  "content": {
+    "media": [
+      {
+        "id": "segment-1",
+        "kind": "video",
+        "src": "assets/demo-video.mp4",
+        "title": "Segment 1: Orientation",
+        "caption": "Introduce the environment and establish what the learner should notice.",
+        "transcript": "Sample transcript text. A real project can supply a full accessible transcript here."
+      },
+      {
+        "id": "segment-2",
+        "kind": "audio",
+        "src": "assets/demo-audio.mp3",
+        "title": "Segment 2: Listen for the customer signal",
+        "caption": "Use audio-only segments when the learning experience benefits from conversation or narration.",
+        "transcript": "Sample audio transcript text."
+      }
+    ]
+  }
+}
