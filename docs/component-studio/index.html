@@ -33,8 +33,9 @@
 
     <div class="workflow-strip" aria-label="Authoring workflow">
       <span class="workflow-step"><strong>1</strong><span>Choose</span></span><span class="workflow-arrow">→</span>
-      <span class="workflow-step"><strong>2</strong><span>Author + Assets</span></span><span class="workflow-arrow">→</span>
-      <span class="workflow-step"><strong>3</strong><span>Preview + Export</span></span>
+      <span class="workflow-step"><strong>2</strong><span>Author</span></span><span class="workflow-arrow">→</span>
+      <span class="workflow-step"><strong>3</strong><span>Assets</span></span><span class="workflow-arrow">→</span>
+      <span class="workflow-step"><strong>4</strong><span>Preview + Export</span></span>
     </div>
 
     <main class="studio-layout">
@@ -73,6 +74,18 @@
           <div class="dynamic-editor" data-dynamic-editor></div>
         </div>
 
+        <div class="workflow-assets-card">
+          <div>
+            <span class="eyebrow">Step 3 · Assets</span>
+            <strong>Connect source files & media</strong>
+            <p>Bring in your project folder, source context, images, video, audio, captions, and documents before testing the learner experience.</p>
+          </div>
+          <div class="workflow-assets-actions">
+            <button type="button" class="asset-flow-button" data-open-assets>Project Assets →</button>
+            <button type="button" class="help-bubble" data-help-topic="assets" aria-label="Help with project assets">?</button>
+          </div>
+        </div>
+
         <details class="panel json-panel">
           <summary>
             <span class="json-summary-copy"><span>Generated JSON</span><small>The engine file behind this interaction</small></span>
@@ -84,7 +97,7 @@
 
       <section class="preview-column">
         <div class="preview-toolbar">
-          <div><span class="eyebrow">Step 3 · Preview</span><div class="preview-title-wrap"><strong data-preview-type>Carousel</strong><button type="button" class="help-bubble" data-help-topic="preview">?</button></div></div>
+          <div><span class="eyebrow">Step 4 · Preview</span><div class="preview-title-wrap"><strong data-preview-type>Carousel</strong><button type="button" class="help-bubble" data-help-topic="preview">?</button></div></div>
           <span class="preview-state" data-preview-state>In progress</span>
         </div>
         <div class="preview-frame">
