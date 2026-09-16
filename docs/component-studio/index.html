@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#4A4238">
+  <title>Component Studio · Learning Experience Engine</title>
+  <link rel="stylesheet" href="studio.css">
+</head>
+<body>
+  <div class="studio-app">
+    <header class="studio-header">
+      <a class="brand" href="../">
+        <span class="brand-mark">LX</span>
+        <span><strong>Learning Experience Engine</strong><small>Component Studio</small></span>
+      </a>
+      <div class="header-actions">
+        <button type="button" class="ghost" data-copy>Copy JSON</button>
+        <button type="button" class="primary" data-download>Export JSON</button>
+      </div>
+    </header>
+
+    <main class="studio-layout">
+      <aside class="studio-sidebar">
+        <div class="sidebar-section">
+          <span class="eyebrow">Create</span>
+          <h1>Build an interaction</h1>
+          <p>Choose a component, enter learning content, and preview the experience as you build.</p>
+        </div>
+        <nav class="component-picker" aria-label="Component type">
+          <button type="button" data-type="carousel" class="active"><span>▤</span><strong>Carousel</strong><small>Browse grouped content</small></button>
+          <button type="button" data-type="hotspot-reveal"><span>◎</span><strong>Hotspot reveal</strong><small>Explore a visual</small></button>
+          <button type="button" data-type="assessment"><span>✓</span><strong>Assessment</strong><small>Question + feedback</small></button>
+          <button type="button" data-type="media-presentation"><span>▶</span><strong>Media presentation</strong><small>Video or audio sequence</small></button>
+        </nav>
+      </aside>
+
+      <section class="editor-column">
+        <div class="panel editor-panel">
+          <div class="panel-head">
+            <div><span class="eyebrow">Author</span><h2 data-editor-title>Carousel</h2></div>
+            <span class="status-chip">Engine-native</span>
+          </div>
+
+          <div class="general-fields">
+            <label><span>Title</span><input type="text" data-field="title" value="Customer Signals"></label>
+            <label><span>Description</span><textarea rows="2" data-field="description">A reusable learning interaction created directly in the Learning Experience Engine.</textarea></label>
+            <label><span>Learner instruction</span><input type="text" data-field="instruction" value="Review each item to continue."></label>
+          </div>
+
+          <div class="dynamic-editor" data-dynamic-editor></div>
+        </div>
+
+        <details class="panel json-panel">
+          <summary><span>Generated JSON</span><small>The engine file behind this interaction</small></summary>
+          <pre data-json-output></pre>
+        </details>
+      </section>
+
+      <section class="preview-column">
+        <div class="preview-toolbar">
+          <div><span class="eyebrow">Preview</span><strong data-preview-type>Carousel</strong></div>
+          <span class="preview-state" data-preview-state>In progress</span>
+        </div>
+        <div class="preview-frame">
+          <div class="preview-course-head">
+            <span class="preview-kind" data-preview-kind>carousel</span>
+            <h2 data-preview-title>Customer Signals</h2>
+            <p data-preview-description></p>
+            <div class="preview-instruction" data-preview-instruction></div>
+          </div>
+          <div class="preview-stage" data-preview-stage></div>
+          <div class="preview-status" data-preview-status aria-live="polite"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="studio.js"></script>
+</body>
+</html>
