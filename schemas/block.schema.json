@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://reeder-design.github.io/learning-experience-engine/schemas/block.schema.json",
+  "title": "Learning Experience Engine Block",
+  "type": "object",
+  "required": ["id", "kind"],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "kind": {
+      "enum": [
+        "text",
+        "image",
+        "audio",
+        "video",
+        "interaction",
+        "knowledge-check",
+        "embed",
+        "divider",
+        "custom"
+      ]
+    },
+    "variant": {"type": ["string", "null"]},
+    "title": {"type": ["string", "null"]},
+    "content": {},
+    "interaction": {
+      "type": ["object", "null"],
+      "properties": {
+        "component": {"type": ["string", "null"]},
+        "completion": {"type": ["object", "null"], "additionalProperties": true}
+      },
+      "additionalProperties": true
+    },
+    "assets": {"type": "array", "items": {"type": "string"}},
+    "metadata": {"type": "object", "additionalProperties": true},
+    "source": {"type": "object", "additionalProperties": true}
+  },
+  "additionalProperties": true
+}
