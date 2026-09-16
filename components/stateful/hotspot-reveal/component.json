@@ -1,0 +1,18 @@
+{
+  "id": "hotspot-reveal",
+  "version": "0.1.0",
+  "family": "stateful",
+  "description": "Layer-reveal interaction for maps, diagrams, products, and labeled graphics.",
+  "detects": [
+    "three or more base-layer interactive objects",
+    "click/release actions that reveal non-base layers"
+  ],
+  "capabilities": [
+    "accessible hotspot labels",
+    "keyboard activation",
+    "viewed-state tracking",
+    "exploration progress",
+    "layer close controls"
+  ],
+  "fallback": "generic-stateful-renderer"
+}
