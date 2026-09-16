@@ -1,0 +1,24 @@
+{
+  "name": "learning-experience-engine",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Reusable framework for building data-driven learning experiences, interactions, and course packages.",
+  "scripts": {
+    "test": "echo \"No tests configured yet\"",
+    "inspect-rise": "echo \"Rise inspector not implemented yet\"",
+    "extract-rise": "echo \"Rise extractor not implemented yet\"",
+    "build": "echo \"Build system not implemented yet\"",
+    "build-rise": "echo \"Rise Code Block builder not implemented yet\"",
+    "validate-public": "echo \"Public validation not implemented yet\""
+  },
+  "keywords": [
+    "instructional-design",
+    "learning-experience",
+    "rise",
+    "storyline",
+    "elearning",
+    "scorm",
+    "xapi"
+  ],
+  "license": "UNLICENSED"
+}
