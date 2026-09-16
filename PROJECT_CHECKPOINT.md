@@ -4,13 +4,13 @@
 **Repository:** `Reeder-design/learning-experience-engine`  
 **Primary public site:** `https://reeder-design.github.io/learning-experience-engine/`
 
-This file is a portable project handoff. It is intentionally sanitized for a public repository and should be sufficient to restart development in a new ChatGPT conversation without relying on prior chat history.
+This file is the portable project handoff for the Learning Experience Engine. It is intentionally sanitized for a public repository and should be sufficient to restart development in a new ChatGPT conversation without depending on prior chat history.
 
 ---
 
 ## 1. Product vision
 
-Learning Experience Engine is a reusable authoring/compiler system for creating modern learning experiences outside the constraints of a single authoring tool.
+Learning Experience Engine is a reusable browser-first authoring/compiler system for creating modern learning experiences outside the constraints of a single authoring tool.
 
 North-star workflow:
 
@@ -27,7 +27,7 @@ Export or publish to the required destination
 The engine separates:
 
 1. structured learning content/data
-2. reusable interaction components
+2. reusable interactions and simulations
 3. themes/design systems
 4. builders/export pipelines
 
@@ -51,15 +51,17 @@ JSON is the engine language, not the normal user interface.
 
 The interface should follow how an instructional designer thinks about the work, not expose repository architecture.
 
-Current UX rule:
+Current UX rules:
 
 > Controls should appear where they are needed in the authoring workflow. Global headers should contain only application-level navigation or project-level controls.
 
-Normal user workflow should not require knowledge of Git, JSON, Node, HTML structure, or file paths.
+> Load assets before fields that depend on those assets so paths can be suggested or filled automatically.
+
+> Authoring canvases should keep related content visible together rather than forcing users to select an item in one area and edit it somewhere else.
+
+Normal use should not require knowledge of Git, JSON, Node, HTML structure, or file paths.
 
 ### Division of labor
-
-Default collaboration workflow:
 
 ```text
 USER
@@ -79,7 +81,7 @@ USER only when necessary
 • run one final local command for private local processing
 ```
 
-Avoid asking the user to run repeated diagnostic commands or paste intermediary logs when the public repo can be inspected/edited directly.
+Avoid asking the user to run repeated diagnostic commands or paste intermediary logs when the public repo can be inspected or edited directly.
 
 ---
 
@@ -93,7 +95,8 @@ Safe for:
 - generic components
 - generic/sanitized demos
 - browser authoring interfaces
-- themes that contain no confidential company branding/content
+- public themes
+- public documentation
 
 ### Private local workspace
 
@@ -105,7 +108,7 @@ Used for:
 - private normalized JSON
 - private previews/builds
 
-Typical private sibling folder name:
+Typical private sibling folder:
 
 ```text
 learning-content-private/
@@ -120,13 +123,13 @@ learning-content-private/
 
 Confidential files must never be committed to the public engine repository.
 
-The browser tools can read explicitly selected local files for preview/package creation without uploading those files to GitHub simply because the app is hosted on GitHub Pages.
+The GitHub Pages authoring apps can read explicitly selected local files for preview/package creation without uploading those files to GitHub simply because the app itself is publicly hosted.
 
 ---
 
 ## 4. Current engine models
 
-Three related models exist and should remain conceptually distinct.
+Three related models remain conceptually distinct.
 
 ### Rise/document model
 
@@ -167,7 +170,7 @@ Do not force Storyline content into the Rise schema. New custom interactions sho
 
 ### Rise import pipeline
 
-Implemented tools:
+Implemented:
 - `tools/rise-inspector/`
 - `tools/rise-extractor/`
 - `tools/rise-normalizer/`
@@ -175,39 +178,30 @@ Implemented tools:
 
 The Rise pipeline can inspect a Rise Web export, extract course data, normalize it, and build a themed web experience.
 
-The normalizer handles HTML-heavy text, media references, asset IDs, metadata, and normalized block structures.
-
 The web builder supports common text/media/interactions, navigation, progress/completion, and responsive rendering. Advanced assessment scoring is not complete.
 
 ### Storyline reverse-engineering pipeline
 
-Implemented tools:
+Implemented:
 - `tools/storyline-inspector/`
 - `tools/storyline-extractor/`
 - `tools/storyline-normalizer/`
 - `tools/storyline-preview/`
 - `builders/stateful-web/`
 
-The pipeline has been informed by multiple published Storyline Web specimens covering:
-- hotspot/layer interactions
-- media presentations
-- multi-scene course structures
-- image carousel logic
-- variable-driven practical assessment logic
-
-Stateful runtime supports scenes/slides, layers, positioned/nested objects, variables, conditions, show/hide, basic states, action groups, navigation, URLs, basic media, pointer events, timelines, and debugging.
+The stateful runtime supports a useful prototype subset of scenes/slides, layers, positioned objects, variables, conditions, show/hide, basic states, action groups, navigation, URLs, media, pointer events, and timelines.
 
 Do **not** claim pixel-perfect Storyline parity or complete Storyline feature coverage.
 
-### Storyline-derived reusable component adapters
+### Storyline-derived reusable adapters
 
-Current reusable stateful adapters include:
+Current adapters:
 - carousel
 - hotspot reveal
 - assessment shell
 - media presentation
 
-These are useful compatibility/reuse patterns, but new authoring should prefer the engine-native component contract when possible.
+These are compatibility/reuse patterns. New authoring should prefer the engine-native contract when possible.
 
 ---
 
@@ -222,8 +216,9 @@ Current component types:
 - `hotspot-reveal`
 - `assessment`
 - `media-presentation`
+- `branching-scenario`
 
-Shared concepts include:
+Shared concepts:
 - schema version
 - ID/title/type
 - description/instruction
@@ -236,7 +231,7 @@ Shared concepts include:
 
 `builders/component-web/`
 
-Build command:
+Example:
 
 ```bash
 npm run build-component -- content/demos/components/carousel.json \
@@ -244,16 +239,17 @@ npm run build-component -- content/demos/components/carousel.json \
   --theme portfolio
 ```
 
-It produces a standalone web interaction, copies local referenced assets, preserves remote/data URLs, adds theme assets, and writes a sanitized build manifest.
+It produces a standalone themed interaction, resolves local referenced assets, adds theme/runtime files, and writes a sanitized build manifest.
 
-### Runtime
+### Shared completion
 
-Supports:
-- carousel paging + keyboard navigation + completion
-- hotspot interaction + visited states
-- single-select assessment + feedback + basic score
-- video/audio presentation + transcript + media-end completion
-- shared `lx:component-complete` browser event
+Engine-native components dispatch:
+
+```text
+lx:component-complete
+```
+
+for future course/LMS tracking integrations.
 
 ### Generic demos
 
@@ -263,73 +259,57 @@ Stored in:
 content/demos/components/
 ```
 
-Includes generic/sanitized examples for all four current component types.
+Current public demos include carousel, hotspot, assessment, media presentation, and branching scenario examples.
 
 ---
 
 ## 7. Component Studio
 
+Public path:
+
+```text
+docs/component-studio/
+```
+
 Public URL:
 
 `https://reeder-design.github.io/learning-experience-engine/component-studio/`
 
-Purpose: browser-first authoring for one reusable interaction.
+Purpose: browser-first authoring for compact reusable interactions.
 
-### Current UX flow
+### UX flow
 
 ```text
 1. Choose interaction
-        ↓
 2. Load project assets
-        ↓
 3. Author
-        ↓
 4. Preview
-        ↓
 5. Export
 ```
 
-Important: **assets come before authoring fields** so file paths can be auto-filled/suggested.
+Assets intentionally come before authoring fields.
 
 ### Current capabilities
 
-- choose carousel / hotspot / assessment / media presentation
-- component basics fields
-- dynamic repeatable content editors
+- carousel / hotspot / assessment / media presentation authoring
 - local project asset library
 - project-folder import
 - individual-file import
-- asset classification by extension
+- automatic asset classification
 - portable relative paths
 - local image/video/audio preview
 - source-context file reading
-- optional VTT matching for video preview
-- auto-fill compatible paths
+- VTT matching support for local media preview
+- compatible-path auto-fill
 - generated JSON
 - copy JSON
 - export JSON
 - import/export project ZIP
-- contextual `?` help bubbles
+- contextual help
 - dedicated User Guide
-- explicit Preview actions
-- explicit Export section
+- explicit Preview and Export actions
 
-### Recommended component project package
-
-```text
-my-interaction/
-├── context/
-│   └── source-content.txt
-├── assets/
-│   ├── images/
-│   ├── video/
-│   ├── audio/
-│   ├── captions/
-│   └── documents/
-└── component.json
-```
-
-ZIP package:
+### Package
 
 ```text
 component-project.zip
@@ -338,54 +318,37 @@ component-project.zip
 └── assets/
 ```
 
-Paths stored in JSON should be portable, e.g.:
-
-```text
-assets/video/walkthrough.mp4
-```
-
-Never absolute local machine paths.
+Never store absolute local machine paths in component JSON.
 
 ---
 
 ## 8. Course Composer
 
-Public app lives under:
+Public path:
 
-`docs/course-composer/`
+```text
+docs/course-composer/
+```
 
 Purpose: assemble multiple learning sections and reusable components into one complete course.
 
-### Current UX flow
+### UX flow
 
 ```text
 1. Course basics
-        ↓
 2. Upload project assets
-        ↓
 3. Build course content
-        ↓
 4. Preview
-        ↓
 5. Export
 ```
 
-This order is intentional. **Project Assets must come before content creation** so adding image/video/resource content can auto-fill compatible files.
-
 ### Major UX decision
 
-Do **not** return to the old left-sidebar/select-one/edit-elsewhere model.
+Do **not** return to the old select-on-left/edit-elsewhere sidebar model.
 
-Course Composer now uses a **single authoring canvas** where all course sections are visible and editable in one view.
+Course Composer uses a **single authoring canvas** where all course sections are visible and editable in one view.
 
-Each course section is its own editable card with direct controls for:
-- edit
-- reorder / drag
-- move up/down
-- duplicate
-- delete
-
-The user should be able to understand the entire course structure while editing without jumping between a sidebar and a separate editor pane.
+Each section card supports direct editing, reordering, move up/down, duplicate, and delete.
 
 ### Current content types
 
@@ -395,26 +358,24 @@ The user should be able to understand the entire course structure while editing 
 - resource/document
 - imported engine-native component
 
-### Current course capabilities
+### Current capabilities
 
-- title
-- description
-- audience
-- objectives
-- shared project asset library
-- source-context files
-- automatic compatible asset assignment for newly added media/resource sections when possible
-- ordered content cards
+- course metadata
+- audience/objectives
+- shared project assets and source context
+- media/resource path auto-fill when possible
+- all course content in one editing canvas
 - component JSON import
-- course-level preview
-- Previous/Next learner navigation
-- autosave to browser local storage
+- learner preview
+- Previous/Next navigation
+- focused/full preview
+- autosave
 - undo/redo
 - generated course JSON
 - JSON export
-- full project ZIP export/import
+- project ZIP import/export
 
-### Course project package
+### Package
 
 ```text
 course-project.zip
@@ -423,37 +384,177 @@ course-project.zip
 └── assets/
 ```
 
-### Composer ↔ Component Studio handoff
-
-Current handoff is still file-based:
+### Current component handoff
 
 ```text
-Component Studio
+Component Studio or Scenario Builder
 → Export component JSON
 → Course Composer
 → Add Component
 → Import component JSON
 ```
 
-A future improvement should support direct **Add to Course** behavior.
+Direct browser-to-browser **Add to Course** handoff is not yet implemented.
 
 ---
 
-## 9. Preview and export UX standard
+## 9. Scenario Builder v0.1
+
+Public path:
+
+```text
+docs/scenario-builder/
+```
+
+Purpose: author branching decision practice and customer-conversation simulations as engine-native components.
+
+### UX flow
+
+```text
+1. Scenario basics
+2. Upload project assets
+3. Build decisions
+4. Preview
+5. Export
+```
+
+Scenario Builder follows the same asset-first, single-canvas, explicit-preview/export conventions as the other authoring apps.
+
+### Engine contract
+
+Component type:
+
+```text
+branching-scenario
+```
+
+Completion strategy:
+
+```text
+reach-outcome
+```
+
+Conceptual structure:
+
+```text
+scenario
+├── start node
+├── optional decision-quality score
+├── decision nodes
+│   └── learner choices
+│       ├── immediate feedback
+│       ├── score delta
+│       └── target node/outcome
+└── outcomes
+```
+
+### Current authoring capabilities
+
+- scenario title/description/instruction
+- optional decision-quality score
+- score label/start/min/max/show-to-learner settings
+- selectable start node
+- local project assets and source context
+- node/outcome visual selectors using asset paths
+- unused-image auto-assignment for newly created cards when possible
+- all decision nodes visible/editable in one canvas
+- all outcomes visible/editable in one canvas
+- add / move / duplicate / delete nodes and outcomes
+- learner choices with text, score delta, feedback, and branch target
+- branch-target **dropdowns** rather than manually typed IDs
+- automatic reference updates when node/outcome IDs are renamed
+- continuous path validation
+- inline learner preview
+- focused learner preview
+- score changes
+- immediate coaching feedback
+- path-history review
+- outcome screens
+- replay/reset
+- generated JSON
+- copy/export JSON
+- complete project ZIP import/export
+- contextual help and dedicated User Guide
+
+### Path Check
+
+Blocking issues include:
+- missing IDs
+- duplicate IDs
+- missing start node
+- no outcome
+- decision node with no choices
+- missing choice destination
+- no outcome reachable from the start node
+
+Warnings include unreachable nodes/outcomes.
+
+### Learner runtime
+
+Standalone branching runtime:
+
+```text
+builders/component-web/scenario-runtime.js
+```
+
+Styles:
+
+```text
+builders/component-web/scenario.css
+```
+
+The component builder validates scenario branches and creates standalone scenario interactions.
+
+When an outcome is reached, the shared completion event includes outcome ID, final score, and learner path history.
+
+### Public demo
+
+```text
+content/demos/components/branching-scenario.json
+```
+
+The demo is generic/sanitized customer-discovery practice.
+
+### Deliberate v0.1 limitation
+
+Scenario Builder currently exposes **one simple decision-quality score**.
+
+It does **not** yet expose arbitrary variables, multi-dimensional state, conditional visibility, or advanced rules such as trust/urgency/stakeholder state. Add those only when an instructional simulation requires them; do not turn the default interface into a programming/state-machine tool.
+
+### Course Composer integration limitation
+
+Course Composer can import a `branching-scenario` component JSON today.
+
+However, the **rich interactive scenario learner runtime is currently available in Scenario Builder and standalone component-web output**. Course Composer's embedded component preview does not yet reproduce the complete interactive scenario runtime and currently falls back to the generic component preview for this new type.
+
+Do not claim full rich Scenario Builder → Composer preview integration until this is implemented.
+
+### Package
+
+```text
+scenario-project.zip
+├── component.json
+├── context/
+└── assets/
+```
+
+---
+
+## 10. Preview and export UX standard
 
 Preview and Export are separate workflow steps.
 
-Do not make users infer that the right-hand pane is automatically the preview or that header buttons are the only export method.
+Do not make users infer that an adjacent pane is automatically the preview or that header buttons are the only way to export.
 
-### Preview sections should have obvious actions
+### Preview actions should be obvious
 
 Examples:
 - Preview from beginning
 - Review interaction
 - Refresh preview
-- Open full preview
+- Open focused/full preview
 
-### Export sections should have obvious actions
+### Export actions should be obvious
 
 Examples:
 - Copy JSON
@@ -461,11 +562,11 @@ Examples:
 - Export project ZIP
 - View generated JSON
 
-This pattern should carry forward into future tools.
+Carry this convention forward into future tools.
 
 ---
 
-## 10. Asset workflow standard
+## 11. Asset workflow standard
 
 Assets should be loaded **before fields that depend on them**.
 
@@ -483,82 +584,78 @@ project/
 └── component.json or course.json
 ```
 
-Folders are recommended but not mandatory. The browser can classify loose files by extension.
-
-Supported examples include:
-- JPEG/PNG/SVG
-- MP4/MOV/WebM
-- MP3/WAV/M4A
-- VTT/SRT
-- PDF and common office files
-- TXT/MD/CSV/JSON context files
+Folders are recommended but not mandatory. Browser tools can classify loose files by extension.
 
 Normal authoring should use folders directly. ZIP is primarily for portability, backup, reopening, and transfer.
 
 ---
 
-## 11. Navigation/help UX standard
+## 12. Navigation/help UX standard
 
 All public static-site internal navigation must work both:
 - on GitHub Pages
 - when opening `index.html` directly from a local filesystem
 
-Therefore internal links should target actual HTML files rather than directory-only URLs.
-
-Example:
+Use explicit HTML targets such as:
 
 ```text
 ../user-guide/index.html
 ```
 
-rather than:
+rather than directory-only URLs.
 
-```text
-../user-guide/
-```
+Help bubbles use centered `?` marks with flex centering and should link to the relevant User Guide page/section.
 
-Help bubbles use centered `?` marks with real flex centering and should link to the relevant User Guide section.
-
-Current app family should feel like one product:
+Current app family:
 
 ```text
 Engine Home
 ↕
-Component Studio
-↕
 Course Composer
+↕
+Scenario Builder
+↕
+Component Studio
 ↕
 User Guide
 ```
 
-The Learning Experience Engine also has its own favicon, separate from other portfolio/library projects.
+The Learning Experience Engine has its own favicon, separate from other portfolio/library projects.
 
 ---
 
-## 12. GitHub Pages and CI
+## 13. GitHub Pages and CI
 
-GitHub Pages is enabled from `main` → `/docs`.
+GitHub Pages is enabled from:
+
+```text
+main → /docs
+```
 
 Public site:
 
 `https://reeder-design.github.io/learning-experience-engine/`
 
-GitHub Actions currently checks:
-- browser JavaScript syntax
+Automated checks currently cover:
+- shared/component runtime JavaScript syntax
+- branching-scenario runtime syntax
 - Component Studio scripts
 - Course Composer scripts
+- Scenario Builder scripts
 - static navigation rules
 - help-bubble alignment rules
-- workflow-order UX expectations
-- component builder smoke tests
+- authoring workflow order
+- required workflow actions
+- component-builder smoke tests
+- branching-scenario demo build
 
-Latest checkpoint status: CI green after the asset-first/single-canvas Composer UX redesign.
+Latest Scenario Builder v0.1 CI status at this checkpoint: **green**.
 
 ---
 
-## 13. Theme
+## 14. Theme
 
-Current portfolio-derived public theme:
+Current public theme:
 
 - Taupe `#4A4238`
 - Charcoal `#4D5359`
@@ -567,30 +664,32 @@ Current portfolio-derived public theme:
 - Yellow-Green `#97DB4F`
 - Montserrat + Open Sans
 
-Theme files live under:
+Theme files:
 
 ```text
 themes/portfolio/
 ```
 
-Long-term, Theme Manager should allow content and styling to remain separate so private corporate branding can be applied without entering the public repository.
+Long-term Theme Manager should separate styling from content so private corporate branding can be applied without entering the public repository.
 
 ---
 
-## 14. Important accuracy limits
+## 15. Important accuracy limits
 
 Do not claim these are finished:
 - full Storyline animation fidelity
 - pixel-perfect Storyline reconstruction
 - complete native Storyline quiz support
-- complete custom variable-driven assessment scoring
+- complete custom variable-driven Storyline assessment scoring
+- arbitrary Scenario Builder state/conditions
+- rich interactive scenario runtime inside Course Composer preview
+- direct Studio/Scenario Builder → Composer handoff
 - Rise Code Block output
 - Storyline Web Object export
 - SCORM/xAPI packaging
 - Docebo deployment
 - universal Storyline classifier accuracy
 - persistent cloud authoring projects
-- direct Studio → Composer handoff
 
 Implemented/prototype-ready claims are safe for:
 - Rise import/normalize pipeline
@@ -599,15 +698,16 @@ Implemented/prototype-ready claims are safe for:
 - first Storyline-derived component adapters
 - engine-native component schema/runtime/builder
 - Component Studio browser authoring
-- local asset/project packages
 - Course Composer browser authoring
-- course-level single-canvas editing
+- Scenario Builder v0.1 browser authoring
+- branching-scenario learner runtime
+- local project asset/package workflows
 - browser preview
-- GitHub CI regression checks
+- GitHub CI regression/smoke checks
 
 ---
 
-## 15. Current repository shape
+## 16. Current repository shape
 
 Approximate important structure:
 
@@ -628,6 +728,11 @@ learning-experience-engine/
 │   ├── web/
 │   ├── stateful-web/
 │   └── component-web/
+│       ├── index.js
+│       ├── runtime.js
+│       ├── scenario-runtime.js
+│       ├── component.css
+│       └── scenario.css
 ├── tools/
 │   ├── rise-inspector/
 │   ├── rise-extractor/
@@ -641,6 +746,7 @@ learning-experience-engine/
 │   ├── assets/
 │   ├── component-studio/
 │   ├── course-composer/
+│   ├── scenario-builder/
 │   └── user-guide/
 ├── tests/
 ├── .github/workflows/
@@ -652,50 +758,45 @@ learning-experience-engine/
 
 ---
 
-## 16. Next milestone
+## 17. Current next steps
 
-**Do not start this until the current checkpoint/UX review is accepted.**
+Scenario Builder v0.1 is implemented. Do **not** restart it from scratch.
 
-Next major feature: **Scenario Builder**.
+Immediate next action should be **visual/user-flow QA of Scenario Builder**.
 
-Goal: the first advanced engine-native interaction for branching/customer-discovery simulations.
+Recommended QA path:
 
-Likely concepts:
-- nodes/steps
-- learner choices
-- branches/outcomes
-- conditions
-- variables/state
-- feedback
-- scoring or decision quality
-- replay/reset
-- completion rules
-- generic sales/discovery scenario template
+```text
+1. Open Scenario Builder
+2. Edit scenario basics
+3. Load a few images + source-context files
+4. Add a decision node
+5. Confirm image auto-assignment / selector behavior
+6. Add/edit learner choices
+7. Choose branch targets from dropdowns
+8. Watch Path Check
+9. Preview from beginning
+10. Test alternate branches
+11. Open focused preview
+12. Export JSON
+13. Export/reopen project ZIP
+```
 
-The Scenario Builder should inherit the UX conventions established by Component Studio and Course Composer:
-- asset-first when assets are needed
-- one clear workflow
-- obvious Preview step
-- obvious Export step
-- contextual help
-- User Guide integration
-- local/private asset compatibility
-- browser-first authoring
+After QA, likely next milestones are:
 
-After Scenario Builder, likely milestones include:
-- direct Component Studio → Course Composer handoff
-- richer course composition/content types
-- Theme Manager
-- project dashboard/recent projects
-- stronger persistent local project workflows
-- LMS/export targets
+1. polish Scenario Builder UX based on real authoring feedback
+2. add rich `branching-scenario` preview/runtime inside Course Composer
+3. direct Component Studio / Scenario Builder → Course Composer handoff
+4. richer scenario state/conditions only where real simulations require them
+5. richer course content/composition patterns
+6. Theme Manager
+7. project dashboard/recent projects/persistent local project workflows
+8. future LMS/export targets
 
 ---
 
-## 17. Restart instructions for a new ChatGPT conversation
+## 18. Restart instructions for a new ChatGPT conversation
 
 If conversation context is lost, tell ChatGPT:
 
-> We are continuing development of `Reeder-design/learning-experience-engine`. Read `PROJECT_CHECKPOINT.md` in the repo first. Use GitHub directly for public repo work. Keep confidential source content local/private. Do not make me run repeated terminal diagnostics. The current UX has Component Studio and Course Composer with asset-first authoring, explicit Preview/Export steps, and a single-canvas Course Composer. CI was green at the checkpoint. The next planned milestone is Scenario Builder.
-
-Then have ChatGPT inspect the current repository before changing anything, because the code may have advanced since this checkpoint.
+> We are continuing development of `Reeder-design/learning-experience-engine`. Read `PROJECT_CHECKPOINT.md` in the repo first and inspect the current repo before editing because development may have advanced since the checkpoint. Use GitHub directly for public repo work. Keep confidential source content local/private. Do not make me run repeated terminal diagnostics. Component Studio, Course Composer, and Scenario Builder v0.1 are implemented with asset-first workflows, explicit Preview/Export steps, and single-canvas authoring where appropriate. `branching-scenario` is now an engine-native component type with a standalone learner runtime. CI was green at the checkpoint. The immediate next step is Scenario Builder visual/user-flow QA; Course Composer rich scenario preview and direct builder-to-composer handoff remain future work.
