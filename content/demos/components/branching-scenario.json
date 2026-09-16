@@ -1,0 +1,118 @@
+{
+  "schemaVersion": "0.1",
+  "id": "customer-discovery-conversation",
+  "title": "Customer Discovery Conversation",
+  "type": "branching-scenario",
+  "description": "Practice making discovery choices and see how each decision changes the conversation.",
+  "instruction": "Choose the response that best advances the conversation. Review the feedback, then continue until you reach an outcome.",
+  "theme": "portfolio",
+  "completion": {
+    "strategy": "reach-outcome",
+    "required": true
+  },
+  "content": {
+    "startNodeId": "opening",
+    "score": {
+      "enabled": true,
+      "label": "Discovery quality",
+      "startingValue": 50,
+      "minimum": 0,
+      "maximum": 100,
+      "showToLearner": true
+    },
+    "nodes": [
+      {
+        "id": "opening",
+        "title": "The customer describes inconsistent connectivity across several locations.",
+        "speaker": "Operations Director",
+        "body": "They say the issue is creating interruptions, but they have not yet explained which workflows are affected or how often the problem occurs.",
+        "image": null,
+        "alt": null,
+        "choices": [
+          {
+            "id": "opening-impact",
+            "text": "Ask which business processes are disrupted when connectivity drops.",
+            "targetId": "impact",
+            "feedback": "This connects the technical symptom to operational impact and gives you evidence for prioritization.",
+            "scoreDelta": 15
+          },
+          {
+            "id": "opening-product",
+            "text": "Immediately explain the features of your recommended solution.",
+            "targetId": "feature-detour",
+            "feedback": "You introduced a solution before establishing enough context. The conversation can recover, but you still need to uncover impact.",
+            "scoreDelta": -10
+          }
+        ]
+      },
+      {
+        "id": "impact",
+        "title": "The customer says outages delay mobile staff and create manual rework.",
+        "speaker": "Operations Director",
+        "body": "They estimate the disruption happens several times each week, especially at two high-volume locations.",
+        "choices": [
+          {
+            "id": "impact-success",
+            "text": "Ask what improvement would make the project successful and how they would measure it.",
+            "targetId": "strong-outcome",
+            "feedback": "You moved from pain to measurable success criteria, which gives the opportunity a clear business outcome.",
+            "scoreDelta": 20
+          },
+          {
+            "id": "impact-price",
+            "text": "Ask for their budget before clarifying what success looks like.",
+            "targetId": "mixed-outcome",
+            "feedback": "Budget matters, but asking too early can narrow the conversation before value and success criteria are clear.",
+            "scoreDelta": -5
+          }
+        ]
+      },
+      {
+        "id": "feature-detour",
+        "title": "The customer asks why those features matter for their environment.",
+        "speaker": "Operations Director",
+        "body": "You have an opportunity to reconnect the conversation to their business situation.",
+        "choices": [
+          {
+            "id": "recover-impact",
+            "text": "Acknowledge the question, then ask which workflows are most affected by the interruptions.",
+            "targetId": "impact",
+            "feedback": "Good recovery. You brought the discussion back to customer impact before continuing the solution conversation.",
+            "scoreDelta": 10
+          },
+          {
+            "id": "continue-features",
+            "text": "Continue describing additional features and technical capabilities.",
+            "targetId": "weak-outcome",
+            "feedback": "The conversation stayed product-led and never established a strong connection to measurable customer value.",
+            "scoreDelta": -15
+          }
+        ]
+      }
+    ],
+    "outcomes": [
+      {
+        "id": "strong-outcome",
+        "title": "Clear business case",
+        "body": "You connected the problem to operational impact and defined measurable success criteria before moving toward a solution.",
+        "summary": "The next conversation can focus on solution fit, stakeholders, constraints, and a credible path to value."
+      },
+      {
+        "id": "mixed-outcome",
+        "title": "Opportunity needs more discovery",
+        "body": "You uncovered real impact, but the conversation shifted toward commercial constraints before success criteria were fully defined.",
+        "summary": "Revisit desired outcomes and decision criteria before positioning the solution."
+      },
+      {
+        "id": "weak-outcome",
+        "title": "Product-led conversation",
+        "body": "The customer heard features, but the discussion never established enough business context to make the recommendation compelling.",
+        "summary": "Restart with questions that reveal workflows, consequences, priorities, and measurable outcomes."
+      }
+    ]
+  },
+  "metadata": {
+    "demo": true,
+    "publicSafe": true
+  }
+}
