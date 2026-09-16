@@ -11,6 +11,10 @@ function printUsage() {
   console.log(`\nRise Inspector v0.1\n\nUsage:\n  node tools/rise-inspector/index.js <path-to-rise-export.zip> [--json]\n\nExample:\n  node tools/rise-inspector/index.js ../learning-content-private/references/rise-exports/course.zip\n`);
 }
 
+function isMacMetadata(fileName) {
+  return fileName.startsWith('__MACOSX/') || fileName.split('/').some((part) => part.startsWith('._'));
+}
+
 function main() {
   const args = process.argv.slice(2);
   const jsonMode = args.includes('--json');
@@ -58,7 +62,7 @@ function main() {
   }
 
   const assetPaths = archive.entries
-    .filter((entry) => !entry.isDirectory && /(^|\/)assets\//i.test(entry.fileName))
+    .filter((entry) => !entry.isDirectory && !isMacMetadata(entry.fileName) && /(^|\/)assets\//i.test(entry.fileName))
     .map((entry) => entry.fileName);
 
   const result = analyzeCourse(runtimeData, assetPaths, {
