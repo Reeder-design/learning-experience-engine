@@ -5,7 +5,7 @@
   "type": "object",
   "required": ["schemaVersion", "id", "title", "kind", "layers"],
   "properties": {
-    "schemaVersion": {"const": "0.1"},
+    "schemaVersion": {"const": "0.2"},
     "id": {"type": "string"},
     "title": {"type": "string"},
     "kind": {"const": "slide"},
@@ -17,13 +17,7 @@
       },
       "additionalProperties": true
     },
-    "timeline": {
-      "type": "object",
-      "properties": {
-        "durationMs": {"type": ["number", "null"]}
-      },
-      "additionalProperties": true
-    },
+    "timeline": {"type": "object", "additionalProperties": true},
     "layers": {
       "type": "array",
       "items": {
@@ -36,6 +30,7 @@
           "timeline": {"type": "object", "additionalProperties": true},
           "objects": {"type": "array", "items": {"type": "object", "additionalProperties": true}},
           "events": {"type": "array", "items": {"type": "object", "additionalProperties": true}},
+          "actionGroups": {"type": "object", "additionalProperties": true},
           "source": {"type": "object", "additionalProperties": true}
         },
         "additionalProperties": true
