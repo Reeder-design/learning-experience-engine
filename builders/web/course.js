@@ -15,9 +15,48 @@ function setTab(button) {
   }
 }
 
+const units = [...document.querySelectorAll('[data-unit]')];
+const navLinks = [...document.querySelectorAll('[data-nav-unit]')];
+const completed = new Set();
+const progressFill = document.querySelector('[data-progress-fill]');
+const progressLabel = document.querySelector('[data-progress-label]');
+
+function updateProgress() {
+  const percent = units.length ? Math.round((completed.size / units.length) * 100) : 0;
+  if (progressFill) progressFill.style.width = `${percent}%`;
+  if (progressLabel) progressLabel.textContent = `${percent}%`;
+}
+
+function navLinkForUnit(id) {
+  return navLinks.find((link) => link.dataset.navUnit === id) || null;
+}
+
+function markComplete(unit) {
+  if (!unit?.id || completed.has(unit.id)) return;
+  completed.add(unit.id);
+  unit.dataset.complete = 'true';
+  const link = navLinkForUnit(unit.id);
+  if (link) {
+    link.classList.add('visited');
+    link.setAttribute('data-complete', 'true');
+  }
+  updateProgress();
+}
+
+function setActiveUnit(id) {
+  for (const link of navLinks) {
+    link.classList.toggle('active', link.dataset.navUnit === id);
+  }
+}
+
 document.addEventListener('click', (event) => {
   const tab = event.target.closest('[data-tab-target]');
   if (tab) setTab(tab);
+
+  const nextAction = event.target.closest('.unit-next, .course-complete .pill-link');
+  if (nextAction) {
+    markComplete(nextAction.closest('[data-unit]'));
+  }
 
   const menuButton = event.target.closest('.menu-button');
   if (menuButton) {
@@ -59,44 +98,37 @@ for (const tabs of document.querySelectorAll('[data-tabs]')) {
   tabButtons.forEach((button, index) => { button.tabIndex = index === 0 ? 0 : -1; });
 }
 
-const units = [...document.querySelectorAll('[data-unit]')];
-const navLinks = [...document.querySelectorAll('[data-nav-unit]')];
-const visited = new Set();
-const progressFill = document.querySelector('[data-progress-fill]');
-const progressLabel = document.querySelector('[data-progress-label]');
-
-function updateProgress() {
-  const percent = units.length ? Math.round((visited.size / units.length) * 100) : 0;
-  if (progressFill) progressFill.style.width = `${percent}%`;
-  if (progressLabel) progressLabel.textContent = `${percent}%`;
-}
-
-function setActiveUnit(id) {
-  for (const link of navLinks) {
-    link.classList.toggle('active', link.dataset.navUnit === id);
-  }
-}
+if (units[0]) setActiveUnit(units[0].id);
 
 if ('IntersectionObserver' in window) {
-  const unitObserver = new IntersectionObserver((entries) => {
-    const visible = entries
-      .filter((entry) => entry.isIntersecting)
-      .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+  // Active state follows the beginning of each unit. This works for both short and very long lessons.
+  const activeObserver = new IntersectionObserver((entries) => {
+    const entering = entries.filter((entry) => entry.isIntersecting);
+    if (!entering.length) return;
+    entering.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+    const unit = entering[0].target.closest('[data-unit]');
+    if (unit) setActiveUnit(unit.id);
+  }, { rootMargin: '-8% 0px -78% 0px', threshold: 0 });
 
+  for (const unit of units) {
+    activeObserver.observe(unit.querySelector('.unit-header') || unit);
+  }
+
+  // Completion is based on reaching the end of a unit, not on the percentage of the whole unit visible.
+  const completionObserver = new IntersectionObserver((entries) => {
     for (const entry of entries) {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('is-visible');
-        visited.add(entry.target.id);
-        document.querySelector(`[data-nav-unit="${CSS.escape(entry.target.id)}"]`)?.classList.add('visited');
-      }
+      if (!entry.isIntersecting) continue;
+      const unit = entry.target.closest('[data-unit]');
+      if (unit) markComplete(unit);
     }
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.25 });
 
-    if (visible[0]) setActiveUnit(visible[0].target.id);
-    updateProgress();
-  }, { rootMargin: '-15% 0px -45% 0px', threshold: [0.05, 0.2, 0.45] });
-
-  units.forEach((unit) => unitObserver.observe(unit));
+  for (const unit of units) {
+    const footer = unit.querySelector('.unit-footer');
+    if (footer) completionObserver.observe(footer);
+  }
 } else {
+  // Older browsers still get functional navigation and completion via the Continue buttons.
   units.forEach((unit) => unit.classList.add('is-visible'));
 }
 
