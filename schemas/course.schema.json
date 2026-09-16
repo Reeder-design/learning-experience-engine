@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://reeder-design.github.io/learning-experience-engine/schemas/course.schema.json",
+  "title": "Learning Experience Engine Course",
+  "type": "object",
+  "required": ["schemaVersion", "id", "title", "units"],
+  "properties": {
+    "schemaVersion": {"const": "0.1"},
+    "id": {"type": "string", "minLength": 1},
+    "title": {"type": "string", "minLength": 1},
+    "description": {"type": ["string", "null"]},
+    "audience": {"type": "array", "items": {"type": "string"}},
+    "objectives": {"type": "array", "items": {"type": "string"}},
+    "metadata": {"type": "object", "additionalProperties": true},
+    "source": {
+      "type": "object",
+      "properties": {
+        "platform": {"type": ["string", "null"]},
+        "sourceId": {"type": ["string", "null"]},
+        "sourceFile": {"type": ["string", "null"]}
+      },
+      "additionalProperties": true
+    },
+    "theme": {"type": "object", "additionalProperties": true},
+    "navigation": {"type": "object", "additionalProperties": true},
+    "units": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "kind", "title", "source"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "kind": {"enum": ["section", "lesson", "assessment"]},
+          "title": {"type": "string"},
+          "source": {"type": "string", "minLength": 1}
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}
