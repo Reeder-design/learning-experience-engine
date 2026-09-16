@@ -4,7 +4,7 @@
   "private": false,
   "description": "Reusable framework for building data-driven learning experiences, interactions, and course packages.",
   "scripts": {
-    "test": "echo \"No tests configured yet\"",
+    "test": "node tests/component-builder.test.js",
     "inspect-rise": "node tools/rise-inspector/index.js",
     "extract-rise": "node tools/rise-extractor/index.js",
     "normalize-rise": "node tools/rise-normalizer/index.js",
