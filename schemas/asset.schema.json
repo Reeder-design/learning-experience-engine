@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://reeder-design.github.io/learning-experience-engine/schemas/asset.schema.json",
+  "title": "Learning Experience Engine Asset",
+  "type": "object",
+  "required": ["id", "kind", "path"],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "kind": {"enum": ["image", "audio", "video", "caption", "document", "font", "other"]},
+    "path": {"type": "string", "minLength": 1},
+    "fileName": {"type": ["string", "null"]},
+    "mimeType": {"type": ["string", "null"]},
+    "bytes": {"type": ["integer", "null"], "minimum": 0},
+    "altText": {"type": ["string", "null"]},
+    "transcript": {"type": ["string", "null"]},
+    "captions": {"type": "array", "items": {"type": "string"}},
+    "metadata": {"type": "object", "additionalProperties": true},
+    "source": {"type": "object", "additionalProperties": true}
+  },
+  "additionalProperties": true
+}
