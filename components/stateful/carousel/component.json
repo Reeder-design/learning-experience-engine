@@ -1,0 +1,19 @@
+{
+  "id": "carousel",
+  "version": "0.1.0",
+  "family": "stateful",
+  "description": "Paged image carousel reconstructed from a normalized horizontal image strip.",
+  "detects": [
+    "base-layer object group",
+    "four or more image-bearing child objects",
+    "group wider than the slide canvas"
+  ],
+  "capabilities": [
+    "previous/next navigation",
+    "page indicators",
+    "keyboard left/right navigation",
+    "variable synchronization when a page/index variable exists",
+    "responsive single-card mobile presentation"
+  ],
+  "fallback": "generic-stateful-renderer"
+}
