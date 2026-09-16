@@ -1,0 +1,51 @@
+.lx-component-overlay{position:absolute;inset:0;z-index:800;pointer-events:none;font-family:var(--font-body,"Open Sans",Arial,sans-serif)}
+.lx-component-overlay button{font:inherit}
+
+/* Carousel */
+.lx-carousel-component{display:grid;place-items:center;padding:148px 92px 54px}
+.lx-carousel-viewport{position:relative;width:100%;max-width:840px;padding:18px 58px 50px;border:1px solid rgba(80,132,132,.24);border-radius:28px;background:rgba(255,255,255,.9);box-shadow:0 24px 70px rgba(36,48,45,.16);backdrop-filter:blur(14px);pointer-events:auto}
+.lx-carousel-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;align-items:stretch;min-height:270px}
+.lx-carousel-card{position:relative;display:grid;place-items:center;margin:0;min-width:0;overflow:hidden;border:1px solid rgba(80,132,132,.18);border-radius:20px;background:linear-gradient(145deg,#fff,#f0f7f3);box-shadow:0 12px 28px rgba(52,74,66,.1);transition:transform .2s ease,box-shadow .2s ease}
+.lx-carousel-card:hover{transform:translateY(-4px);box-shadow:0 18px 36px rgba(52,74,66,.14)}
+.lx-carousel-card img{display:block;width:100%;height:100%;max-height:260px;object-fit:contain}
+.lx-carousel-card figcaption{position:absolute;right:10px;bottom:10px;display:grid;place-items:center;width:28px;height:28px;border-radius:999px;background:#4A4238;color:#fff;font-size:.7rem;font-weight:800}
+.lx-carousel-arrow{position:absolute;top:50%;z-index:5;display:grid;place-items:center;width:44px;height:44px;margin-top:-38px;border:0;border-radius:999px;background:linear-gradient(135deg,#508484,#3f6868);color:#fff;font-size:2rem;line-height:1;box-shadow:0 10px 24px rgba(63,104,104,.25);cursor:pointer;pointer-events:auto;transition:transform .16s ease,opacity .16s ease}
+.lx-carousel-arrow:hover:not(:disabled){transform:scale(1.06)}
+.lx-carousel-arrow:disabled{opacity:.28;cursor:default}
+.lx-carousel-arrow.previous{left:14px}.lx-carousel-arrow.next{right:14px}
+.lx-carousel-footer{position:absolute;left:58px;right:58px;bottom:15px;display:flex;align-items:center;justify-content:space-between;gap:18px;color:#6f777d;font-size:.75rem;font-weight:700}
+.lx-carousel-dots{display:flex;gap:8px;align-items:center}
+.lx-carousel-dots button{width:9px;height:9px;padding:0;border:0;border-radius:999px;background:#c9cecb;cursor:pointer;transition:width .18s ease,background .18s ease}
+.lx-carousel-dots button.active{width:28px;background:linear-gradient(90deg,#508484,#79C99E)}
+
+/* Hotspot reveal */
+.lx-hotspot-status{inset:14px 14px auto auto;width:auto;height:auto}
+.lx-hotspot-progress{display:grid;gap:2px;min-width:190px;padding:11px 14px;border:1px solid rgba(80,132,132,.24);border-radius:15px;background:rgba(255,255,255,.92);box-shadow:0 10px 28px rgba(52,74,66,.12);color:#24302d;pointer-events:none}
+.lx-hotspot-progress strong{font-family:var(--font-heading,"Montserrat",Arial,sans-serif);font-size:.78rem}
+.lx-hotspot-progress span{font-size:.68rem;color:#6f777d}
+.lx-object.lx-enhanced-hotspot{display:grid!important;place-items:center!important;border:3px solid rgba(255,255,255,.94)!important;border-radius:50%!important;background:linear-gradient(135deg,#508484,#79C99E)!important;color:#fff!important;font-weight:800!important;font-size:1rem!important;box-shadow:0 0 0 8px rgba(121,201,158,.17),0 10px 26px rgba(52,74,66,.2)!important;cursor:pointer!important;animation:lx-hotspot-pulse 2.2s ease-in-out infinite}
+.lx-object.lx-enhanced-hotspot::after{content:attr(data-hotspot-label);position:absolute;left:50%;top:calc(100% + 10px);z-index:20;min-width:120px;max-width:220px;padding:7px 9px;border-radius:9px;background:#24302d;color:#fff;font-size:.7rem;line-height:1.25;text-align:center;opacity:0;transform:translate(-50%,-4px);pointer-events:none;transition:opacity .16s ease,transform .16s ease}
+.lx-object.lx-enhanced-hotspot:hover::after,.lx-object.lx-enhanced-hotspot:focus::after{opacity:1;transform:translate(-50%,0)}
+.lx-object.lx-enhanced-hotspot.visited{background:linear-gradient(135deg,#4A4238,#4D5359)!important;animation:none}
+.lx-hotspot-detail-layer.active{filter:drop-shadow(0 22px 42px rgba(36,48,45,.24))}
+.lx-layer-close{position:absolute;right:18px;top:18px;z-index:9999;display:grid;place-items:center;width:38px;height:38px;border:1px solid rgba(80,132,132,.24);border-radius:999px;background:rgba(255,255,255,.94);color:#24302d;font-size:1.5rem;cursor:pointer;pointer-events:auto;box-shadow:0 8px 20px rgba(52,74,66,.12)}
+@keyframes lx-hotspot-pulse{0%,100%{box-shadow:0 0 0 7px rgba(121,201,158,.14),0 10px 26px rgba(52,74,66,.2)}50%{box-shadow:0 0 0 13px rgba(121,201,158,.05),0 12px 30px rgba(52,74,66,.24)}}
+
+/* Assessments */
+.lx-assessment-status{inset:14px 14px auto auto;width:auto;height:auto}
+.lx-assessment-pill{display:flex;align-items:center;gap:10px;padding:9px 13px;border:1px solid rgba(151,219,79,.45);border-radius:999px;background:rgba(255,255,255,.94);box-shadow:0 10px 26px rgba(52,74,66,.11);color:#4D5359;font-size:.68rem;pointer-events:none}
+.lx-assessment-pill strong{color:#24302d;font-family:var(--font-heading,"Montserrat",Arial,sans-serif);font-size:.72rem}
+.lx-object.lx-answer-choice{border-radius:14px!important;box-shadow:0 8px 18px rgba(52,74,66,.08)!important;transition:transform .16s ease,box-shadow .16s ease,filter .16s ease!important;cursor:pointer!important}
+.lx-object.lx-answer-choice:hover{transform:translateY(-2px)!important;box-shadow:0 13px 26px rgba(52,74,66,.14)!important;filter:saturate(1.05)}
+.lx-feedback-correct.active::before,.lx-feedback-incorrect.active::before{position:absolute;left:18px;top:18px;z-index:9998;padding:7px 12px;border-radius:999px;color:#fff;font-size:.72rem;font-weight:800;letter-spacing:.03em}
+.lx-feedback-correct.active::before{content:"✓ Correct";background:#508484}
+.lx-feedback-incorrect.active::before{content:"Try again";background:#4A4238}
+
+@media(max-width:760px){
+  .lx-carousel-component{padding:90px 38px 34px}
+  .lx-carousel-viewport{padding:14px 48px 46px}
+  .lx-carousel-cards{grid-template-columns:1fr;min-height:240px}
+  .lx-carousel-card:not(:first-child){display:none}
+  .lx-carousel-footer{left:48px;right:48px}
+}
+@media(prefers-reduced-motion:reduce){.lx-object.lx-enhanced-hotspot{animation:none}.lx-carousel-card,.lx-carousel-arrow,.lx-carousel-dots button{transition:none}}
