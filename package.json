@@ -5,8 +5,8 @@
   "description": "Reusable framework for building data-driven learning experiences, interactions, and course packages.",
   "scripts": {
     "test": "echo \"No tests configured yet\"",
-    "inspect-rise": "echo \"Rise inspector not implemented yet\"",
-    "extract-rise": "echo \"Rise extractor not implemented yet\"",
+    "inspect-rise": "node tools/rise-inspector/index.js",
+    "extract-rise": "node tools/rise-extractor/index.js",
     "build": "echo \"Build system not implemented yet\"",
     "build-rise": "echo \"Rise Code Block builder not implemented yet\"",
     "validate-public": "echo \"Public validation not implemented yet\""
