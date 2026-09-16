@@ -6,6 +6,7 @@ on:
     paths:
       - 'builders/component-web/**'
       - 'content/demos/components/**'
+      - 'docs/component-studio/**'
       - 'schemas/component.schema.json'
       - 'tests/component-builder.test.js'
       - 'themes/**'
@@ -15,6 +16,7 @@ on:
     paths:
       - 'builders/component-web/**'
       - 'content/demos/components/**'
+      - 'docs/component-studio/**'
       - 'schemas/component.schema.json'
       - 'tests/component-builder.test.js'
       - 'themes/**'
@@ -32,6 +34,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24'
+
+      - name: Check browser runtime syntax
+        run: |
+          node --check builders/component-web/runtime.js
+          node --check docs/component-studio/studio.js
 
       - name: Run component builder smoke tests
         run: npm test
