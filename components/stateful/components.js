@@ -9,6 +9,10 @@
     carouselPage: 0,
   };
 
+  function onCleanup(fn) {
+    state.cleanup.push(fn);
+  }
+
   function clear() {
     for (const fn of state.cleanup.splice(0)) {
       try { fn(); } catch (_) {}
@@ -101,6 +105,15 @@
     return null;
   }
 
+  function detectMedia(ctx) {
+    const base = ctx.slide?.layers?.find((layer) => layer.kind === 'base');
+    if (!base) return null;
+    const mediaObjects = flattenObjects(base.objects || []).filter((object) =>
+      (object.assets || []).some((id) => ['video', 'audio'].includes(ctx.assetMap?.get(id)?.kind))
+    );
+    return mediaObjects.length ? { mediaObjects } : null;
+  }
+
   function classify(ctx) {
     const carousel = detectCarousel(ctx);
     if (carousel) return { type: 'carousel', data: carousel };
@@ -108,6 +121,8 @@
     if (hotspots) return { type: 'hotspot-reveal', data: hotspots };
     const assessment = detectAssessment(ctx);
     if (assessment) return { type: 'assessment', data: assessment };
+    const media = detectMedia(ctx);
+    if (media) return { type: 'media-presentation', data: media };
     if (ctx.slide?.interaction?.layered || ctx.slide?.interaction?.variableDriven) return { type: 'stateful', data: {} };
     return { type: 'slide', data: {} };
   }
@@ -133,8 +148,9 @@
     }
 
     const pageCount = Math.max(1, Math.ceil(items.length / pageSize));
-    const moveVariable = Object.keys(ctx.variables || {}).find((name) => /^(move|page|index)/i.test(name));
-    state.carouselPage = Math.max(0, Math.min(pageCount - 1, Number(ctx.variables?.[moveVariable] || 0)));
+    const authorVars = ctx.variables || {};
+    const moveVariable = Object.keys(authorVars).find((name) => /^(move|page|index)/i.test(name));
+    state.carouselPage = Math.max(0, Math.min(pageCount - 1, Number(authorVars[moveVariable] || 0)));
 
     const overlay = makeOverlay(ctx.stage, 'lx-carousel-component');
     const viewport = document.createElement('div');
@@ -221,7 +237,7 @@
     overlay.appendChild(status);
 
     function updateStatus() {
-      status.innerHTML = `<strong>Explore the interaction</strong><span>${state.visitedHotspots.size} of ${detection.hotspots.length} locations viewed</span>`;
+      status.innerHTML = `<strong>Explore the map</strong><span>${state.visitedHotspots.size} of ${detection.hotspots.length} locations viewed</span>`;
     }
 
     detection.hotspots.forEach(({ object, target }, index) => {
@@ -299,6 +315,57 @@
     }
   }
 
+  function enhanceMedia(ctx, detection) {
+    const objects = detection.mediaObjects || [];
+    const mediaEntries = objects.map((object, index) => ({
+      object,
+      element: ctx.objectEls.get(object.id),
+      media: ctx.objectEls.get(object.id)?.querySelector('video,audio'),
+      index,
+    })).filter((entry) => entry.element && entry.media);
+    if (!mediaEntries.length) return;
+
+    for (const entry of mediaEntries) entry.element.classList.add('lx-media-object');
+    if (mediaEntries.length === 1) return;
+
+    const overlay = makeOverlay(ctx.stage, 'lx-media-status');
+    const controls = document.createElement('div');
+    controls.className = 'lx-media-chapters';
+    const label = document.createElement('strong');
+    label.textContent = 'Media segments';
+    const buttons = document.createElement('div');
+    buttons.className = 'lx-media-chapter-buttons';
+    controls.append(label, buttons);
+    overlay.appendChild(controls);
+
+    let active = 0;
+    function select(index, autoplay = false) {
+      active = Math.max(0, Math.min(mediaEntries.length - 1, index));
+      mediaEntries.forEach((entry, entryIndex) => {
+        const selected = entryIndex === active;
+        entry.element.style.display = selected ? '' : 'none';
+        if (!selected) entry.media.pause?.();
+      });
+      [...buttons.querySelectorAll('button')].forEach((button, buttonIndex) => {
+        const selected = buttonIndex === active;
+        button.classList.toggle('active', selected);
+        button.setAttribute('aria-current', selected ? 'true' : 'false');
+      });
+      if (autoplay) mediaEntries[active].media.play?.();
+    }
+
+    mediaEntries.forEach((entry, index) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = `Segment ${index + 1}`;
+      button.setAttribute('aria-label', `Show media segment ${index + 1}`);
+      button.addEventListener('click', () => select(index, true));
+      buttons.appendChild(button);
+    });
+
+    select(0);
+  }
+
   function enhance(ctx) {
     clear();
     state.context = ctx;
@@ -308,6 +375,7 @@
     if (classification.type === 'carousel') enhanceCarousel(ctx, classification.data);
     if (classification.type === 'hotspot-reveal') enhanceHotspots(ctx, classification.data);
     if (classification.type === 'assessment') enhanceAssessment(ctx, classification.data);
+    if (classification.type === 'media-presentation') enhanceMedia(ctx, classification.data);
     return classification.type;
   }
 
