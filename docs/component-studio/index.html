@@ -16,35 +16,29 @@
       <div class="studio-header-left">
         <a class="back-link" href="../index.html">← Engine home</a>
         <span class="studio-header-divider" aria-hidden="true"></span>
-        <a class="brand" href="../index.html">
-          <span class="brand-mark">LX</span>
-          <span><strong>Learning Experience Engine</strong><small>Component Studio</small></span>
-        </a>
+        <a class="brand" href="../index.html"><span class="brand-mark">LX</span><span><strong>Learning Experience Engine</strong><small>Component Studio</small></span></a>
         <nav class="header-nav" aria-label="Studio navigation">
+          <a class="nav-link" href="../course-composer/index.html">Course Composer</a>
           <a class="nav-link global-help-link" href="../user-guide/index.html">User Guide</a>
         </nav>
       </div>
-      <div class="header-actions">
-        <button type="button" class="ghost" data-copy>Copy JSON</button>
-        <button type="button" class="primary" data-download>Export JSON</button>
-        <button type="button" class="help-bubble" data-help-topic="export" aria-label="Help with export">?</button>
-      </div>
     </header>
 
-    <div class="workflow-strip" aria-label="Authoring workflow">
-      <span class="workflow-step"><strong>1</strong><span>Choose</span></span><span class="workflow-arrow">→</span>
-      <span class="workflow-step"><strong>2</strong><span>Author</span></span><span class="workflow-arrow">→</span>
-      <span class="workflow-step"><strong>3</strong><span>Assets</span></span><span class="workflow-arrow">→</span>
-      <span class="workflow-step"><strong>4</strong><span>Preview + Export</span></span>
-    </div>
+    <nav class="workflow-strip" aria-label="Authoring workflow">
+      <a class="workflow-step" href="#choose"><strong>1</strong><span>Choose</span></a><span class="workflow-arrow">→</span>
+      <a class="workflow-step" href="#assets"><strong>2</strong><span>Assets</span></a><span class="workflow-arrow">→</span>
+      <a class="workflow-step" href="#author"><strong>3</strong><span>Author</span></a><span class="workflow-arrow">→</span>
+      <a class="workflow-step" href="#preview"><strong>4</strong><span>Preview</span></a><span class="workflow-arrow">→</span>
+      <a class="workflow-step" href="#export"><strong>5</strong><span>Export</span></a>
+    </nav>
 
     <main class="studio-layout">
-      <aside class="studio-sidebar">
+      <aside class="studio-sidebar" id="choose">
         <div class="sidebar-section">
           <span class="eyebrow">Step 1 · Choose</span>
           <div class="section-title-row"><h1>Build an interaction</h1><button type="button" class="help-bubble" data-help-topic="choose">?</button></div>
           <p>Choose the component that best matches what the learner needs to do.</p>
-          <div class="sidebar-help">New here? <a href="../user-guide/index.html#getting-started">Start with the 4-step guide →</a></div>
+          <div class="sidebar-help">New here? <a href="../user-guide/index.html#getting-started">Start with the guide →</a></div>
         </div>
         <nav class="component-picker" aria-label="Component type">
           <button type="button" data-type="carousel" class="active"><span>▤</span><strong>Carousel</strong><small>Browse grouped content</small></button>
@@ -55,61 +49,62 @@
       </aside>
 
       <section class="editor-column">
-        <div class="panel editor-panel">
+        <section class="workflow-assets-card" id="assets">
+          <div>
+            <span class="eyebrow">Step 2 · Assets</span>
+            <strong>Load source files before authoring</strong>
+            <p>Bring in your project folder, context, images, video, audio, captions, and documents first so compatible path fields can fill automatically.</p>
+            <span class="asset-flow-summary" data-workflow-asset-summary>No project files imported</span>
+          </div>
+          <div class="workflow-assets-actions stacked-actions">
+            <button type="button" class="asset-flow-button primary-flow" data-asset-folder>Choose project folder</button>
+            <button type="button" class="asset-flow-button" data-asset-files>Choose files</button>
+            <button type="button" class="asset-flow-button" data-open-assets>View asset library →</button>
+            <button type="button" class="help-bubble" data-help-topic="assets" aria-label="Help with project assets">?</button>
+          </div>
+        </section>
+
+        <div class="panel editor-panel" id="author">
           <div class="panel-head">
-            <div>
-              <span class="eyebrow">Step 2 · Author</span>
-              <div class="section-title-row"><h2 data-editor-title>Carousel</h2><button type="button" class="help-bubble" data-help-topic="component">?</button></div>
-            </div>
+            <div><span class="eyebrow">Step 3 · Author</span><div class="section-title-row"><h2 data-editor-title>Carousel</h2><button type="button" class="help-bubble" data-help-topic="component">?</button></div></div>
             <span class="status-chip">Engine-native</span>
           </div>
-
           <div class="basics-head"><strong>Basics</strong><button type="button" class="help-bubble" data-help-topic="basics">?</button></div>
           <div class="general-fields">
             <label><span>Title</span><input type="text" data-field="title" value="Customer Signals"></label>
             <label><span>Description</span><textarea rows="2" data-field="description">A reusable learning interaction created directly in the Learning Experience Engine.</textarea></label>
             <label><span>Learner instruction</span><input type="text" data-field="instruction" value="Review each item to continue."></label>
           </div>
-
           <div class="dynamic-editor" data-dynamic-editor></div>
         </div>
 
-        <div class="workflow-assets-card">
-          <div>
-            <span class="eyebrow">Step 3 · Assets</span>
-            <strong>Connect source files & media</strong>
-            <p>Bring in your project folder, source context, images, video, audio, captions, and documents before testing the learner experience.</p>
-          </div>
-          <div class="workflow-assets-actions">
-            <button type="button" class="asset-flow-button" data-open-assets>Project Assets →</button>
-            <button type="button" class="help-bubble" data-help-topic="assets" aria-label="Help with project assets">?</button>
-          </div>
-        </div>
-
         <details class="panel json-panel">
-          <summary>
-            <span class="json-summary-copy"><span>Generated JSON</span><small>The engine file behind this interaction</small></span>
-            <button type="button" class="help-bubble" data-help-topic="json" aria-label="Help with generated JSON">?</button>
-          </summary>
+          <summary><span class="json-summary-copy"><span>Generated JSON</span><small>Advanced / engine view</small></span><button type="button" class="help-bubble" data-help-topic="json" aria-label="Help with generated JSON">?</button></summary>
           <pre data-json-output></pre>
         </details>
       </section>
 
       <section class="preview-column">
-        <div class="preview-toolbar">
-          <div><span class="eyebrow">Step 4 · Preview</span><div class="preview-title-wrap"><strong data-preview-type>Carousel</strong><button type="button" class="help-bubble" data-help-topic="preview">?</button></div></div>
-          <span class="preview-state" data-preview-state>In progress</span>
-        </div>
-        <div class="preview-frame">
-          <div class="preview-course-head">
-            <span class="preview-kind" data-preview-kind>carousel</span>
-            <h2 data-preview-title>Customer Signals</h2>
-            <p data-preview-description></p>
-            <div class="preview-instruction" data-preview-instruction></div>
+        <section id="preview">
+          <div class="preview-toolbar">
+            <div><span class="eyebrow">Step 4 · Preview</span><div class="preview-title-wrap"><strong data-preview-type>Carousel</strong><button type="button" class="help-bubble" data-help-topic="preview">?</button></div></div>
+            <div class="preview-actions"><button type="button" data-preview-focus>Review interaction</button><button type="button" data-preview-refresh>Refresh preview</button><span class="preview-state" data-preview-state>In progress</span></div>
           </div>
-          <div class="preview-stage" data-preview-stage></div>
-          <div class="preview-status" data-preview-status aria-live="polite"></div>
-        </div>
+          <div class="preview-frame">
+            <div class="preview-course-head"><span class="preview-kind" data-preview-kind>carousel</span><h2 data-preview-title>Customer Signals</h2><p data-preview-description></p><div class="preview-instruction" data-preview-instruction></div></div>
+            <div class="preview-stage" data-preview-stage></div>
+            <div class="preview-status" data-preview-status aria-live="polite"></div>
+          </div>
+        </section>
+
+        <section class="studio-export-panel" id="export">
+          <div class="studio-export-head"><div><span class="eyebrow">Step 5 · Export</span><strong>Choose what to save</strong><p>Export only the component definition or package it together with the project files you loaded.</p></div><button type="button" class="help-bubble" data-help-topic="export">?</button></div>
+          <div class="studio-export-actions">
+            <button type="button" data-copy>Copy JSON</button>
+            <button type="button" data-download>Export JSON</button>
+            <button type="button" class="primary-flow" data-export-project>Export project ZIP</button>
+          </div>
+        </section>
       </section>
     </main>
   </div>
