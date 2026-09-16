@@ -8,8 +8,10 @@ on:
       - 'content/demos/components/**'
       - 'docs/index.html'
       - 'docs/component-studio/**'
+      - 'docs/course-composer/**'
       - 'docs/user-guide/**'
       - 'schemas/component.schema.json'
+      - 'schemas/course.schema.json'
       - 'tests/component-builder.test.js'
       - 'tests/docs-navigation.test.js'
       - 'themes/**'
@@ -21,8 +23,10 @@ on:
       - 'content/demos/components/**'
       - 'docs/index.html'
       - 'docs/component-studio/**'
+      - 'docs/course-composer/**'
       - 'docs/user-guide/**'
       - 'schemas/component.schema.json'
+      - 'schemas/course.schema.json'
       - 'tests/component-builder.test.js'
       - 'tests/docs-navigation.test.js'
       - 'themes/**'
@@ -48,6 +52,8 @@ jobs:
           node --check docs/component-studio/asset-library.js
           node --check docs/component-studio/project-package.js
           node --check docs/component-studio/help.js
+          node --check docs/course-composer/composer.js
+          node --check docs/course-composer/course-package.js
 
       - name: Validate static docs navigation
         run: node tests/docs-navigation.test.js
