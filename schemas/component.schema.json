@@ -9,7 +9,7 @@
     "id": { "type": "string", "minLength": 1 },
     "title": { "type": "string", "minLength": 1 },
     "type": {
-      "enum": ["carousel", "hotspot-reveal", "assessment", "media-presentation"]
+      "enum": ["carousel", "hotspot-reveal", "assessment", "media-presentation", "branching-scenario"]
     },
     "description": { "type": ["string", "null"] },
     "instruction": { "type": ["string", "null"] },
@@ -18,7 +18,7 @@
       "type": "object",
       "properties": {
         "strategy": {
-          "enum": ["view-all", "answer", "media-end", "manual", "none"]
+          "enum": ["view-all", "answer", "media-end", "reach-outcome", "manual", "none"]
         },
         "required": { "type": "boolean" }
       },
@@ -156,6 +156,81 @@
                     "title": { "type": ["string", "null"] },
                     "caption": { "type": ["string", "null"] },
                     "transcript": { "type": ["string", "null"] }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "type": { "const": "branching-scenario" } } },
+      "then": {
+        "properties": {
+          "content": {
+            "required": ["startNodeId", "nodes", "outcomes"],
+            "properties": {
+              "startNodeId": { "type": "string", "minLength": 1 },
+              "score": {
+                "type": "object",
+                "properties": {
+                  "enabled": { "type": "boolean" },
+                  "label": { "type": "string" },
+                  "startingValue": { "type": "number" },
+                  "minimum": { "type": "number" },
+                  "maximum": { "type": "number" },
+                  "showToLearner": { "type": "boolean" }
+                },
+                "additionalProperties": true
+              },
+              "nodes": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": ["id", "title", "choices"],
+                  "properties": {
+                    "id": { "type": "string", "minLength": 1 },
+                    "title": { "type": "string" },
+                    "speaker": { "type": ["string", "null"] },
+                    "body": { "type": ["string", "null"] },
+                    "image": { "type": ["string", "null"] },
+                    "alt": { "type": ["string", "null"] },
+                    "choices": {
+                      "type": "array",
+                      "minItems": 1,
+                      "items": {
+                        "type": "object",
+                        "required": ["id", "text", "targetId"],
+                        "properties": {
+                          "id": { "type": "string", "minLength": 1 },
+                          "text": { "type": "string" },
+                          "targetId": { "type": "string", "minLength": 1 },
+                          "feedback": { "type": ["string", "null"] },
+                          "scoreDelta": { "type": "number" }
+                        },
+                        "additionalProperties": true
+                      }
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              },
+              "outcomes": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": ["id", "title"],
+                  "properties": {
+                    "id": { "type": "string", "minLength": 1 },
+                    "title": { "type": "string" },
+                    "body": { "type": ["string", "null"] },
+                    "image": { "type": ["string", "null"] },
+                    "alt": { "type": ["string", "null"] },
+                    "summary": { "type": ["string", "null"] }
                   },
                   "additionalProperties": true
                 }
