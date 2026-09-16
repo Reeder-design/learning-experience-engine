@@ -11,6 +11,7 @@ const demos = [
   ['carousel', 'content/demos/components/carousel.json'],
   ['hotspot', 'content/demos/components/hotspot-reveal.json'],
   ['assessment', 'content/demos/components/assessment.json'],
+  ['scenario', 'content/demos/components/branching-scenario.json'],
 ];
 
 let failures = 0;
@@ -37,7 +38,7 @@ for (const [name, relativeDemo] of demos) {
     continue;
   }
 
-  const expected = ['index.html', 'component.css', 'runtime.js', 'theme.css', 'build-manifest.json'];
+  const expected = ['index.html', 'component.css', 'scenario.css', 'runtime.js', 'scenario-runtime.js', 'theme.css', 'build-manifest.json'];
   for (const file of expected) {
     if (!fs.existsSync(path.join(output, file))) fail(`${name}: missing ${file}`);
   }
@@ -45,6 +46,7 @@ for (const [name, relativeDemo] of demos) {
   const html = fs.readFileSync(path.join(output, 'index.html'), 'utf8');
   if (!html.includes('window.__LX_COMPONENT__')) fail(`${name}: component payload missing from index.html`);
   if (!html.includes('runtime.js')) fail(`${name}: runtime script missing from index.html`);
+  if (!html.includes('scenario-runtime.js')) fail(`${name}: scenario runtime script missing from index.html`);
 
   const manifest = JSON.parse(fs.readFileSync(path.join(output, 'build-manifest.json'), 'utf8'));
   if (manifest.builder !== 'component-web@0.1.0') fail(`${name}: unexpected builder version`);
