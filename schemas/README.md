@@ -25,12 +25,36 @@ Added after inspecting multiple real Storyline Web publishes. This model support
 
 This is the preferred authoring model for new reusable interactions. It describes the instructional interaction directly instead of reproducing Rise or Storyline implementation details.
 
-- `component.schema.json` — a compact contract for reusable components such as carousels, hotspot reveals, assessments, and media presentations
+- `component.schema.json` — a compact contract for reusable components such as carousels, hotspot reveals, assessments, media presentations, and branching scenarios
+
+Current engine-native component types:
+
+- `carousel`
+- `hotspot-reveal`
+- `assessment`
+- `media-presentation`
+- `branching-scenario`
+
+`branching-scenario` adds a compact model for decision practice:
+
+```text
+scenario
+├── start node
+├── optional decision-quality score
+├── decision nodes
+│   └── choices
+│       ├── feedback
+│       ├── score change
+│       └── target node/outcome
+└── outcomes
+```
+
+The first scenario contract intentionally uses one simple score rather than exposing arbitrary variables/conditions by default. Richer state can be added as an extension once a learning simulation actually needs it.
 
 Example conceptual flow:
 
 ```text
-Author / ChatGPT / future Studio UI
+Author / ChatGPT / browser authoring UI
           ↓
 component JSON
           ↓
@@ -39,7 +63,7 @@ Learning Experience Engine
 themed browser interaction
 ```
 
-The component model is intentionally simpler than imported Storyline data. A hotspot interaction, for example, stores hotspot coordinates and reveal content rather than layers, trigger IDs, and proprietary runtime actions.
+The component model is intentionally simpler than imported Storyline data. A hotspot interaction, for example, stores hotspot coordinates and reveal content rather than layers, trigger IDs, and proprietary runtime actions. A branching scenario stores learner decisions and destinations rather than reproducing a slide/trigger implementation.
 
 ## How the schema families work together
 
