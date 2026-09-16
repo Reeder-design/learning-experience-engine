@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://reeder-design.github.io/learning-experience-engine/schemas/experience.schema.json",
+  "title": "Learning Experience Engine Stateful Experience",
+  "type": "object",
+  "required": ["schemaVersion", "id", "title", "kind", "scenes"],
+  "properties": {
+    "schemaVersion": {"const": "0.1"},
+    "id": {"type": "string", "minLength": 1},
+    "title": {"type": "string", "minLength": 1},
+    "kind": {"const": "stateful-experience"},
+    "description": {"type": ["string", "null"]},
+    "canvas": {
+      "type": "object",
+      "properties": {
+        "width": {"type": ["number", "null"]},
+        "height": {"type": ["number", "null"]}
+      },
+      "additionalProperties": true
+    },
+    "variables": {
+      "type": "object",
+      "properties": {
+        "author": {"type": "array", "items": {"type": "object", "additionalProperties": true}},
+        "system": {"type": "array", "items": {"type": "object", "additionalProperties": true}}
+      },
+      "additionalProperties": true
+    },
+    "scenes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "source"],
+        "properties": {
+          "id": {"type": "string"},
+          "title": {"type": ["string", "null"]},
+          "order": {"type": ["integer", "null"]},
+          "source": {"type": "string"}
+        },
+        "additionalProperties": true
+      }
+    },
+    "assets": {"type": "string"},
+    "source": {"type": "object", "additionalProperties": true},
+    "metadata": {"type": "object", "additionalProperties": true}
+  },
+  "additionalProperties": true
+}
