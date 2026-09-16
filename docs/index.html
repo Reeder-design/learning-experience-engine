@@ -1,15 +1,50 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#4A4238">
   <title>Learning Experience Engine</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Open+Sans:wght@400;500;600;700&display=swap');
+    :root{--taupe:#4A4238;--charcoal:#4D5359;--pine:#508484;--mint:#79C99E;--lime:#97DB4F;--ink:#24302D;--muted:#6F777D;--line:rgba(80,132,132,.2)}*{box-sizing:border-box}body{margin:0;font-family:'Open Sans',Arial,sans-serif;color:var(--ink);background:radial-gradient(circle at 8% 2%,rgba(121,201,158,.14),transparent 28rem),radial-gradient(circle at 90% 14%,rgba(151,219,79,.08),transparent 24rem),linear-gradient(#fff,#f5f7f4)}main{max-width:1160px;margin:0 auto;padding:70px 28px}.eyebrow{color:var(--pine);font-size:.72rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}h1,h2,h3{font-family:Montserrat,sans-serif}.hero{display:grid;grid-template-columns:1.2fr .8fr;gap:50px;align-items:center;min-height:470px}.hero h1{margin:8px 0 18px;font-size:clamp(3rem,7vw,6.8rem);line-height:.92;letter-spacing:-.065em}.hero p{max-width:720px;color:var(--muted);font-size:1.08rem;line-height:1.75}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}.button{display:inline-flex;align-items:center;gap:8px;padding:11px 16px;border-radius:999px;text-decoration:none;font-weight:800}.button.primary{background:linear-gradient(135deg,var(--pine),#3f6868);color:#fff;box-shadow:0 10px 24px rgba(63,104,104,.2)}.button.secondary{border:1px solid var(--line);background:#fff;color:var(--ink)}.visual{position:relative;min-height:360px}.node{position:absolute;display:grid;place-items:center;border-radius:50%;background:#fff;border:1px solid var(--line);box-shadow:0 16px 38px rgba(52,74,66,.12);font-family:Montserrat,sans-serif;font-weight:800;color:var(--pine)}.node.large{width:170px;height:170px;left:27%;top:24%;background:linear-gradient(145deg,#fff,#edf6f1)}.node.a{width:86px;height:86px;left:5%;top:12%}.node.b{width:96px;height:96px;right:5%;top:10%}.node.c{width:80px;height:80px;left:8%;bottom:8%}.node.d{width:92px;height:92px;right:6%;bottom:10%}.visual:before,.visual:after{content:"";position:absolute;inset:0;background:linear-gradient(25deg,transparent 49.7%,rgba(80,132,132,.18) 50%,transparent 50.3%),linear-gradient(-30deg,transparent 49.7%,rgba(121,201,158,.18) 50%,transparent 50.3%)}.section{margin-top:64px}.section h2{font-size:2rem;margin-bottom:8px}.section>p{color:var(--muted);max-width:760px;line-height:1.7}.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:24px}.card{padding:24px;border:1px solid var(--line);border-radius:22px;background:rgba(255,255,255,.9);box-shadow:0 12px 34px rgba(52,74,66,.08)}.card span{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:#edf6f1;color:var(--pine);font-weight:800}.card h3{margin:16px 0 8px}.card p{margin:0;color:var(--muted);font-size:.9rem;line-height:1.6}.flow{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:24px}.flow strong{padding:10px 13px;border:1px solid var(--line);border-radius:12px;background:#fff}.flow i{color:var(--mint);font-style:normal;font-weight:800}@media(max-width:800px){.hero{grid-template-columns:1fr}.visual{display:none}.cards{grid-template-columns:1fr}main{padding-top:42px}}
+  </style>
 </head>
 <body>
   <main>
-    <h1>Learning Experience Engine</h1>
-    <p>A reusable framework for building data-driven learning experiences, course interactions, simulations, and instructional design tools.</p>
-    <p>Development is currently in progress.</p>
+    <section class="hero">
+      <div>
+        <div class="eyebrow">Learning Experience Engine</div>
+        <h1>Build learning beyond the authoring tool.</h1>
+        <p>A reusable system for importing, authoring, theming, and rendering instructional experiences. Existing Rise and Storyline work can feed the engine, while new interactions can be authored directly from structured learning content.</p>
+        <div class="actions">
+          <a class="button primary" href="component-studio/">Open Component Studio →</a>
+          <a class="button secondary" href="https://github.com/Reeder-design/learning-experience-engine">View GitHub</a>
+        </div>
+      </div>
+      <div class="visual" aria-hidden="true">
+        <div class="node large">ENGINE</div><div class="node a">Rise</div><div class="node b">Web</div><div class="node c">Storyline</div><div class="node d">LMS</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="eyebrow">Author directly</div>
+      <h2>Component Studio</h2>
+      <p>The first browser authoring interface for the engine. Create a reusable interaction with normal form fields, see a live preview, and export the structured component JSON.</p>
+      <div class="cards">
+        <article class="card"><span>▤</span><h3>Carousel</h3><p>Organize grouped content into an accessible paged exploration.</p></article>
+        <article class="card"><span>◎</span><h3>Hotspot reveal</h3><p>Place interactive points over a visual and reveal contextual learning content.</p></article>
+        <article class="card"><span>✓</span><h3>Assessment</h3><p>Create questions, answers, feedback, completion, and basic scoring.</p></article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="eyebrow">Architecture</div>
+      <h2>Three ways into the engine</h2>
+      <div class="flow"><strong>Rise export</strong><i>→</i><strong>Normalize</strong><i>→</i><strong>Engine</strong></div>
+      <div class="flow"><strong>Storyline export</strong><i>→</i><strong>Normalize</strong><i>→</i><strong>Engine</strong></div>
+      <div class="flow"><strong>Component Studio / ChatGPT</strong><i>→</i><strong>Engine-native JSON</strong><i>→</i><strong>Engine</strong></div>
+    </section>
   </main>
 </body>
 </html>
