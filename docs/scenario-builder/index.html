@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#4A4238">
+  <title>Scenario Builder · Learning Experience Engine</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/experience-engine-favicon.svg">
+  <link rel="stylesheet" href="scenario-builder.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-left">
+      <a class="header-link" href="../index.html">← Engine home</a>
+      <span class="divider" aria-hidden="true"></span>
+      <a class="brand" href="../index.html"><span class="brand-mark">LX</span><span><strong>Learning Experience Engine</strong><small>Scenario Builder</small></span></a>
+      <nav class="header-nav" aria-label="Scenario Builder navigation">
+        <a class="header-link" href="../course-composer/index.html">Course Composer</a>
+        <a class="header-link" href="../component-studio/index.html">Component Studio</a>
+        <a class="header-link" href="../user-guide/scenario-builder.html">? User Guide</a>
+      </nav>
+    </div>
+    <div class="header-actions">
+      <span class="save-state" data-save-state>Autosaved</span>
+      <button type="button" class="ghost" data-open-project>Open Project</button>
+    </div>
+  </header>
+
+  <div class="workflow-strip" aria-label="Scenario authoring workflow">
+    <span><strong>1</strong> Scenario basics</span><i>→</i>
+    <span><strong>2</strong> Upload assets</span><i>→</i>
+    <span><strong>3</strong> Build decisions</span><i>→</i>
+    <span><strong>4</strong> Preview</span><i>→</i>
+    <span><strong>5</strong> Export</span>
+  </div>
+
+  <main class="scenario-main">
+    <section class="workflow-section" id="basics-section">
+      <div class="section-head">
+        <div><span class="eyebrow">Step 1</span><h1>Scenario basics</h1><p>Define the learner experience before you build the decision path.</p></div>
+        <button type="button" class="help-dot" data-help="basics" aria-label="Help with scenario basics">?</button>
+      </div>
+      <div class="panel basics-grid">
+        <label class="wide"><span>Scenario title</span><input type="text" data-field="title"></label>
+        <label class="wide"><span>Description</span><textarea rows="3" data-field="description"></textarea></label>
+        <label class="wide"><span>Learner instruction</span><input type="text" data-field="instruction"></label>
+        <label><span>Score label</span><input type="text" data-score-field="label"></label>
+        <label><span>Starting score</span><input type="number" data-score-field="startingValue"></label>
+        <label><span>Minimum</span><input type="number" data-score-field="minimum"></label>
+        <label><span>Maximum</span><input type="number" data-score-field="maximum"></label>
+        <label class="toggle-row"><input type="checkbox" data-score-field="enabled"><span>Track decision quality score</span></label>
+        <label class="toggle-row"><input type="checkbox" data-score-field="showToLearner"><span>Show score to learner</span></label>
+        <label class="wide"><span>Start at</span><select data-start-node></select></label>
+      </div>
+    </section>
+
+    <section class="workflow-section" id="assets-section">
+      <div class="section-head">
+        <div><span class="eyebrow">Step 2</span><h2>Upload project assets</h2><p>Load source context and visuals first. Image fields in the decision cards will use these paths automatically.</p></div>
+        <button type="button" class="help-dot" data-help="assets" aria-label="Help with project assets">?</button>
+      </div>
+      <div class="panel asset-panel">
+        <div class="asset-actions">
+          <button type="button" class="primary-soft" data-choose-folder>Choose project folder</button>
+          <button type="button" data-choose-files>Choose files</button>
+        </div>
+        <p class="privacy-note"><strong>Local only.</strong> Selected files stay in this browser session unless you explicitly export a project ZIP.</p>
+        <div class="asset-summary" data-asset-summary>No files loaded yet.</div>
+        <div class="asset-grid" data-asset-grid></div>
+        <div class="context-wrap">
+          <h3>Source context</h3>
+          <div data-context-list><p class="empty-copy">No source-context files loaded.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="workflow-section" id="build-section">
+      <div class="section-head build-head">
+        <div><span class="eyebrow">Step 3</span><h2>Build the decision path</h2><p>Every decision node and outcome stays visible in one editing canvas. Choice destinations update automatically as the path changes.</p></div>
+        <button type="button" class="help-dot" data-help="build" aria-label="Help with scenario path">?</button>
+      </div>
+
+      <div class="build-toolbar panel">
+        <div class="add-actions">
+          <button type="button" class="primary" data-add-node>+ Decision node</button>
+          <button type="button" data-add-outcome>+ Outcome</button>
+        </div>
+        <div class="path-check" data-path-check></div>
+      </div>
+
+      <div class="canvas-label"><span>Decision nodes</span><small>Choices branch from these cards.</small></div>
+      <div class="card-stack" data-node-list></div>
+
+      <div class="canvas-label outcome-label"><span>Outcomes</span><small>Reaching any outcome completes the scenario.</small></div>
+      <div class="card-stack" data-outcome-list></div>
+    </section>
+
+    <section class="workflow-section" id="preview-section">
+      <div class="section-head">
+        <div><span class="eyebrow">Step 4</span><h2>Preview the learner experience</h2><p>Run the path from the beginning, test alternate decisions, and confirm the feedback and outcome behavior.</p></div>
+        <button type="button" class="help-dot" data-help="preview" aria-label="Help with scenario preview">?</button>
+      </div>
+      <div class="preview-actions">
+        <button type="button" class="primary" data-preview-start>Preview from beginning</button>
+        <button type="button" data-preview-focus>Open focused preview</button>
+      </div>
+      <div class="preview-shell panel" data-preview-shell>
+        <div class="preview-empty">Choose <strong>Preview from beginning</strong> when you are ready to test the scenario.</div>
+      </div>
+    </section>
+
+    <section class="workflow-section" id="export-section">
+      <div class="section-head">
+        <div><span class="eyebrow">Step 5</span><h2>Export</h2><p>Use the scenario as an engine-native component, or package the JSON and local project files together.</p></div>
+        <button type="button" class="help-dot" data-help="export" aria-label="Help with export">?</button>
+      </div>
+      <div class="panel export-panel">
+        <div class="export-actions">
+          <button type="button" data-copy-json>Copy JSON</button>
+          <button type="button" data-export-json>Export JSON</button>
+          <button type="button" class="primary" data-export-project>Export project ZIP</button>
+        </div>
+        <details class="json-panel">
+          <summary>View generated scenario JSON</summary>
+          <pre data-json-output></pre>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <dialog class="focused-preview" data-preview-dialog>
+    <div class="dialog-head"><strong>Scenario preview</strong><button type="button" data-close-preview aria-label="Close preview">×</button></div>
+    <div class="dialog-body" data-dialog-preview></div>
+  </dialog>
+
+  <div class="help-popover" data-help-popover role="dialog" aria-hidden="true">
+    <button type="button" data-close-help aria-label="Close help">×</button>
+    <h3 data-help-title></h3>
+    <p data-help-body></p>
+    <a href="../user-guide/scenario-builder.html">Open User Guide →</a>
+  </div>
+
+  <input type="file" data-folder-input webkitdirectory multiple hidden>
+  <input type="file" data-files-input multiple hidden accept=".txt,.md,.markdown,.csv,.json,.png,.jpg,.jpeg,.gif,.webp,.svg,.bmp,.pdf">
+  <input type="file" data-project-input accept="application/json,.json,application/zip,.zip" hidden>
+
+  <script src="scenario-builder.js"></script>
+  <script src="scenario-package.js"></script>
+</body>
+</html>
