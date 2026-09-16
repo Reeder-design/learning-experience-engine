@@ -1,0 +1,82 @@
+# ==========================================================
+# CONFIDENTIAL / PRIVATE CONTENT
+# ==========================================================
+
+private/
+private-content/
+confidential/
+internal/
+source-content/
+
+content/private/
+content/internal/
+content/confidential/
+
+assets/private/
+assets/internal/
+assets/confidential/
+
+dist/private/
+dist/internal/
+
+build/private/
+exports/private/
+
+# ==========================================================
+# COURSE SOURCE FILES / EXPORTS
+# ==========================================================
+
+*.story
+*.rise
+*.scorm
+*.xapi
+*.zip
+
+# ==========================================================
+# ENVIRONMENT VARIABLES / SECRETS
+# ==========================================================
+
+.env
+.env.*
+!.env.example
+
+credentials.json
+secrets.json
+
+*.pem
+*.key
+*.p12
+*.pfx
+
+config.local.json
+*.local.json
+
+# ==========================================================
+# NODE
+# ==========================================================
+
+node_modules/
+
+# ==========================================================
+# TEMPORARY FILES
+# ==========================================================
+
+tmp/
+temp/
+scratch/
+.cache/
+*.log
+
+# ==========================================================
+# OPERATING SYSTEM
+# ==========================================================
+
+.DS_Store
+Thumbs.db
+
+# ==========================================================
+# IDE
+# ==========================================================
+
+.idea/
+.vscode/settings.json
