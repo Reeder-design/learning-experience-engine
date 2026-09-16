@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://reeder-design.github.io/learning-experience-engine/schemas/assessment.schema.json",
+  "title": "Learning Experience Engine Assessment",
+  "type": "object",
+  "required": ["schemaVersion", "id", "title", "questions"],
+  "properties": {
+    "schemaVersion": {"const": "0.1"},
+    "id": {"type": "string", "minLength": 1},
+    "title": {"type": "string"},
+    "description": {"type": ["string", "null"]},
+    "passingScore": {"type": ["number", "null"]},
+    "attemptsAllowed": {"type": ["integer", "null"], "minimum": 1},
+    "randomize": {"type": ["boolean", "null"]},
+    "metadata": {"type": "object", "additionalProperties": true},
+    "source": {"type": "object", "additionalProperties": true},
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "prompt"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "type": {
+            "enum": [
+              "multiple-choice",
+              "multiple-response",
+              "true-false",
+              "matching",
+              "sequence",
+              "fill-in",
+              "free-response",
+              "custom"
+            ]
+          },
+          "prompt": {},
+          "answers": {"type": "array", "items": {"type": "object", "additionalProperties": true}},
+          "feedback": {"type": ["object", "string", "null"], "additionalProperties": true},
+          "points": {"type": ["number", "null"]},
+          "metadata": {"type": "object", "additionalProperties": true},
+          "source": {"type": "object", "additionalProperties": true}
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}
