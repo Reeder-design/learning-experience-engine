@@ -1,70 +1,136 @@
 # Learning Experience Engine
 
-A reusable framework and browser-first instructional-design workbench for building, reusing, and eventually converting courses, interactions, and simulations across authoring environments.
+A reusable instructional-design engine evolving into an **AI-assisted Learning Project Workbench** for creating, transforming, previewing, sanitizing, rebranding, templating, and reusing learning experiences from source material or existing projects.
 
-## Product principle
+## Product north star
 
-The engine can be technical underneath without requiring the instructional designer to think technically during normal authoring.
-
-Normal browser workflow should answer:
+The primary user should not need to rebuild common Rise/Storyline patterns or work directly with JSON.
 
 ```text
-What do I want to make?
-→ What source material do I have?
-→ Build it
-→ Preview it as a learner
-→ Save and reuse it
+source content / files / existing project / saved template
+        ↓
+Learning Project Workbench
+        ↓
+editable populated project + learner preview
+        ↓
+AI transformations + manual fine-tuning
+        ↓
+save / reuse / export / template
 ```
 
-Git, Node, schemas, JSON, internal IDs, and file paths remain available for advanced/debug/integration work but are intentionally not the default user experience.
+The technical engine remains underneath for schema validation, rendering, asset handling, branch integrity, themes, and future publishing targets.
 
-## Project Goals
+## Learning Project Workbench v0.1
 
-- Separate learning content from presentation, interaction logic, and authoring-tool implementation
-- Create reusable instructional-design patterns instead of rebuilding common Rise/Storyline mechanics
-- Import published Rise and Storyline experiences into normalized engine models
-- Author new courses, interactions, and scenarios directly in the browser
-- Keep technical project structure underneath a human-centered ID workflow
-- Render standalone themed web learning experiences without requiring the original authoring runtime
-- Support future reusable templates, direct builder-to-course handoffs, Rise Code Block, Storyline Web Object, LMS, SCORM, and xAPI workflows
-- Support AI-assisted course development
-- Maintain strict separation between public engine code and confidential learning content
+Public path:
 
-## Current Capabilities
+```text
+docs/workbench/
+```
 
-### Rise pipeline
+The Workbench is now the primary product surface. The first supported project type is `branching-scenario` so the source → project → edit → preview workflow can be proven with a complete interaction model before expanding to other formats.
 
-- Inspect published Rise Web exports
-- Extract course, lesson, assessment, and asset data
-- Normalize Rise content into document/block learning schemas
-- Build themed standalone web courses
-- Render common text/media/interaction patterns, navigation, and completion/progress behavior
+Current workflow:
 
-The pipeline works today. A human-facing guided **Reuse existing Rise content** browser workflow is still planned.
+```text
+Start from template / Start simple / Open existing JSON
+        ↓
+Source
+        ↓
+Edit populated fields
+        ↓
+Preview as learner
+        ↓
+AI actions
+        ↓
+Save & reuse
+```
 
-### Storyline pipeline
+Implemented in v0.1:
 
-- Inspect published Storyline Web exports
-- Extract scenes, slides, layers, variables, assets, and published runtime data
-- Normalize Storyline into a stateful experience model
-- Build standalone responsive stateful web previews
-- Execute a useful subset of variable, condition, layer, object, navigation, timeline, and media behavior
-- Process a Storyline Web ZIP through extract → normalize → preview
+- three built-in source template projects: customer discovery, decision practice, and objection handling
+- existing Engine `branching-scenario` JSON → editable project reconstruction
+- local source-file and source-folder intake
+- readable TXT/MD/CSV/JSON reference content
+- local image assets available inside scenario image selectors and learner preview
+- one-canvas editable decision points, responses, coaching feedback, destinations, and outcomes
+- hidden Advanced internal IDs
+- continuous flow validation
+- interactive learner preview
+- local autosave
+- scenario JSON download
+- visible AI transformation workspace with presets for sanitize, rebrand, audience adaptation, and create-similar workflows
+- secure AI execution intentionally disabled until the server-side API layer is connected
 
-The pipeline works today. A human-facing guided **Reuse existing Storyline content** workflow is still planned.
+The AI UI is deliberately present now so the project architecture is designed around transformation rather than adding AI as an afterthought.
 
-### Engine-native interaction system
+## Specialized editors
 
-New interactions can be authored without importing an Articulate file.
+These remain useful but are now treated as fine-tuning tools underneath the Workbench.
 
-- `schemas/component.schema.json` defines the underlying portable interaction contract
-- `builders/component-web/` renders interaction data into standalone themed experiences
-- `content/demos/components/` contains sanitized examples
-- `docs/component-studio/` is the implementation path for the user-facing **Interaction Builder**
-- `docs/scenario-builder/` provides specialized branching-scenario authoring
-- completion dispatches a common `lx:component-complete` browser event for future course/LMS tracking
+### Scenario Builder
 
-Current interaction types:
+`docs/scenario-builder/`
+
+Fine-tunes branching decisions, coaching feedback, optional scoring, outcomes, branch validation, source media, and scenario-specific preview behavior.
+
+### Interaction Builder
+
+Implementation path remains `docs/component-studio/` for compatibility.
+
+Builds/fine-tunes reusable:
+
+- carousel
+- visual exploration / hotspot reveal
+- knowledge check
+- guided media
+
+### Course Composer
+
+`docs/course-composer/`
+
+Provides a manual full-course editing canvas. It remains available, but expanding Rise-like block authoring is not the immediate product priority.
+
+## Existing import foundations
+
+### Rise
+
+Implemented:
+
+```text
+tools/rise-inspector/
+tools/rise-extractor/
+tools/rise-normalizer/
+builders/web/
+```
+
+The technical pipeline can inspect, extract, normalize, and render published Rise Web exports. A human-facing Workbench import flow is planned after the source/template/AI transformation model is proven.
+
+### Storyline
+
+Implemented:
+
+```text
+tools/storyline-inspector/
+tools/storyline-extractor/
+tools/storyline-normalizer/
+tools/storyline-preview/
+builders/stateful-web/
+```
+
+The prototype stateful runtime supports useful subsets of scenes, slides, layers, objects, variables, conditions, actions, navigation, media, and timelines. Storyline-derived adapters include carousel, hotspot reveal, assessment shell, and media presentation.
+
+Do not claim pixel-perfect Storyline reconstruction or full Storyline parity.
+
+## Engine-native interaction system
+
+Schema:
+
+```text
+schemas/component.schema.json
+```
+
+Current types:
 
 - `carousel`
 - `hotspot-reveal`
@@ -72,179 +138,89 @@ Current interaction types:
 - `media-presentation`
 - `branching-scenario`
 
-### Reusable Storyline-derived stateful adapters
-
-The stateful runtime can enhance recognized patterns imported from Storyline while retaining the generic renderer as a safe fallback:
-
-- carousel
-- hotspot reveal
-- assessment shell
-- media presentation
-
-## Browser authoring workbench
-
-The current public UX follows one shared convention: **source files before authoring, one visible editing canvas where practical, explicit learner preview, and Save & reuse as the final step.**
-
-A shared `docs/assets/id-workbench.js` / `id-workbench.css` layer keeps human-facing terminology consistent while preserving technical engine fields underneath.
-
-### Interaction Builder
-
-Implementation path: `docs/component-studio/`
-
-User-facing purpose: create compact reusable interactions based on what the learner needs to do.
+Standalone builder:
 
 ```text
-Choose
-→ Source files & media
-→ Build
-→ Preview
-→ Save & reuse
+builders/component-web/
 ```
 
-The first decision is learner behavior rather than implementation terminology:
-
-- Browse or compare → Carousel
-- Explore a visual → Hotspot
-- Practice with a question → Knowledge check
-- Watch or listen → Guided media
-
-Internal item IDs and advanced project data are hidden during normal authoring but remain available when needed.
-
-### Course Composer
-
-Implementation path: `docs/course-composer/`
-
-User-facing purpose: assemble the complete learner journey in one editable course canvas.
+Shared completion event:
 
 ```text
-Course basics
-→ Source files & media
-→ Build course
-→ Preview
-→ Save & reuse
+lx:component-complete
 ```
 
-Current content choices are presented in ID language:
+## Human-centered UX rules
 
-- Text / explanation
-- Image + explanation
-- Video
-- Job aid / resource
-- Interaction
+Normal instructional-design work should not require knowledge of Git, Node, schemas, internal IDs, or file paths.
 
-The whole course remains visible/editable in one canvas rather than using a select-one/edit-elsewhere sidebar model.
-
-### Scenario Builder
-
-Implementation path: `docs/scenario-builder/`
-
-User-facing purpose: design branching practice as a simulation worksheet rather than a visible state machine.
+Shared ID-facing layer:
 
 ```text
-Scenario setup
-→ Source files & media
-→ Build decisions
-→ Preview
-→ Save & reuse
+docs/assets/id-workbench.css
+docs/assets/id-workbench.js
 ```
 
-Authoring prompts now focus on instructional decisions:
-
-- What is the learner practicing?
-- What should the learner do?
-- Who is speaking?
-- What's happening?
-- What does the learner know?
-- What happens next?
-- Coaching feedback
-- Impact on score
-
-Internal node/outcome IDs are hidden behind **Advanced fields**. Scoring is collapsed under **Optional scoring** so a scenario can be authored without configuring a score model first.
-
-Current scenario capabilities include decision points, realistic learner choices, coaching feedback, optional score changes, multiple outcomes, path validation, inline/focused preview, replay/path history, local source files/media, and editable project packaging.
-
-## Save & reuse direction
-
-The browser tools currently support editable project downloads and structured interaction/course files. The next major product pass is a shared reusable-template system:
+Preferred language:
 
 ```text
-Start blank
-Start from template
-Open saved project
-
-...author...
-
-Save editable project
-Save as reusable template
-Add to course
+Source files & media
+Editable fields
+Preview / Preview as learner
+Coaching feedback
+What happens next?
+Save & reuse
+Advanced project data
 ```
 
-Direct Interaction Builder / Scenario Builder → Course Composer handoff is also planned so users no longer need to download and re-import the interaction file manually.
+## AI architecture — next implementation layer
 
-## Shared engine systems
+Do **not** place an OpenAI API key in GitHub Pages JavaScript.
 
-- Authoring-tool-neutral schemas
-- Asset manifests and portable references
-- Theme system
-- Responsive and keyboard-accessible patterns
-- Public/private content architecture
-- GitHub Pages browser authoring apps
-- GitHub Actions smoke/regression checks
-- Human-centered ID UX regression rules
-
-## Repository Structure
-
-- `components/` — reusable interactions and Storyline-derived adapters
-- `content/demos/` — public sanitized demos
-- `content/examples/` — fictional examples and fixtures
-- `schemas/` — document/block, stateful, course, and interaction schemas
-- `themes/` — reusable visual systems
-- `engine/` — shared engine logic as it develops
-- `builders/web/` — document/block course builder
-- `builders/stateful-web/` — stateful experience builder
-- `builders/component-web/` — engine-native interaction builder/runtime
-- `tools/` — Rise/Storyline inspection, extraction, normalization, migration, and preview utilities
-- `docs/` — GitHub Pages workbench, authoring apps, and guides
-- `docs/assets/id-workbench.*` — shared ID-facing vocabulary/progressive-disclosure layer
-- `tests/` — automated smoke/regression tests
-- `dist/public/` — generated public-safe output
-
-## Architecture
-
-The engine supports three complementary learning models:
+Target architecture:
 
 ```text
-Existing Rise / document-style learning
-  → course
-    → lessons / assessments
-      → blocks
-
-Existing Storyline / stateful learning
-  → experience
-    → scenes
-      → slides
-        → layers
-          → objects / states / events / actions
-
-New reusable interaction
-  → component
-    → instructional content + behavior settings
+Browser Workbench
+        ↓
+secure backend / serverless API route
+        ↓
+OpenAI API
+        ↓
+structured project response
+        ↓
+schema + flow validation
+        ↓
+editable Workbench project + preview
 ```
 
-The technical models remain distinct where necessary. The browser workbench hides that distinction during normal instructional-design tasks wherever possible.
+Initial AI actions:
 
-## Confidentiality
+- source materials → populated branching scenario
+- sanitize internal/confidential content for public-safe reuse
+- rebrand using a saved theme
+- adapt for another learner audience
+- create a similar project using a source project as the structural template
+- rewrite coaching feedback / distractors / examples while preserving interaction logic
+
+## Next product milestones
+
+1. **Secure AI generation/transformation layer** for Workbench scenarios.
+2. **Source Template Library** with complete reusable project structures rather than only block-level templates.
+3. **Theme Library** separated from project content/interaction structure.
+4. **Editable project packaging** that preserves source instructions, assets, project JSON, and template metadata together.
+5. Guided Workbench reuse flows for existing Rise and Storyline exports.
+6. Expand the Workbench beyond branching scenarios to other interaction/course project types.
+
+## Public/private boundary
 
 This is a public repository.
 
-Confidential company, customer, and internal course content must remain outside this repository. Local confidential source material belongs in the separate sibling `learning-content-private/` workspace and must never be committed here.
-
-See `CONFIDENTIALITY.md` for project rules.
+Reusable code, schemas, generic templates, themes, demos, and documentation are public-safe. Confidential company/customer content, Articulate exports, source documents, private assets, and private generated projects belong outside this repository in the sibling `learning-content-private/` workspace.
 
 ## Status
 
-Active prototype / early product development. The Rise and Storyline import pipelines, normalized schemas, themed web renderers, reusable adapters, engine-native interaction builder, Interaction Builder, Course Composer, Scenario Builder v0.1, local project packaging, human-centered ID UX layer, GitHub Pages authoring interfaces, and automated smoke/regression checks are functioning.
+Active prototype / early product development.
 
-Next major product milestone: **Reusable Template System**, followed by direct builder-to-course handoffs and the guided Rise/Storyline reuse workflow.
+Workbench v0.1, Scenario Builder, Interaction Builder, Course Composer, Rise/Storyline import foundations, engine-native component rendering, local asset workflows, and automated syntax/navigation/smoke regression checks are functioning.
 
-Still under development: richer scenario variables/conditions, full Storyline animation fidelity, advanced assessment models, persistent cloud projects, LMS packaging, Rise Code Block output, Storyline Web Object output, xAPI/SCORM tracking, Theme Manager, and comprehensive public-safe validation.
+Still future work includes the secure AI API connection, reusable source-template library, theme library, guided Rise/Storyline Workbench import, richer scenario state, persistent cloud projects, LMS/SCORM/xAPI packaging, Rise Code Block output, Storyline Web Object output, and direct deployment integrations.
