@@ -85,11 +85,44 @@ Builds/fine-tunes reusable:
 - knowledge check
 - guided media
 
-### Course Composer
+### Course Builder
 
-`docs/course-composer/`
+Implementation path remains:
 
-Provides a manual full-course editing canvas. It remains available, but expanding Rise-like block authoring is not the immediate product priority.
+```text
+docs/course-composer/
+```
+
+Course Builder provides a manual full-course editing canvas. It remains available, but expanding Rise-like block authoring is not the immediate product priority.
+
+## App naming contract
+
+User-facing product names and implementation identifiers are intentionally separate. Display names can evolve without renaming stable routes, storage keys, schemas, or integration references.
+
+Canonical registry:
+
+```text
+docs/assets/app-registry.js
+```
+
+Current contract:
+
+| Internal ID / route | Public display name |
+| --- | --- |
+| `workbench` | Learning Project Workbench |
+| `component-studio` | Interaction Builder |
+| `scenario-builder` | Scenario Builder |
+| `course-composer` | Course Builder |
+
+Rules:
+
+- normal UI and guides use the public display name
+- implementation paths and internal identifiers stay stable unless a deliberate migration is planned
+- do not create duplicate alias folders such as `course-builder/` just to match a display name
+- legacy display names may exist only as migration metadata in the registry, not in normal public HTML
+- CI scans public HTML for naming regressions and validates the registry
+
+This avoids breaking saved links, local projects, tests, and future integrations when a user-facing label changes.
 
 ## Existing import foundations
 
@@ -173,6 +206,12 @@ Save & reuse
 Advanced project data
 ```
 
+## Favicon / browser identity rule
+
+Every public HTML page under `docs/` must explicitly include the Engine SVG favicon plus ICO fallback and Safari mask icon metadata. `docs/favicon.ico` remains the site-level fallback.
+
+The docs regression test discovers `docs/**/*.html` automatically, so new pages fail CI if favicon metadata is omitted.
+
 ## AI architecture — next implementation layer
 
 Do **not** place an OpenAI API key in GitHub Pages JavaScript.
@@ -221,6 +260,6 @@ Reusable code, schemas, generic templates, themes, demos, and documentation are 
 
 Active prototype / early product development.
 
-Workbench v0.1, Scenario Builder, Interaction Builder, Course Composer, Rise/Storyline import foundations, engine-native component rendering, local asset workflows, and automated syntax/navigation/smoke regression checks are functioning.
+Workbench v0.1, Scenario Builder, Interaction Builder, Course Builder, Rise/Storyline import foundations, engine-native component rendering, local asset workflows, and automated syntax/navigation/naming/favicon/smoke regression checks are functioning.
 
 Still future work includes the secure AI API connection, reusable source-template library, theme library, guided Rise/Storyline Workbench import, richer scenario state, persistent cloud projects, LMS/SCORM/xAPI packaging, Rise Code Block output, Storyline Web Object output, and direct deployment integrations.
