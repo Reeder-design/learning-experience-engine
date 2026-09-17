@@ -3,8 +3,9 @@
   const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
   const path = location.pathname;
 
+  const setText = (el, value) => { if (el && (el.textContent || '') !== value) el.textContent = value; };
   const replaceExact = (root, selector, from, to) => {
-    $$(selector, root).forEach((el) => { if ((el.textContent || '').trim() === from) el.textContent = to; });
+    $$(selector, root).forEach((el) => { if ((el.textContent || '').trim() === from) setText(el, to); });
   };
 
   function bindAdvancedToggle() {
@@ -15,7 +16,7 @@
       button.addEventListener('click', () => {
         const on = document.body.classList.toggle('show-advanced-fields');
         button.setAttribute('aria-pressed', String(on));
-        button.textContent = on ? 'Hide advanced fields' : 'Advanced fields';
+        setText(button, on ? 'Hide advanced fields' : 'Advanced fields');
       });
     });
   }
@@ -26,14 +27,45 @@
       if (!title) return;
       const text=(title.textContent||'').trim();
       if (text === 'ID' || text === 'Node ID' || text === 'Outcome ID' || text === 'Internal ID') {
-        title.textContent='Internal ID';
+        setText(title,'Internal ID');
         label.classList.add('ux-technical-field');
       }
     });
   }
 
+  function applyHelpCopy(page) {
+    const title=$('[data-help-title]');
+    const body=$('[data-help-body]');
+    if(!title||!body)return;
+    const t=(title.textContent||'').trim();
+    const maps={
+      interaction:{
+        'Project Assets':['Source files & media','Add reference content and media before authoring so compatible fields can use those files automatically. Files stay local to this browser session unless you download an editable project.'],
+        'Generated JSON':['Advanced project data','This is the structured data behind the interaction. You normally do not need to edit or copy it during everyday authoring.'],
+        'Export options':['Save & reuse','Download the editable project to continue later, or download the interaction file when you want to add it to Course Composer.'],
+        'Component basics':['Interaction basics','Name the interaction, describe the learning purpose, and tell the learner what to do.'],
+        'Component-specific fields':['Interaction content','These fields change based on what the learner needs to do: browse, explore, answer, watch, or listen.']
+      },
+      composer:{
+        'Project assets':['Source files & media','Add reference content and media before building the course so Composer can suggest compatible files as you add sections.'],
+        'Course content':['Build the course','Everything stays editable in one canvas. Add, reorder, duplicate, or remove sections without jumping between separate screens.'],
+        'Course preview':['Preview','Check the sequence in the embedded preview or open Preview as learner for a focused learner view.'],
+        'Export':['Save & reuse','Download the editable project to continue later. Advanced course data stays available when you need the engine structure directly.']
+      },
+      scenario:{
+        'Scenario basics':['Scenario setup','Start with what the learner is practicing and what they should do. Scoring and internal IDs are optional/advanced details.'],
+        'Project assets':['Source files & media','Add reference content and visuals before writing decisions so scenario cards can use those images automatically.'],
+        'Decision path':['Build decisions','Write what is happening, what the learner knows, their response choices, coaching feedback, and what happens next.'],
+        'Learner preview':['Preview','Try different decisions and confirm the coaching feedback and outcomes make sense before saving the scenario.'],
+        'Export':['Save & reuse','Download the editable project to continue later or download the scenario interaction file to add it to a course.']
+      }
+    };
+    const match=maps[page]?.[t];
+    if(match){setText(title,match[0]);setText(body,match[1]);}
+  }
+
   function applyInteractionBuilder() {
-    document.title='Interaction Builder · Learning Experience Engine';
+    if(document.title!=='Interaction Builder · Learning Experience Engine')document.title='Interaction Builder · Learning Experience Engine';
     replaceExact(document,'small','Component Studio','Interaction Builder');
     replaceExact(document,'.status-chip','Engine-native','Reusable interaction');
     replaceExact(document,'a,button','Component Studio','Interaction Builder');
@@ -48,21 +80,17 @@
       'Correct?':'Correct answer?',
       'Items per page':'Items shown at once'
     };
-    $$('label > span').forEach((span)=>{const t=(span.textContent||'').trim();if(labels[t])span.textContent=labels[t];});
+    $$('label > span').forEach((span)=>{const t=(span.textContent||'').trim();if(labels[t])setText(span,labels[t]);});
 
-    const humanTypes={
-      carousel:'Carousel',
-      'hotspot-reveal':'Visual exploration',
-      assessment:'Knowledge check',
-      'media-presentation':'Guided media'
-    };
+    const humanTypes={carousel:'Carousel','hotspot-reveal':'Visual exploration',assessment:'Knowledge check','media-presentation':'Guided media'};
     const active=$('[data-type].active')?.dataset.type;
     if(active&&humanTypes[active]){
-      $('[data-editor-title]') && ($('[data-editor-title]').textContent=humanTypes[active]);
-      $('[data-preview-type]') && ($('[data-preview-type]').textContent=humanTypes[active]);
-      $('[data-preview-kind]') && ($('[data-preview-kind]').textContent=humanTypes[active]);
+      setText($('[data-editor-title]'),humanTypes[active]);
+      setText($('[data-preview-type]'),humanTypes[active]);
+      setText($('[data-preview-kind]'),humanTypes[active]);
     }
     markTechnicalLabels();
+    applyHelpCopy('interaction');
   }
 
   function applyComposer() {
@@ -76,61 +104,59 @@
 
     $$('label > span').forEach((span)=>{
       const map={'Image path':'Image','Video path':'Video','Caption path':'Captions','Document path':'Document'};
-      const t=(span.textContent||'').trim(); if(map[t]) span.textContent=map[t];
+      const t=(span.textContent||'').trim(); if(map[t]) setText(span,map[t]);
     });
     $$('.type-chip').forEach((chip)=>{
       const t=(chip.textContent||'').trim();
-      if(t==='component')chip.textContent='interaction';
-      if(t==='resource')chip.textContent='job aid';
+      if(t==='component')setText(chip,'interaction');
+      if(t==='resource')setText(chip,'job aid');
     });
     $$('.content-card-title small').forEach((el)=>{
-      el.textContent=(el.textContent||'').replace(/\bcomponent\b/g,'interaction').replace(/\bresource\b/g,'job aid');
+      const next=(el.textContent||'').replace(/\bcomponent\b/g,'interaction').replace(/\bresource\b/g,'job aid');
+      setText(el,next);
     });
     $$('.component-summary small,.editor-note').forEach((el)=>{
-      el.textContent=(el.textContent||'')
+      const next=(el.textContent||'')
         .replace(/Engine-native interaction/g,'Reusable interaction')
         .replace(/Component Studio/g,'Interaction Builder')
         .replace(/component JSON/gi,'interaction file');
+      setText(el,next);
     });
+    applyHelpCopy('composer');
   }
 
   function applyScenario() {
     const labelMap={
-      'Node ID':'Internal ID',
-      'Outcome ID':'Internal ID',
-      'Speaker / role':'Who is speaking?',
-      'Decision title / situation':"What's happening?",
-      'Situation details':'What does the learner know?',
-      'Send learner to':'What happens next?',
-      'Score change':'Impact on score',
-      'Immediate feedback':'Coaching feedback',
-      'Outcome title':'Outcome name',
-      'Outcome explanation':'What happened?',
-      'Visual':'Image'
+      'Node ID':'Internal ID','Outcome ID':'Internal ID','Speaker / role':'Who is speaking?',
+      'Decision title / situation':"What's happening?",'Situation details':'What does the learner know?',
+      'Send learner to':'What happens next?','Score change':'Impact on score','Immediate feedback':'Coaching feedback',
+      'Outcome title':'Outcome name','Outcome explanation':'What happened?','Visual':'Image'
     };
-    $$('label > span').forEach((span)=>{const t=(span.textContent||'').trim();if(labelMap[t])span.textContent=labelMap[t];});
+    $$('label > span').forEach((span)=>{const t=(span.textContent||'').trim();if(labelMap[t])setText(span,labelMap[t]);});
     markTechnicalLabels();
 
     const check=$('[data-path-check]');
     if(check){
       const t=(check.textContent||'').trim();
-      if(t.startsWith('Path check:')) check.textContent=t.replace(/^Path check:\s*/,'Things to fix before preview: ');
-      else if(t.startsWith('Path runs,')) check.textContent=t.replace(/^Path runs,\s*/,'Ready to preview, with ');
-      else if(t.startsWith('Path check ✓')) check.textContent='Ready to preview ✓ All decisions lead somewhere and at least one outcome can be reached.';
+      if(t.startsWith('Path check:')) setText(check,t.replace(/^Path check:\s*/,'Things to fix before preview: '));
+      else if(t.startsWith('Path runs,')) setText(check,t.replace(/^Path runs,\s*/,'Ready to preview, with '));
+      else if(t.startsWith('Path check ✓')) setText(check,'Ready to preview ✓ All decisions lead somewhere and at least one outcome can be reached.');
     }
     $$('select[data-choice-field="targetId"] option').forEach((option)=>{
-      option.textContent=(option.textContent||'').replace(/^Decision · /,'Next decision · ').replace(/^Missing · /,'Needs attention · ');
+      const next=(option.textContent||'').replace(/^Decision · /,'Next decision · ').replace(/^Missing · /,'Needs attention · ');
+      setText(option,next);
     });
     replaceExact(document,'button','Preview from beginning','Preview');
     replaceExact(document,'button','Open focused preview','Preview as learner');
     replaceExact(document,'.canvas-label span','Decision nodes','Decision points');
+    applyHelpCopy('scenario');
   }
 
   function updateScoreSummary(){
     const details=$('[data-score-settings]');
     const enabled=$('[data-score-field="enabled"]');
     const summary=details?.querySelector('summary [data-score-summary]');
-    if(summary&&enabled) summary.textContent=enabled.checked?'Optional scoring · On':'Optional scoring · Off';
+    if(summary&&enabled)setText(summary,enabled.checked?'Optional scoring · On':'Optional scoring · Off');
   }
 
   function apply() {
