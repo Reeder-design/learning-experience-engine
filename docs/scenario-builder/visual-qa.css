@@ -1,0 +1,338 @@
+/* Scenario Builder visual QA / polish layer.
+   Kept separate from the base stylesheet so visual refinements remain easy to audit. */
+
+:root {
+  --control-height: 46px;
+  --control-radius: 12px;
+  --control-border: rgba(80,132,132,.28);
+  --control-focus: 0 0 0 3px rgba(151,219,79,.18);
+}
+
+/* --- Form readability ---------------------------------------------------- */
+.basics-grid input,
+.basics-grid select,
+.field-grid input,
+.field-grid select,
+.choice-card input,
+.choice-card select,
+.outcome-fields input,
+.outcome-fields select {
+  min-height: var(--control-height);
+  line-height: 1.25;
+  padding: 11px 13px;
+}
+
+.basics-grid textarea,
+.field-grid textarea,
+.choice-card textarea,
+.outcome-fields textarea {
+  min-height: 92px;
+  line-height: 1.55;
+  padding: 11px 13px;
+}
+
+.basics-grid label > span,
+.field-grid label > span,
+.choice-card label > span,
+.outcome-fields label > span {
+  line-height: 1.35;
+  letter-spacing: .005em;
+}
+
+/* Native selects were visually compressed in Safari. Give the closed
+   control one predictable line with dedicated arrow space. */
+.basics-grid select,
+.field-grid select,
+.choice-card select,
+.outcome-fields select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 42px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background-color: #fff;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--pine) 50%),
+    linear-gradient(135deg, var(--pine) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 13px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.basics-grid select:focus,
+.field-grid select:focus,
+.choice-card select:focus,
+.outcome-fields select:focus {
+  border-color: var(--mint);
+  box-shadow: var(--control-focus);
+}
+
+/* --- Decision / choice hierarchy --------------------------------------- */
+.scenario-edit-card {
+  overflow: visible;
+}
+
+.edit-card-head {
+  min-height: 62px;
+  padding: 15px 18px;
+}
+
+.edit-card-head .title-wrap {
+  flex: 1 1 300px;
+}
+
+.edit-card-head strong {
+  line-height: 1.35;
+}
+
+.field-grid,
+.outcome-fields {
+  gap: 15px 16px;
+  padding: 18px;
+}
+
+.choices-wrap {
+  padding: 2px 18px 18px;
+}
+
+.choices-head {
+  margin: 5px 0 12px;
+}
+
+.choice-list {
+  gap: 12px;
+}
+
+.choice-card {
+  grid-template-columns: minmax(0,1fr) minmax(150px,210px);
+  gap: 13px 16px;
+  padding: 16px;
+  padding-top: 18px;
+  border-color: rgba(80,132,132,.2);
+  background: linear-gradient(145deg,#fcfdfc,#f7faf8);
+}
+
+/* Make the actual branching decision impossible to miss. */
+.choice-card label:has(select[data-choice-field="targetId"]) {
+  grid-column: 1 / -1;
+}
+
+.choice-card select[data-choice-field="targetId"] {
+  width: 100%;
+  min-height: 48px;
+  font-weight: 650;
+  color: var(--ink);
+  background-color: #fff;
+}
+
+.choice-card label:has(input[data-choice-field="scoreDelta"]) {
+  grid-column: 1 / -1;
+  max-width: 220px;
+}
+
+.choice-card .wide {
+  grid-column: 1 / -1;
+}
+
+.choice-actions {
+  top: 10px;
+  right: 10px;
+}
+
+.choice-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* --- Buttons ------------------------------------------------------------ */
+.asset-actions button,
+.preview-actions button,
+.export-actions button,
+.add-actions button {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.2;
+}
+
+.card-actions {
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.card-actions button,
+.choices-head button {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.15;
+}
+
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible {
+  outline: none;
+  box-shadow: var(--control-focus);
+}
+
+/* --- Long-content safety ------------------------------------------------ */
+.section-head,
+.section-head > div,
+.title-wrap,
+.asset-card,
+.learner-card,
+.outcome-summary,
+.path-history,
+.help-popover {
+  min-width: 0;
+}
+
+.section-head p,
+.asset-card small,
+.learner-card p,
+.learner-choice,
+.learner-feedback,
+.outcome-summary,
+.path-history li,
+.help-popover p {
+  overflow-wrap: anywhere;
+}
+
+.asset-card {
+  min-height: 72px;
+  padding: 12px;
+}
+
+.asset-card strong {
+  line-height: 1.35;
+}
+
+.asset-card small {
+  line-height: 1.45;
+  word-break: normal;
+}
+
+/* --- Preview polish ----------------------------------------------------- */
+.preview-shell {
+  padding: clamp(18px,3vw,28px);
+}
+
+.learner-card {
+  padding: clamp(20px,3vw,30px);
+}
+
+.learner-card h3 {
+  max-width: calc(100% - 130px);
+  line-height: 1.25;
+}
+
+.learner-choice {
+  min-height: 54px;
+  padding: 13px 15px;
+  line-height: 1.45;
+  transition: transform .14s ease, border-color .14s ease, background .14s ease, box-shadow .14s ease;
+}
+
+.learner-choice:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 7px 18px rgba(52,74,66,.07);
+}
+
+.learner-choice:disabled {
+  cursor: default;
+  opacity: .72;
+}
+
+.learner-feedback {
+  line-height: 1.55;
+}
+
+/* --- Workflow / responsive polish -------------------------------------- */
+.workflow-strip {
+  scrollbar-width: none;
+}
+.workflow-strip::-webkit-scrollbar { display: none; }
+
+@media (max-width: 850px) {
+  .choice-card {
+    grid-template-columns: 1fr;
+  }
+
+  .choice-card label:has(select[data-choice-field="targetId"]),
+  .choice-card label:has(input[data-choice-field="scoreDelta"]),
+  .choice-card .wide {
+    grid-column: auto;
+    max-width: none;
+  }
+
+  .edit-card-head {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .card-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 600px) {
+  .scenario-main {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .workflow-section {
+    padding: 24px 0;
+  }
+
+  .section-head {
+    gap: 12px;
+  }
+
+  .field-grid,
+  .outcome-fields,
+  .basics-grid,
+  .asset-panel,
+  .export-panel {
+    padding: 15px;
+  }
+
+  .choices-wrap {
+    padding: 0 15px 15px;
+  }
+
+  .choice-card {
+    padding: 15px;
+    padding-top: 18px;
+  }
+
+  .asset-actions button,
+  .preview-actions button,
+  .export-actions button,
+  .add-actions button {
+    width: 100%;
+  }
+
+  .learner-score {
+    position: static;
+    justify-items: start;
+    width: fit-content;
+    margin-bottom: 14px;
+  }
+
+  .learner-card h3 {
+    max-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .learner-choice { transition: none; }
+}
