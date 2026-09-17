@@ -21,7 +21,32 @@ AI transformations + manual fine-tuning
 save / reuse / export / template
 ```
 
-The specialized Scenario Builder, Interaction Builder, and Course Composer remain underneath as fine-tuning editors.
+The specialized Scenario Builder, Interaction Builder, and Course Builder remain underneath as fine-tuning editors.
+
+## Stable app naming contract
+
+Public display names and implementation identifiers are intentionally separate.
+
+```text
+workbench        → Learning Project Workbench
+component-studio → Interaction Builder
+scenario-builder → Scenario Builder
+course-composer  → Course Builder
+```
+
+The canonical browser registry is:
+
+```text
+docs/assets/app-registry.js
+```
+
+Important rules:
+
+- `course-composer` remains the stable internal ID and route even though the public name is **Course Builder**.
+- Do not create a duplicate `course-builder/` implementation folder just to match the label.
+- Do not casually rename existing internal routes, storage keys, or integration identifiers when changing display copy.
+- Public HTML should use **Course Builder**; CI rejects the legacy public label `Course Composer`.
+- Every public `docs/**/*.html` page must explicitly include the Engine SVG favicon, ICO fallback, and Safari mask icon. CI discovers future HTML pages automatically.
 
 ## Workbench v0.1
 
@@ -126,4 +151,4 @@ Not:
 
 ## Testing
 
-WorkBench browser JavaScript syntax, required Workbench workflow markers, static navigation, and existing component-builder smoke tests are covered by `.github/workflows/component-smoke.yml` and `tests/docs-navigation.test.js`.
+Workbench browser JavaScript syntax, canonical app naming, automatic favicon coverage for all public HTML pages, required Workbench workflow markers, static navigation, and existing component-builder smoke tests are covered by `.github/workflows/component-smoke.yml` and `tests/docs-navigation.test.js`.
