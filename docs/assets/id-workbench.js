@@ -2,6 +2,9 @@
   const $ = (s,r=document)=>r.querySelector(s);
   const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
   const path = location.pathname;
+  const appName = (internalId, fallback) => window.LX_APP_NAME?.(internalId) || fallback;
+  const courseName = () => appName('course-composer','Course Builder');
+  const interactionName = () => appName('component-studio','Interaction Builder');
 
   const setText = (el, value) => { if (el && (el.textContent || '') !== value) el.textContent = value; };
   const replaceExact = (root, selector, from, to) => {
@@ -42,12 +45,12 @@
       interaction:{
         'Project Assets':['Source files & media','Add reference content and media before authoring so compatible fields can use those files automatically. Files stay local to this browser session unless you download an editable project.'],
         'Generated JSON':['Advanced project data','This is the structured data behind the interaction. You normally do not need to edit or copy it during everyday authoring.'],
-        'Export options':['Save & reuse','Download the editable project to continue later, or download the interaction file when you want to add it to Course Composer.'],
+        'Export options':['Save & reuse',`Download the editable project to continue later, or download the interaction file when you want to add it to ${courseName()}.`],
         'Component basics':['Interaction basics','Name the interaction, describe the learning purpose, and tell the learner what to do.'],
         'Component-specific fields':['Interaction content','These fields change based on what the learner needs to do: browse, explore, answer, watch, or listen.']
       },
       composer:{
-        'Project assets':['Source files & media','Add reference content and media before building the course so Composer can suggest compatible files as you add sections.'],
+        'Project assets':['Source files & media',`Add reference content and media before building the course so ${courseName()} can suggest compatible files as you add sections.`],
         'Course content':['Build the course','Everything stays editable in one canvas. Add, reorder, duplicate, or remove sections without jumping between separate screens.'],
         'Course preview':['Preview','Check the sequence in the embedded preview or open Preview as learner for a focused learner view.'],
         'Export':['Save & reuse','Download the editable project to continue later. Advanced course data stays available when you need the engine structure directly.']
@@ -78,7 +81,7 @@
     replaceExact(document,'[data-asset-summary]','No project files imported','No source files added yet');
     const privacy=$('.asset-privacy span');
     if(privacy){
-      const next=(privacy.textContent||'').replace('Component Studio','Interaction Builder');
+      const next=(privacy.textContent||'').replace('Component Studio',interactionName());
       setText(privacy,next);
     }
     const help=$('.asset-help');
@@ -86,10 +89,11 @@
   }
 
   function applyInteractionBuilder() {
-    if(document.title!=='Interaction Builder · Learning Experience Engine')document.title='Interaction Builder · Learning Experience Engine';
-    replaceExact(document,'small','Component Studio','Interaction Builder');
+    document.title=`${interactionName()} · Learning Experience Engine`;
+    replaceExact(document,'small','Component Studio',interactionName());
     replaceExact(document,'.status-chip','Engine-native','Reusable interaction');
-    replaceExact(document,'a,button','Component Studio','Interaction Builder');
+    replaceExact(document,'a,button','Component Studio',interactionName());
+    replaceExact(document,'a,button','Course Composer',courseName());
     replaceExact(document,'.preview-actions button','Review interaction','Preview as learner');
     replaceExact(document,'.preview-actions button','Refresh preview','Restart preview');
     humanizeAssetDrawer();
@@ -112,12 +116,15 @@
   }
 
   function applyComposer() {
-    replaceExact(document,'a,button','Component Studio','Interaction Builder');
+    document.title=`${courseName()} · Learning Experience Engine`;
+    replaceExact(document,'small','Course Composer',courseName());
+    replaceExact(document,'a,button','Course Composer',courseName());
+    replaceExact(document,'a,button','Component Studio',interactionName());
     replaceExact(document,'button','Preview from beginning','Preview');
     replaceExact(document,'button','Open full preview','Preview as learner');
     replaceExact(document,'button','Import component JSON','Choose interaction file');
     replaceExact(document,'button','Replace component JSON','Replace interaction');
-    replaceExact(document,'a','Open Component Studio →','Open Interaction Builder →');
+    replaceExact(document,'a','Open Component Studio →',`Open ${interactionName()} →`);
     replaceExact(document,'strong','No component imported yet','No interaction added yet');
 
     $$('label > span').forEach((span)=>{
@@ -136,7 +143,7 @@
     $$('.component-summary small,.editor-note').forEach((el)=>{
       const next=(el.textContent||'')
         .replace(/Engine-native interaction/g,'Reusable interaction')
-        .replace(/Component Studio/g,'Interaction Builder')
+        .replace(/Component Studio/g,interactionName())
         .replace(/component JSON/gi,'interaction file');
       setText(el,next);
     });
@@ -144,6 +151,7 @@
   }
 
   function applyScenario() {
+    replaceExact(document,'a,button','Course Composer',courseName());
     const labelMap={
       'Node ID':'Internal ID','Outcome ID':'Internal ID','Speaker / role':'Who is speaking?',
       'Decision title / situation':"What's happening?",'Situation details':'What does the learner know?',
