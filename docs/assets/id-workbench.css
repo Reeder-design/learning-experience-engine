@@ -1,0 +1,128 @@
+/* Shared human-centered authoring layer.
+   Keeps technical engine concepts available without making them part of normal ID workflow. */
+
+:root {
+  --ux-pine:#508484;
+  --ux-mint:#79C99E;
+  --ux-lime:#97DB4F;
+  --ux-ink:#24302D;
+  --ux-muted:#6F777D;
+  --ux-line:rgba(80,132,132,.22);
+  --ux-soft:#F3F8F5;
+}
+
+.ux-advanced-toggle {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  min-height:34px;
+  padding:7px 11px;
+  border:1px solid var(--ux-line);
+  border-radius:999px;
+  background:#fff;
+  color:var(--ux-muted);
+  font:700 .7rem/1 'Open Sans',Arial,sans-serif;
+  cursor:pointer;
+  transition:border-color .16s ease,background .16s ease,color .16s ease,transform .16s ease;
+}
+.ux-advanced-toggle:hover,
+.ux-advanced-toggle[aria-pressed="true"] {
+  border-color:var(--ux-mint);
+  background:var(--ux-soft);
+  color:var(--ux-pine);
+}
+.ux-advanced-toggle:hover { transform:translateY(-1px); }
+
+.ux-technical-field { display:none !important; }
+body.show-advanced-fields .ux-technical-field { display:grid !important; }
+
+.ux-advanced-settings {
+  grid-column:1/-1;
+  border:1px solid var(--ux-line);
+  border-radius:14px;
+  background:linear-gradient(145deg,#fff,#f8fbf9);
+  overflow:hidden;
+}
+.ux-advanced-settings > summary {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:13px 15px;
+  cursor:pointer;
+  list-style:none;
+  color:var(--ux-ink);
+  font-weight:800;
+}
+.ux-advanced-settings > summary::-webkit-details-marker { display:none; }
+.ux-advanced-settings > summary::after {
+  content:"Optional";
+  padding:4px 8px;
+  border-radius:999px;
+  background:#edf6f1;
+  color:var(--ux-pine);
+  font-size:.62rem;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+.ux-advanced-settings[open] > summary { border-bottom:1px solid var(--ux-line); }
+.ux-settings-grid {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:13px;
+  padding:15px;
+}
+.ux-settings-grid .wide { grid-column:1/-1; }
+
+.ux-inline-note {
+  margin:0;
+  color:var(--ux-muted);
+  font-size:.78rem;
+  line-height:1.55;
+}
+
+.ux-next-step {
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  margin-top:12px;
+  padding:12px 14px;
+  border:1px solid var(--ux-line);
+  border-radius:13px;
+  background:var(--ux-soft);
+  color:#53625d;
+  font-size:.78rem;
+  line-height:1.55;
+}
+.ux-next-step strong { color:var(--ux-ink); }
+
+.ux-advanced-data {
+  margin-top:14px;
+  border-top:1px solid var(--ux-line);
+  padding-top:12px;
+}
+.ux-advanced-data > summary {
+  color:var(--ux-pine);
+  cursor:pointer;
+  font-size:.76rem;
+  font-weight:800;
+}
+
+.ux-disabled-action {
+  opacity:.58;
+  cursor:not-allowed !important;
+}
+
+/* Keep hidden internal fields from leaving awkward empty two-column rows. */
+.field-row:has(.ux-technical-field:not(:only-child)) { grid-template-columns:1fr; }
+body.show-advanced-fields .field-row:has(.ux-technical-field:not(:only-child)) { grid-template-columns:repeat(2,minmax(0,1fr)); }
+
+@media(max-width:700px){
+  .ux-settings-grid{grid-template-columns:1fr}
+  .ux-settings-grid .wide{grid-column:auto}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .ux-advanced-toggle{transition:none}
+}
