@@ -13,6 +13,16 @@ const files = [
   'docs/user-guide/scenario-builder.html',
 ];
 
+const htmlPages = [
+  'docs/index.html',
+  'docs/component-studio/index.html',
+  'docs/course-composer/index.html',
+  'docs/scenario-builder/index.html',
+  'docs/user-guide/index.html',
+  'docs/user-guide/course-composer.html',
+  'docs/user-guide/scenario-builder.html',
+];
+
 const forbidden = [
   /href=["']\.\/["']/g,
   /href=["']\.\.\/["']/g,
@@ -33,6 +43,18 @@ for (const relative of files) {
       console.error(`${relative}: directory-only navigation target found: ${matches.join(', ')}`);
     }
   }
+}
+
+for (const relative of htmlPages) {
+  const source = fs.readFileSync(path.join(root, relative), 'utf8');
+  if (!source.includes('experience-engine-favicon.svg')) {
+    failed = true;
+    console.error(`${relative}: missing Learning Experience Engine favicon metadata.`);
+  }
+}
+if (!fs.existsSync(path.join(root, 'docs/favicon.ico'))) {
+  failed = true;
+  console.error('docs/favicon.ico: missing global browser favicon fallback.');
 }
 
 const helpCss = fs.readFileSync(path.join(root, 'docs/component-studio/help.css'), 'utf8');
@@ -70,6 +92,7 @@ for (const requiredFile of [
   'docs/scenario-builder/scenario-builder.js',
   'docs/scenario-builder/scenario-package.js',
   'docs/scenario-builder/visual-qa.css',
+  'docs/scenario-builder/motion-polish.css',
   'docs/user-guide/scenario-builder.html',
   'builders/component-web/scenario-runtime.js',
   'builders/component-web/scenario.css',
@@ -126,9 +149,17 @@ for (const marker of ['data-choose-folder', 'data-add-node', 'data-add-outcome',
     console.error(`Scenario Builder is missing workflow action: ${marker}`);
   }
 }
-if (!scenarioHtml.includes('href="visual-qa.css"')) {
-  failed = true;
-  console.error('Scenario Builder is missing the visual QA polish stylesheet.');
+for (const stylesheet of ['href="visual-qa.css"', 'href="motion-polish.css"']) {
+  if (!scenarioHtml.includes(stylesheet)) {
+    failed = true;
+    console.error(`Scenario Builder is missing polish stylesheet: ${stylesheet}`);
+  }
+}
+for (const label of ['Track decision quality score', 'Show score to learner']) {
+  if (!scenarioHtml.includes(label)) {
+    failed = true;
+    console.error(`Scenario Builder is missing score control label: ${label}`);
+  }
 }
 
 const scenarioVisualCss = fs.readFileSync(path.join(root, 'docs/scenario-builder/visual-qa.css'), 'utf8');
@@ -145,5 +176,19 @@ for (const marker of [
   }
 }
 
+const scenarioMotionCss = fs.readFileSync(path.join(root, 'docs/scenario-builder/motion-polish.css'), 'utf8');
+for (const marker of [
+  '.basics-grid .toggle-row',
+  'grid-column: span 2',
+  'grid-template-columns: 22px minmax(0,1fr)',
+  'input[type="checkbox"]:checked',
+  '@media (prefers-reduced-motion: reduce)',
+]) {
+  if (!scenarioMotionCss.includes(marker)) {
+    failed = true;
+    console.error(`Scenario Builder motion polish stylesheet is missing: ${marker}`);
+  }
+}
+
 if (failed) process.exit(1);
-console.log('Static navigation, help alignment, visual QA, and authoring workflow checks passed.');
+console.log('Static navigation, favicon, help alignment, visual QA, and authoring workflow checks passed.');
