@@ -12,18 +12,20 @@ const files = [
   'docs/user-guide/index.html',
   'docs/user-guide/course-composer.html',
   'docs/user-guide/scenario-builder.html',
+  'docs/user-guide/workbench.html',
 ];
 
-const htmlPages = [
-  'docs/index.html',
-  'docs/workbench/index.html',
-  'docs/component-studio/index.html',
-  'docs/course-composer/index.html',
-  'docs/scenario-builder/index.html',
-  'docs/user-guide/index.html',
-  'docs/user-guide/course-composer.html',
-  'docs/user-guide/scenario-builder.html',
-];
+function findHtmlFiles(dir) {
+  const output = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const absolute = path.join(dir, entry.name);
+    if (entry.isDirectory()) output.push(...findHtmlFiles(absolute));
+    else if (entry.isFile() && entry.name.endsWith('.html')) output.push(path.relative(root, absolute).replace(/\\/g, '/'));
+  }
+  return output.sort();
+}
+
+const htmlPages = findHtmlFiles(path.join(root, 'docs'));
 
 const forbidden = [
   /href=["']\.\/["']/g,
@@ -52,9 +54,15 @@ for (const relative of files) {
 
 for (const relative of htmlPages) {
   const source = read(relative);
-  if (!source.includes('experience-engine-favicon.svg')) {
+  for (const faviconMarker of ['experience-engine-favicon.svg', 'favicon.ico', 'rel="mask-icon"']) {
+    if (!source.includes(faviconMarker)) {
+      failed = true;
+      console.error(`${relative}: missing required favicon metadata: ${faviconMarker}`);
+    }
+  }
+  if (source.includes('Course Composer')) {
     failed = true;
-    console.error(`${relative}: missing Learning Experience Engine favicon metadata.`);
+    console.error(`${relative}: legacy public name "Course Composer" found. Use "Course Builder"; keep course-composer only as the internal route/ID.`);
   }
 }
 if (!fs.existsSync(path.join(root, 'docs/favicon.ico'))) {
@@ -63,6 +71,7 @@ if (!fs.existsSync(path.join(root, 'docs/favicon.ico'))) {
 }
 
 for (const requiredFile of [
+  'docs/assets/app-registry.js',
   'docs/assets/id-workbench.css',
   'docs/assets/id-workbench.js',
   'docs/workbench/index.html',
@@ -77,12 +86,29 @@ for (const requiredFile of [
   'docs/scenario-builder/motion-polish.css',
   'docs/user-guide/course-composer.html',
   'docs/user-guide/scenario-builder.html',
+  'docs/user-guide/workbench.html',
   'builders/component-web/scenario-runtime.js',
   'builders/component-web/scenario.css',
 ]) {
   if (!fs.existsSync(path.join(root, requiredFile))) {
     failed = true;
     console.error(`Missing authoring UI file: ${requiredFile}`);
+  }
+}
+
+const appRegistry = read('docs/assets/app-registry.js');
+for (const marker of [
+  "'course-composer'",
+  "displayName: 'Course Builder'",
+  "legacyDisplayNames: ['Course Composer']",
+  "'component-studio'",
+  "displayName: 'Interaction Builder'",
+  "'scenario-builder'",
+  "displayName: 'Scenario Builder'",
+]) {
+  if (!appRegistry.includes(marker)) {
+    failed = true;
+    console.error(`App registry is missing canonical naming contract: ${marker}`);
   }
 }
 
@@ -160,6 +186,7 @@ assertIncludes('docs/workbench/index.html', [
   'Create a similar version',
   'Download interaction JSON',
   'Advanced project data',
+  '../assets/app-registry.js',
 ], 'Learning Project Workbench');
 const workbenchAppJs = read('docs/workbench/workbench.js');
 for (const marker of ['customer-discovery', 'decision-practice', 'objection-handling', 'validScenario', 'openJson', 'renderPreview', 'importSourceFiles', 'downloadJson']) {
@@ -178,11 +205,13 @@ for (const marker of ['data-preview-focus', 'data-preview-refresh', 'data-copy',
 }
 assertIncludes('docs/component-studio/index.html', [
   'Interaction Builder',
+  'Course Builder',
   'What should the learner do?',
   'Source files & media',
   'Save & reuse',
   'Download editable project',
   'data-ux-advanced-toggle',
+  '../assets/app-registry.js',
   '../assets/id-workbench.css',
   '../assets/id-workbench.js',
 ], 'Interaction Builder');
@@ -191,10 +220,11 @@ const composerHtml = read('docs/course-composer/index.html');
 for (const marker of ['data-content-canvas', 'data-preview-start', 'data-preview-full', 'data-export-json', 'data-export-project']) {
   if (!composerHtml.includes(marker)) {
     failed = true;
-    console.error(`Course Composer is missing workflow action: ${marker}`);
+    console.error(`Course Builder is missing workflow action: ${marker}`);
   }
 }
 assertIncludes('docs/course-composer/index.html', [
+  'Course Builder',
   'Who is this for?',
   'Add source files & media',
   'Job aid / resource',
@@ -203,8 +233,9 @@ assertIncludes('docs/course-composer/index.html', [
   'Save & reuse',
   'Download editable project',
   'Reusable template',
+  '../assets/app-registry.js',
   '../assets/id-workbench.js',
-], 'Course Composer');
+], 'Course Builder');
 
 const scenarioHtml = read('docs/scenario-builder/index.html');
 for (const marker of ['data-choose-folder', 'data-add-node', 'data-add-outcome', 'data-preview-start', 'data-preview-focus', 'data-copy-json', 'data-export-json', 'data-export-project']) {
@@ -214,6 +245,7 @@ for (const marker of ['data-choose-folder', 'data-add-node', 'data-add-outcome',
   }
 }
 assertIncludes('docs/scenario-builder/index.html', [
+  'Course Builder',
   'What is the learner practicing?',
   'First decision',
   'data-score-settings',
@@ -224,6 +256,7 @@ assertIncludes('docs/scenario-builder/index.html', [
   'Preview as learner',
   'Save & reuse',
   'Download editable project',
+  '../assets/app-registry.js',
   '../assets/id-workbench.js',
 ], 'Scenario Builder');
 for (const stylesheet of ['href="visual-qa.css"', 'href="motion-polish.css"']) {
@@ -236,18 +269,20 @@ for (const stylesheet of ['href="visual-qa.css"', 'href="motion-polish.css"']) {
 assertIncludes('docs/index.html', [
   'Open Learning Project Workbench',
   'One project workspace',
+  'Course Builder',
   'AI project transformations',
   'Source template library',
   'Existing Rise content',
   'Existing Storyline content',
 ], 'Engine Home');
 
-assertIncludes('docs/user-guide/index.html', ['Interaction Builder Guide', 'Source files & media', 'Save & reuse', 'Advanced project data'], 'Interaction Builder Guide');
-assertIncludes('docs/user-guide/course-composer.html', ['Build the course in one canvas', 'Job aid / resource', 'Save & reuse'], 'Course Composer Guide');
-assertIncludes('docs/user-guide/scenario-builder.html', ['Build decision points like a simulation worksheet', 'Coaching feedback', 'Optional scoring', 'Save & reuse'], 'Scenario Builder Guide');
+assertIncludes('docs/user-guide/index.html', ['Interaction Builder Guide', 'Course Builder', 'Source files & media', 'Save & reuse', 'Advanced project data'], 'Interaction Builder Guide');
+assertIncludes('docs/user-guide/course-composer.html', ['Course Builder Guide', 'Build the course in one canvas', 'Job aid / resource', 'Save & reuse'], 'Course Builder Guide');
+assertIncludes('docs/user-guide/scenario-builder.html', ['Course Builder', 'Build decision points like a simulation worksheet', 'Coaching feedback', 'Optional scoring', 'Save & reuse'], 'Scenario Builder Guide');
+assertIncludes('docs/user-guide/workbench.html', ['Learning Project Workbench', 'Course Builder', 'AI transformation'], 'Workbench Guide');
 
 const workbenchJs = read('docs/assets/id-workbench.js');
-for (const marker of ['markTechnicalLabels', 'humanizeAssetDrawer', "'What happens next?'", 'Interaction Builder', 'ux-technical-field']) {
+for (const marker of ['markTechnicalLabels', 'humanizeAssetDrawer', "'What happens next?'", 'courseName', 'interactionName', 'ux-technical-field']) {
   if (!workbenchJs.includes(marker)) {
     failed = true;
     console.error(`ID workbench JS is missing: ${marker}`);
@@ -284,4 +319,4 @@ for (const marker of ['.basics-grid .toggle-row', 'input[type="checkbox"]:checke
 }
 
 if (failed) process.exit(1);
-console.log('Static navigation, favicon, Learning Project Workbench, human-centered ID UX, visual QA, and authoring workflow checks passed.');
+console.log(`Static navigation, canonical app naming, favicon coverage for ${htmlPages.length} HTML pages, Workbench UX, visual QA, and authoring workflow checks passed.`);
