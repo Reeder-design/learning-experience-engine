@@ -1,0 +1,276 @@
+/* Scenario Builder interaction polish layer.
+   Adds clearer score toggles, restrained motion, and more responsive visual feedback. */
+
+:root {
+  --motion-fast: 140ms;
+  --motion-base: 220ms;
+  --motion-slow: 360ms;
+  --ease-soft: cubic-bezier(.2,.7,.2,1);
+}
+
+/* Score settings should read as two distinct controls, not a run-on line. */
+.basics-grid .toggle-row {
+  grid-column: span 2;
+  display: grid !important;
+  grid-template-columns: 22px minmax(0,1fr);
+  align-items: center;
+  gap: 11px;
+  min-height: 52px;
+  padding: 11px 13px;
+  border: 1px solid rgba(80,132,132,.22);
+  border-radius: 13px;
+  background: linear-gradient(145deg,#fff,#f6faf7);
+  cursor: pointer;
+  transition: transform var(--motion-fast) var(--ease-soft), border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, background var(--motion-fast) ease;
+}
+
+.basics-grid .toggle-row:hover {
+  transform: translateY(-1px);
+  border-color: rgba(121,201,158,.65);
+  box-shadow: 0 8px 20px rgba(52,74,66,.07);
+  background: #f8fcf9;
+}
+
+.basics-grid .toggle-row:focus-within {
+  border-color: var(--mint);
+  box-shadow: 0 0 0 3px rgba(151,219,79,.16), 0 8px 22px rgba(52,74,66,.07);
+}
+
+.basics-grid .toggle-row input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  width: 20px;
+  height: 20px;
+  min-height: 20px;
+  margin: 0;
+  padding: 0;
+  border: 1.5px solid rgba(80,132,132,.55);
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  transition: background var(--motion-fast) ease, border-color var(--motion-fast) ease, transform var(--motion-fast) var(--ease-soft);
+}
+
+.basics-grid .toggle-row input[type="checkbox"]:checked {
+  border-color: var(--pine);
+  background: linear-gradient(135deg,var(--pine),var(--mint));
+}
+
+.basics-grid .toggle-row input[type="checkbox"]:checked::after {
+  content: "✓";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.basics-grid .toggle-row input[type="checkbox"]:active {
+  transform: scale(.92);
+}
+
+.basics-grid .toggle-row > span {
+  display: block;
+  min-width: 0;
+  margin: 0;
+  color: var(--ink);
+  font-size: .78rem;
+  font-weight: 800 !important;
+  line-height: 1.35;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* Stronger visual rhythm without turning the authoring tool into a motion demo. */
+.workflow-section {
+  animation: section-arrive var(--motion-slow) var(--ease-soft) both;
+}
+.workflow-section:nth-of-type(2){animation-delay:40ms}
+.workflow-section:nth-of-type(3){animation-delay:80ms}
+.workflow-section:nth-of-type(4){animation-delay:120ms}
+.workflow-section:nth-of-type(5){animation-delay:160ms}
+
+@keyframes section-arrive {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.panel,
+.scenario-edit-card,
+.choice-card,
+.asset-card,
+.learner-card {
+  transition: transform var(--motion-base) var(--ease-soft), box-shadow var(--motion-base) ease, border-color var(--motion-base) ease, background var(--motion-base) ease;
+}
+
+.scenario-edit-card {
+  position: relative;
+}
+
+.scenario-edit-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 22px;
+  right: 22px;
+  height: 3px;
+  border-radius: 0 0 999px 999px;
+  background: linear-gradient(90deg,transparent,var(--mint),var(--lime),transparent);
+  opacity: .42;
+  transform: scaleX(.45);
+  transition: opacity var(--motion-base) ease, transform var(--motion-base) var(--ease-soft);
+  pointer-events: none;
+}
+
+.scenario-edit-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(80,132,132,.32);
+  box-shadow: 0 16px 38px rgba(52,74,66,.11);
+}
+
+.scenario-edit-card:hover::before {
+  opacity: .9;
+  transform: scaleX(1);
+}
+
+.choice-card:hover,
+.asset-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(121,201,158,.5);
+  box-shadow: 0 8px 22px rgba(52,74,66,.07);
+}
+
+.workflow-strip span {
+  padding: 4px 7px;
+  border-radius: 999px;
+  transition: background var(--motion-fast) ease, color var(--motion-fast) ease, transform var(--motion-fast) var(--ease-soft);
+}
+
+.workflow-strip span:hover {
+  color: var(--ink);
+  background: #f2f8f4;
+  transform: translateY(-1px);
+}
+
+.workflow-strip strong {
+  transition: transform var(--motion-fast) var(--ease-soft), background var(--motion-fast) ease;
+}
+.workflow-strip span:hover strong {
+  transform: scale(1.08);
+  background: #e4f4ea;
+}
+
+.header-link,
+.header-actions button,
+.asset-actions button,
+.preview-actions button,
+.export-actions button,
+.add-actions button,
+.card-actions button,
+.choices-head button,
+.help-dot,
+.learner-feedback button,
+.learner-replay {
+  transition: transform var(--motion-fast) var(--ease-soft), box-shadow var(--motion-fast) ease, border-color var(--motion-fast) ease, background var(--motion-fast) ease;
+}
+
+.header-link:hover,
+.header-actions button:hover,
+.asset-actions button:hover,
+.preview-actions button:hover,
+.export-actions button:hover,
+.add-actions button:hover,
+.card-actions button:hover,
+.choices-head button:hover,
+.learner-feedback button:hover,
+.learner-replay:hover {
+  transform: translateY(-1px);
+}
+
+.primary:hover,
+.preview-actions .primary:hover,
+.export-actions .primary:hover,
+.add-actions .primary:hover {
+  box-shadow: 0 10px 24px rgba(63,104,104,.2);
+}
+
+.help-dot:hover {
+  transform: rotate(5deg) scale(1.05);
+}
+
+input,
+textarea,
+select {
+  transition: border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, background var(--motion-fast) ease;
+}
+
+input:hover,
+textarea:hover,
+select:hover {
+  border-color: rgba(80,132,132,.42);
+}
+
+.path-check {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #f7faf8;
+}
+.path-check.ok { background: #edf7f1; }
+.path-check.warn { background: #fbf4ea; }
+
+.preview-shell {
+  background:
+    radial-gradient(circle at 92% 8%,rgba(151,219,79,.08),transparent 16rem),
+    rgba(255,255,255,.95);
+}
+
+.focused-preview[open] {
+  animation: dialog-in var(--motion-base) var(--ease-soft) both;
+}
+@keyframes dialog-in {
+  from { opacity: 0; transform: translateY(10px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (max-width: 850px) {
+  .basics-grid .toggle-row {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 600px) {
+  .basics-grid .toggle-row {
+    min-height: 50px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workflow-section,
+  .focused-preview[open] { animation: none; }
+  .panel,
+  .scenario-edit-card,
+  .choice-card,
+  .asset-card,
+  .learner-card,
+  .workflow-strip span,
+  .workflow-strip strong,
+  .header-link,
+  .header-actions button,
+  .asset-actions button,
+  .preview-actions button,
+  .export-actions button,
+  .add-actions button,
+  .card-actions button,
+  .choices-head button,
+  .help-dot,
+  input,
+  textarea,
+  select { transition: none; }
+}
