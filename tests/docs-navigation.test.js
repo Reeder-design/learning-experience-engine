@@ -4,6 +4,7 @@ const path = require('path');
 const root = path.resolve(__dirname, '..');
 const files = [
   'docs/index.html',
+  'docs/workbench/index.html',
   'docs/component-studio/index.html',
   'docs/component-studio/help.js',
   'docs/course-composer/index.html',
@@ -15,6 +16,7 @@ const files = [
 
 const htmlPages = [
   'docs/index.html',
+  'docs/workbench/index.html',
   'docs/component-studio/index.html',
   'docs/course-composer/index.html',
   'docs/scenario-builder/index.html',
@@ -26,6 +28,7 @@ const htmlPages = [
 const forbidden = [
   /href=["']\.\/["']/g,
   /href=["']\.\.\/["']/g,
+  /href=["'][^"']*workbench\/["']/g,
   /href=["'][^"']*component-studio\/["']/g,
   /href=["'][^"']*course-composer\/["']/g,
   /href=["'][^"']*scenario-builder\/["']/g,
@@ -62,6 +65,9 @@ if (!fs.existsSync(path.join(root, 'docs/favicon.ico'))) {
 for (const requiredFile of [
   'docs/assets/id-workbench.css',
   'docs/assets/id-workbench.js',
+  'docs/workbench/index.html',
+  'docs/workbench/workbench.css',
+  'docs/workbench/workbench.js',
   'docs/course-composer/composer.js',
   'docs/course-composer/course-package.js',
   'docs/component-studio/workflow-v2.css',
@@ -140,6 +146,29 @@ assertOrder('docs/component-studio/index.html', ['id="choose"', 'id="assets"', '
 assertOrder('docs/course-composer/index.html', ['id="course-basics"', 'id="project-assets"', 'id="course-content"', 'id="course-preview"', 'id="course-export"']);
 assertOrder('docs/scenario-builder/index.html', ['id="basics-section"', 'id="assets-section"', 'id="build-section"', 'id="preview-section"', 'id="export-section"']);
 
+assertIncludes('docs/workbench/index.html', [
+  'Learning Project Workbench',
+  'Start from a template',
+  'Open existing JSON',
+  '1 · Source',
+  '2 · Edit',
+  '3 · Preview',
+  '4 · AI actions',
+  '5 · Save & reuse',
+  'Project brief / source outline',
+  'Sanitize for portfolio',
+  'Create a similar version',
+  'Download interaction JSON',
+  'Advanced project data',
+], 'Learning Project Workbench');
+const workbenchAppJs = read('docs/workbench/workbench.js');
+for (const marker of ['customer-discovery', 'decision-practice', 'objection-handling', 'validScenario', 'openJson', 'renderPreview', 'importSourceFiles', 'downloadJson']) {
+  if (!workbenchAppJs.includes(marker)) {
+    failed = true;
+    console.error(`Learning Project Workbench JS is missing: ${marker}`);
+  }
+}
+
 const studioHtml = read('docs/component-studio/index.html');
 for (const marker of ['data-preview-focus', 'data-preview-refresh', 'data-copy', 'data-download', 'data-export-project']) {
   if (!studioHtml.includes(marker)) {
@@ -205,10 +234,10 @@ for (const stylesheet of ['href="visual-qa.css"', 'href="motion-polish.css"']) {
 }
 
 assertIncludes('docs/index.html', [
-  'What do you want to make?',
-  'Build something',
-  'Reuse instead of rebuild',
-  'Reusable templates',
+  'Open Learning Project Workbench',
+  'One project workspace',
+  'AI project transformations',
+  'Source template library',
   'Existing Rise content',
   'Existing Storyline content',
 ], 'Engine Home');
@@ -255,4 +284,4 @@ for (const marker of ['.basics-grid .toggle-row', 'input[type="checkbox"]:checke
 }
 
 if (failed) process.exit(1);
-console.log('Static navigation, favicon, human-centered ID UX, visual QA, and authoring workflow checks passed.');
+console.log('Static navigation, favicon, Learning Project Workbench, human-centered ID UX, visual QA, and authoring workflow checks passed.');
