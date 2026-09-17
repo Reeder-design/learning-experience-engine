@@ -114,6 +114,33 @@ body.show-advanced-fields .ux-technical-field { display:grid !important; }
   cursor:not-allowed !important;
 }
 
+/* Cross-tool workflow links should look like actions, not stray text links. */
+.studio-export-actions a,
+.export-actions a,
+.asset-flow-button {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:42px;
+  padding:9px 12px;
+  border:1px solid var(--ux-line);
+  border-radius:999px;
+  background:#fff;
+  color:var(--ux-ink);
+  text-decoration:none;
+  font-size:.75rem;
+  font-weight:800;
+  line-height:1.2;
+  transition:transform .15s ease,border-color .15s ease,background .15s ease;
+}
+.studio-export-actions a:hover,
+.export-actions a:hover,
+.asset-flow-button:hover {
+  transform:translateY(-1px);
+  border-color:var(--ux-mint);
+  background:var(--ux-soft);
+}
+
 /* Keep hidden internal fields from leaving awkward empty two-column rows. */
 .field-row:has(.ux-technical-field:not(:only-child)) { grid-template-columns:1fr; }
 body.show-advanced-fields .field-row:has(.ux-technical-field:not(:only-child)) { grid-template-columns:repeat(2,minmax(0,1fr)); }
@@ -121,8 +148,9 @@ body.show-advanced-fields .field-row:has(.ux-technical-field:not(:only-child)) {
 @media(max-width:700px){
   .ux-settings-grid{grid-template-columns:1fr}
   .ux-settings-grid .wide{grid-column:auto}
+  .studio-export-actions a,.export-actions a,.asset-flow-button{width:100%}
 }
 
 @media(prefers-reduced-motion:reduce){
-  .ux-advanced-toggle{transition:none}
+  .ux-advanced-toggle,.studio-export-actions a,.export-actions a,.asset-flow-button{transition:none}
 }
