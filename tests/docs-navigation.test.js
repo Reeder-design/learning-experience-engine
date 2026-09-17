@@ -69,6 +69,7 @@ for (const requiredFile of [
   'docs/component-studio/workflow-v2.css',
   'docs/scenario-builder/scenario-builder.js',
   'docs/scenario-builder/scenario-package.js',
+  'docs/scenario-builder/visual-qa.css',
   'docs/user-guide/scenario-builder.html',
   'builders/component-web/scenario-runtime.js',
   'builders/component-web/scenario.css',
@@ -125,6 +126,24 @@ for (const marker of ['data-choose-folder', 'data-add-node', 'data-add-outcome',
     console.error(`Scenario Builder is missing workflow action: ${marker}`);
   }
 }
+if (!scenarioHtml.includes('href="visual-qa.css"')) {
+  failed = true;
+  console.error('Scenario Builder is missing the visual QA polish stylesheet.');
+}
+
+const scenarioVisualCss = fs.readFileSync(path.join(root, 'docs/scenario-builder/visual-qa.css'), 'utf8');
+for (const marker of [
+  '.choice-card label:has(select[data-choice-field="targetId"])',
+  '.choice-card select[data-choice-field="targetId"]',
+  'min-height: 48px',
+  'text-overflow: ellipsis',
+  '@media (max-width: 600px)',
+]) {
+  if (!scenarioVisualCss.includes(marker)) {
+    failed = true;
+    console.error(`Scenario Builder visual QA stylesheet is missing: ${marker}`);
+  }
+}
 
 if (failed) process.exit(1);
-console.log('Static navigation, help alignment, and authoring workflow checks passed.');
+console.log('Static navigation, help alignment, visual QA, and authoring workflow checks passed.');
