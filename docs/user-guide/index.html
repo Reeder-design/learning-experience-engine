@@ -4,123 +4,43 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#4A4238">
-  <title>User Guide · Learning Experience Engine</title>
-  <link rel="icon" type="image/svg+xml" href="../assets/experience-engine-favicon.svg">
+  <title>Interaction Builder Guide · Learning Experience Engine</title>
+  <link rel="icon" type="image/svg+xml" sizes="any" href="../assets/experience-engine-favicon.svg?v=3">
+  <link rel="shortcut icon" href="../assets/experience-engine-favicon.svg?v=3">
+  <link rel="mask-icon" href="../assets/experience-engine-favicon.svg?v=3" color="#508484">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Open+Sans:wght@400;500;600;700&display=swap');
-    :root{--taupe:#4A4238;--charcoal:#4D5359;--pine:#508484;--mint:#79C99E;--lime:#97DB4F;--ink:#24302D;--muted:#6F777D;--line:rgba(80,132,132,.2);--off:#F7F8F5;--shadow:0 18px 48px rgba(52,74,66,.11)}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:'Open Sans',Arial,sans-serif;color:var(--ink);background:linear-gradient(#fff,var(--off))}a{color:var(--pine)}.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:13px 22px;color:#fff;background:linear-gradient(110deg,#2f3438,var(--taupe) 52%,#3f6868);box-shadow:0 10px 26px rgba(35,45,42,.15)}.topbar-left,.topbar-actions{display:flex;align-items:center;gap:9px}.brand{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none}.brand-mark{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--pine),var(--mint));font-family:Montserrat,sans-serif;font-weight:800}.brand strong,.brand small{display:block}.brand small{color:#cdebd9;font-size:.7rem}.back,.action{display:inline-flex;align-items:center;gap:6px;padding:8px 11px;border:1px solid rgba(255,255,255,.2);border-radius:999px;color:#fff;text-decoration:none;font-size:.75rem;font-weight:800;background:rgba(255,255,255,.06)}.action.primary{border:0;background:linear-gradient(135deg,var(--mint),var(--lime));color:#27312e}.layout{display:grid;grid-template-columns:260px minmax(0,820px);gap:44px;max-width:1160px;margin:0 auto;padding:42px 28px 90px}.toc{position:sticky;top:92px;align-self:start;padding:18px;border:1px solid var(--line);border-radius:18px;background:#fff;box-shadow:0 10px 30px rgba(52,74,66,.06)}.toc strong{display:block;margin-bottom:10px;font-family:Montserrat,sans-serif}.toc a{display:block;padding:7px 9px;border-radius:9px;color:var(--muted);text-decoration:none;font-size:.8rem}.toc a:hover{background:#eef7f1;color:var(--pine)}.content{min-width:0}.hero{padding:34px 0 26px;border-bottom:1px solid var(--line)}.eyebrow{color:var(--pine);font-size:.68rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}.hero h1{margin:7px 0 12px;font-family:Montserrat,sans-serif;font-size:clamp(2.4rem,6vw,4.7rem);letter-spacing:-.05em;line-height:.96}.hero p{max-width:700px;margin:0;color:var(--muted);font-size:1rem;line-height:1.7}.guide-section{scroll-margin-top:96px;padding:34px 0;border-bottom:1px solid var(--line)}.guide-section h2{margin:4px 0 10px;font-family:Montserrat,sans-serif;font-size:1.75rem}.guide-section h3{margin:25px 0 8px;font-family:Montserrat,sans-serif;font-size:1.05rem}.guide-section p,.guide-section li{color:#52605b;line-height:1.7}.steps{display:grid;gap:12px;margin:18px 0}.step{display:grid;grid-template-columns:34px 1fr;gap:12px;padding:14px;border:1px solid var(--line);border-radius:14px;background:#fff}.step>strong{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#edf6f1;color:var(--pine)}.step h3{margin:0 0 3px}.step p{margin:0;font-size:.88rem}.callout{margin:18px 0;padding:15px 17px;border-left:5px solid var(--mint);border-radius:12px;background:#f3f9f5;color:#4d5d57}.callout strong{color:var(--ink)}code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.tree{overflow:auto;padding:16px;border-radius:14px;background:#202826;color:#d8f0e3;font-size:.8rem;line-height:1.6}.component-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.component-card{padding:16px;border:1px solid var(--line);border-radius:15px;background:#fff}.component-card h3{margin:0 0 5px}.component-card p{margin:0;font-size:.85rem}.mini-table{width:100%;border-collapse:collapse;margin-top:14px;font-size:.84rem}.mini-table th,.mini-table td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.mini-table th{font-family:Montserrat,sans-serif}.footer-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}.button{display:inline-flex;padding:10px 14px;border-radius:999px;text-decoration:none;font-weight:800}.button.primary{background:linear-gradient(135deg,var(--pine),#3f6868);color:#fff}.button.secondary{border:1px solid var(--line);background:#fff;color:var(--ink)}@media(max-width:860px){.layout{display:block}.toc{position:static;margin-bottom:28px}.component-grid{grid-template-columns:1fr}.topbar{flex-wrap:wrap}.topbar-actions{width:100%;justify-content:flex-end}}@media(max-width:600px){.layout{padding:28px 18px 70px}.brand span:last-child{display:none}.topbar-actions{justify-content:flex-start;overflow:auto}.mini-table{font-size:.76rem}}
+    :root{--taupe:#4A4238;--pine:#508484;--mint:#79C99E;--lime:#97DB4F;--ink:#24302D;--muted:#6F777D;--line:rgba(80,132,132,.2);--off:#F7F8F5}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:'Open Sans',Arial,sans-serif;color:var(--ink);background:linear-gradient(#fff,var(--off))}.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 22px;color:#fff;background:linear-gradient(110deg,#2f3438,var(--taupe) 52%,#3f6868);box-shadow:0 10px 26px rgba(35,45,42,.15)}.topbar-left,.topbar-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.brand,.nav{display:flex;align-items:center;gap:9px;color:#fff;text-decoration:none}.brand-mark{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--pine),var(--mint));font-family:Montserrat,sans-serif;font-weight:800}.brand strong,.brand small{display:block}.brand small{font-size:.68rem;color:#cdebd9}.nav{padding:8px 11px;border:1px solid rgba(255,255,255,.2);border-radius:999px;background:rgba(255,255,255,.06);font-size:.75rem;font-weight:800}.nav.primary{border:0;background:linear-gradient(135deg,var(--mint),var(--lime));color:#27312e}.layout{display:grid;grid-template-columns:250px minmax(0,820px);gap:42px;max-width:1130px;margin:0 auto;padding:42px 26px 90px}.toc{position:sticky;top:90px;align-self:start;padding:18px;border:1px solid var(--line);border-radius:18px;background:#fff}.toc strong{display:block;margin-bottom:9px;font-family:Montserrat,sans-serif}.toc a{display:block;padding:7px 8px;border-radius:8px;color:var(--muted);font-size:.79rem;text-decoration:none}.toc a:hover{background:#eef7f1;color:var(--pine)}.hero{padding:30px 0;border-bottom:1px solid var(--line)}.eyebrow{color:var(--pine);font-size:.66rem;font-weight:800;letter-spacing:.11em;text-transform:uppercase}.hero h1,.section h2,.section h3{font-family:Montserrat,sans-serif}.hero h1{margin:7px 0 12px;font-size:clamp(2.4rem,6vw,4.6rem);line-height:.96;letter-spacing:-.05em}.hero p,.section p,.section li{color:#52605b;line-height:1.7}.section{scroll-margin-top:92px;padding:32px 0;border-bottom:1px solid var(--line)}.section h2{margin:5px 0 10px;font-size:1.7rem}.section h3{margin:24px 0 7px;font-size:1rem}.steps{display:grid;gap:10px}.step{display:grid;grid-template-columns:34px 1fr;gap:12px;padding:14px;border:1px solid var(--line);border-radius:14px;background:#fff}.step>strong{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#edf6f1;color:var(--pine)}.step h3,.step p{margin:0}.callout{padding:14px 16px;border-left:5px solid var(--mint);border-radius:11px;background:#f3f9f5}.grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}.card{padding:15px;border:1px solid var(--line);border-radius:14px;background:#fff}.card h3{margin:0 0 5px}.card p{margin:0;font-size:.84rem}.table{width:100%;border-collapse:collapse;font-size:.83rem}.table th,.table td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.button{display:inline-flex;padding:10px 14px;border-radius:999px;background:linear-gradient(135deg,var(--pine),#3f6868);color:#fff;text-decoration:none;font-weight:800;margin-top:18px}.muted{font-size:.85rem;color:var(--muted)}@media(max-width:820px){.layout{display:block}.toc{position:static;margin-bottom:24px}.topbar{flex-wrap:wrap}.topbar-actions{width:100%;overflow:auto}.grid{grid-template-columns:1fr}}@media(max-width:560px){.layout{padding:26px 17px 70px}.brand span:last-child{display:none}}
   </style>
 </head>
 <body>
-  <header class="topbar">
-    <div class="topbar-left">
-      <a class="back" href="../index.html">← Engine home</a>
-      <a class="brand" href="../index.html"><span class="brand-mark">LX</span><span><strong>Learning Experience Engine</strong><small>User Guide</small></span></a>
-    </div>
-    <div class="topbar-actions"><a class="action primary" href="../component-studio/index.html">Open Component Studio →</a></div>
-  </header>
+  <header class="topbar"><div class="topbar-left"><a class="nav" href="../index.html">← Engine home</a><a class="brand" href="../index.html"><span class="brand-mark">LX</span><span><strong>Learning Experience Engine</strong><small>Interaction Builder Guide</small></span></a></div><div class="topbar-actions"><a class="nav" href="course-composer.html">Course guide</a><a class="nav" href="scenario-builder.html">Scenario guide</a><a class="nav primary" href="../component-studio/index.html">Open Interaction Builder →</a></div></header>
 
   <div class="layout">
-    <nav class="toc" aria-label="User guide contents">
-      <strong>On this page</strong>
-      <a href="#getting-started">Getting started</a>
-      <a href="#choose-a-component">Choose a component</a>
-      <a href="#author-the-basics">Author the basics</a>
-      <a href="#project-assets">Project assets</a>
-      <a href="#component-fields">Component fields</a>
-      <a href="#preview-and-test">Preview and test</a>
-      <a href="#generated-json">Generated JSON</a>
-      <a href="#save-and-export">Save and export</a>
-      <a href="#privacy">Privacy</a>
-      <a href="#troubleshooting">Troubleshooting</a>
-    </nav>
+    <nav class="toc" aria-label="User guide contents"><strong>On this page</strong><a href="#getting-started">Getting started</a><a href="#choose-a-component">Choose the learning task</a><a href="#project-assets">Source files & media</a><a href="#author-the-basics">Interaction basics</a><a href="#component-fields">Build the interaction</a><a href="#preview-and-test">Preview</a><a href="#save-and-export">Save & reuse</a><a href="#generated-json">Advanced project data</a><a href="#privacy">Privacy</a><a href="#troubleshooting">Troubleshooting</a></nav>
 
-    <main class="content">
-      <section class="hero">
-        <div class="eyebrow">Learning Experience Engine</div>
-        <h1>Component Studio User Guide</h1>
-        <p>Use Component Studio to build reusable learning interactions from normal form fields, local source files, and assets—without hand-writing JSON or constructing the interaction in Storyline first.</p>
-      </section>
+    <main>
+      <section class="hero"><div class="eyebrow">Learning Experience Engine</div><h1>Interaction Builder Guide</h1><p>Build reusable learning interactions without recreating the same Storyline mechanics every time. Normal authoring happens through instructional-design fields; internal IDs and structured project data stay under Advanced.</p></section>
 
-      <section class="guide-section" id="getting-started">
-        <div class="eyebrow">Start here</div><h2>Getting started</h2>
-        <div class="steps">
-          <div class="step"><strong>1</strong><div><h3>Choose</h3><p>Select the interaction pattern that best matches the learning task.</p></div></div>
-          <div class="step"><strong>2</strong><div><h3>Author</h3><p>Add the learning content, source context, and media/assets.</p></div></div>
-          <div class="step"><strong>3</strong><div><h3>Preview</h3><p>Interact with the learner preview and verify the completion behavior.</p></div></div>
-          <div class="step"><strong>4</strong><div><h3>Export</h3><p>Save component JSON alone or export a complete portable project ZIP.</p></div></div>
-        </div>
-      </section>
+      <section class="section" id="getting-started"><div class="eyebrow">Start here</div><h2>The five-step workflow</h2><div class="steps"><div class="step"><strong>1</strong><div><h3>Choose</h3><p>Start with what the learner needs to do: browse, explore, answer, watch, or listen.</p></div></div><div class="step"><strong>2</strong><div><h3>Source files & media</h3><p>Add reference content, images, video, audio, captions, and documents before building.</p></div></div><div class="step"><strong>3</strong><div><h3>Build</h3><p>Write the content and behavior using normal ID-facing fields.</p></div></div><div class="step"><strong>4</strong><div><h3>Preview</h3><p>Test the interaction and use Preview as learner for a focused view.</p></div></div><div class="step"><strong>5</strong><div><h3>Save & reuse</h3><p>Download the editable project or the interaction file you can add to Course Composer.</p></div></div></div></section>
 
-      <section class="guide-section" id="choose-a-component">
-        <div class="eyebrow">Step 1</div><h2>Choose a component</h2>
-        <div class="component-grid">
-          <article class="component-card" id="carousel"><h3>Carousel</h3><p>Best for a set of related items learners should browse, compare, or review one group at a time.</p></article>
-          <article class="component-card" id="hotspot-reveal"><h3>Hotspot reveal</h3><p>Best for maps, diagrams, workflows, equipment, interfaces, or visual exploration.</p></article>
-          <article class="component-card" id="assessment"><h3>Assessment</h3><p>Best for focused questions with answer-level feedback and completion.</p></article>
-          <article class="component-card" id="media-presentation"><h3>Media presentation</h3><p>Best for guided video/audio sequences, demonstrations, or narrated examples.</p></article>
-        </div>
-        <div class="callout"><strong>Tip:</strong> switching component types starts from that type's template. Export your current work first if you want to keep it.</div>
-      </section>
+      <section class="section" id="choose-a-component"><div class="eyebrow">Step 1</div><h2>Choose by learner behavior</h2><div class="grid"><article class="card" id="carousel"><h3>Browse or compare · Carousel</h3><p>Use for examples, benefits, personas, product signals, steps, or grouped content learners should move through.</p></article><article class="card" id="hotspot-reveal"><h3>Explore a visual · Hotspot</h3><p>Use for diagrams, workflows, maps, interfaces, equipment, or any image learners should inspect.</p></article><article class="card" id="assessment"><h3>Practice with a question · Knowledge check</h3><p>Use for a focused question with answer-level coaching feedback.</p></article><article class="card" id="media-presentation"><h3>Watch or listen · Guided media</h3><p>Use for demonstrations, narrated examples, walkthroughs, or a sequence of audio/video segments.</p></article></div><div class="callout"><strong>Rule of thumb:</strong> choose the interaction based on the learner action, not the widget name.</div></section>
 
-      <section class="guide-section" id="author-the-basics">
-        <div class="eyebrow">Step 2</div><h2>Author the basics</h2>
-        <table class="mini-table"><tr><th>Field</th><th>Purpose</th></tr><tr><td>Title</td><td>The learner-facing name of the interaction and the basis for its generated ID.</td></tr><tr><td>Description</td><td>Explains the purpose or context of the interaction.</td></tr><tr><td>Learner instruction</td><td>Tells the learner what action to take.</td></tr></table>
-      </section>
+      <section class="section" id="project-assets"><div class="eyebrow">Step 2</div><h2>Add source files & media</h2><p>Add your source folder when possible. The builder reads the files locally and can fill compatible image/media fields while you author.</p><table class="table"><tr><th>You add</th><th>How it helps</th></tr><tr><td>Reference content (TXT, MD, CSV, JSON)</td><td>Keeps source notes close to the interaction while you build.</td></tr><tr><td>Images</td><td>Available for carousels, visual exploration, and supporting media.</td></tr><tr><td>Video / audio</td><td>Available to guided-media interactions.</td></tr><tr><td>Captions</td><td>Matching caption files can be recognized for local preview.</td></tr><tr><td>Documents</td><td>Stay packaged with the editable project for reuse.</td></tr></table><div class="callout"><strong>Privacy:</strong> selecting a file does not commit it to GitHub. Confidential source files can stay in your private local workspace.</div></section>
 
-      <section class="guide-section" id="project-assets">
-        <div class="eyebrow">Files + media</div><h2>Project Assets</h2>
-        <p>Open <strong>Project Assets</strong> in Component Studio and select a project folder, selected files, or an existing Studio project ZIP. Studio classifies the files and generates portable relative paths.</p>
-        <pre class="tree">my-interaction/
-├── context/
-│   └── source-content.txt
-├── assets/
-│   ├── images/
-│   ├── video/
-│   ├── audio/
-│   ├── captions/
-│   └── documents/
-└── component.json</pre>
-        <p>The structure is recommended rather than required. Studio can classify many files by extension even when they are selected individually.</p>
-        <table class="mini-table"><tr><th>File type</th><th>Studio use</th></tr><tr><td>JPG, PNG, SVG, WebP</td><td>Images and visual backgrounds</td></tr><tr><td>MP4, WebM, MOV</td><td>Video media</td></tr><tr><td>MP3, WAV, M4A</td><td>Audio media</td></tr><tr><td>VTT, SRT</td><td>Captions/subtitles</td></tr><tr><td>PDF, DOCX, PPTX</td><td>Reference/supporting documents</td></tr><tr><td>TXT, MD, CSV, JSON</td><td>Source context available inside the Asset Library</td></tr></table>
-      </section>
+      <section class="section" id="author-the-basics"><div class="eyebrow">Step 3</div><h2>Set the interaction basics</h2><p>Give the interaction a learner-facing title, describe what it is helping the learner understand, and write a clear action instruction. Internal IDs are generated underneath and are hidden during normal authoring.</p></section>
 
-      <section class="guide-section" id="component-fields">
-        <div class="eyebrow">Interaction content</div><h2>Component-specific fields</h2>
-        <h3>Carousel</h3><p>Set items per page, then add item titles, body text, image paths, and useful alt text.</p>
-        <h3>Hotspot reveal</h3><p>Select a background image and position each hotspot using X/Y percentages from 0–100. Add a short label, title, and reveal content.</p>
-        <h3>Assessment</h3><p>Add questions and answer options, identify the correct option, and write feedback for each response.</p>
-        <h3>Media presentation</h3><p>Add video/audio segments, choose the media type, assign the path, and add captions/transcript content. Matching VTT files can be recognized in local preview.</p>
-      </section>
+      <section class="section" id="component-fields"><div class="eyebrow">Build</div><h2>Add the learning content</h2><h3>Carousel</h3><p>Add the items learners should browse or compare. Each item can have a title, explanation, image, and alt text.</p><h3>Visual exploration</h3><p>Add a background image, then define what each hotspot should reveal. Position values are currently entered as percentages; direct click-and-place positioning is a future usability upgrade.</p><h3>Knowledge check</h3><p>Write the question, answer choices, identify the correct response, and give useful coaching feedback.</p><h3>Guided media</h3><p>Add each audio/video segment in sequence with captions or transcript content where needed.</p><div class="callout"><strong>Advanced fields:</strong> use the Advanced fields button only when you need to inspect internal identifiers. Most authoring does not require them.</div></section>
 
-      <section class="guide-section" id="preview-and-test">
-        <div class="eyebrow">Step 3</div><h2>Preview and test</h2>
-        <p>The right-hand preview is a learner-facing simulation. Click through the component, test feedback, inspect media, and verify when the status changes from <strong>In progress</strong> to <strong>Complete</strong>.</p>
-        <div class="callout"><strong>Preview assets are local:</strong> when you choose files from your Mac, Studio creates temporary browser URLs so you can test them without uploading those files anywhere.</div>
-      </section>
+      <section class="section" id="preview-and-test"><div class="eyebrow">Step 4</div><h2>Preview</h2><p>Use the embedded preview while you author. Choose <strong>Preview as learner</strong> when you want to focus on the experience without the editing controls, and <strong>Restart preview</strong> when you want to test completion again.</p></section>
 
-      <section class="guide-section" id="generated-json">
-        <div class="eyebrow">Behind the interface</div><h2>Generated JSON</h2>
-        <p>Generated JSON is the engine-native component definition. Component Studio writes and updates it for you. You can inspect or copy it when useful, but normal authoring should happen through the form.</p>
-      </section>
+      <section class="section" id="save-and-export"><div class="eyebrow">Step 5</div><h2>Save & reuse</h2><table class="table"><tr><th>Option</th><th>Use it when…</th></tr><tr><td>Download editable project</td><td>You want the interaction plus selected source files/media together so you can continue editing later.</td></tr><tr><td>Download interaction for a course</td><td>You want to add this interaction to Course Composer now.</td></tr><tr><td>Copy project data</td><td>You are doing advanced engine/debug work. Normal authoring does not require this.</td></tr></table><div class="callout"><strong>Coming next:</strong> reusable templates and a direct Add to course handoff will remove the download/import step.</div></section>
 
-      <section class="guide-section" id="save-and-export">
-        <div class="eyebrow">Step 4</div><h2>Save and export</h2>
-        <table class="mini-table"><tr><th>Option</th><th>What it contains</th></tr><tr><td>Copy JSON</td><td>Copies the current engine component definition.</td></tr><tr><td>Export JSON</td><td>Downloads the component definition as a .json file.</td></tr><tr><td>Export Project ZIP</td><td>Bundles component.json plus the local context and assets selected for the project.</td></tr><tr><td>Import Project ZIP</td><td>Restores an exported Studio project package for continued authoring.</td></tr></table>
-      </section>
+      <section class="section" id="generated-json"><div class="eyebrow">Advanced</div><h2>Advanced project data</h2><p>The structured data underneath the form is what makes the interaction portable and reusable. You normally do not need to edit it. It remains available for debugging, integration, and future automated workflows.</p></section>
 
-      <section class="guide-section" id="privacy">
-        <div class="eyebrow">Important</div><h2>Privacy and confidential work</h2>
-        <p>Component Studio is hosted as a static GitHub Pages app, but the local files you explicitly select are read by your browser and are not automatically committed or uploaded to GitHub. Keep confidential project folders in your private local workspace and never place them inside the public engine repository.</p>
-      </section>
+      <section class="section" id="privacy"><div class="eyebrow">Important</div><h2>Privacy and confidential work</h2><p>The authoring app is public, but files you explicitly select are read locally in your browser. Keep confidential source folders outside the public repository and only export or publish sanitized content intentionally.</p></section>
 
-      <section class="guide-section" id="troubleshooting">
-        <div class="eyebrow">Help</div><h2>Troubleshooting</h2>
-        <h3>I do not see the latest interface</h3><p>GitHub Pages may still be deploying, or Safari may be showing cached files. Refresh the page; if needed, use a hard refresh.</p>
-        <h3>My asset is not filling a path</h3><p>Click the path field first, then choose <strong>Use</strong> beside the asset. You can also use <strong>Auto-fill paths</strong> for compatible empty/default fields.</p>
-        <h3>My media does not preview</h3><p>Confirm the media file is included in the current Project Assets session and that the path shown in the field matches the Asset Library path.</p>
-        <div class="footer-actions"><a class="button primary" href="../component-studio/index.html">Open Component Studio →</a><a class="button secondary" href="../index.html">Back to Engine home</a></div>
-      </section>
+      <section class="section" id="troubleshooting"><div class="eyebrow">Help</div><h2>Troubleshooting</h2><h3>I do not see the latest interface</h3><p>Refresh the browser; Safari may cache older GitHub Pages files.</p><h3>A media field did not fill automatically</h3><p>Open Source files & media, confirm the file is loaded, then choose it for the relevant field.</p><h3>Why can I still see technical data?</h3><p>Advanced project data is intentionally still available for portability and debugging, but it is not part of the normal authoring workflow.</p><a class="button" href="../component-studio/index.html">Open Interaction Builder →</a></section>
     </main>
   </div>
 </body>
