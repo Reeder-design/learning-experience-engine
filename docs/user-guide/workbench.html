@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#4A4238">
+  <title>Learning Project Workbench Guide · Learning Experience Engine</title>
+  <link rel="icon" type="image/svg+xml" sizes="any" href="../assets/experience-engine-favicon.svg?v=3">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Open+Sans:wght@400;500;600;700&display=swap');
+    :root{--pine:#508484;--mint:#79C99E;--ink:#24302D;--muted:#66726d;--line:rgba(80,132,132,.2);--soft:#f3f8f5}*{box-sizing:border-box}body{margin:0;font-family:'Open Sans',Arial,sans-serif;color:var(--ink);background:linear-gradient(#fff,#f6f8f5)}a{color:var(--pine)}header{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 20px;color:#fff;background:linear-gradient(110deg,#2f3438,#4A4238 52%,#3f6868)}header a{color:#fff;text-decoration:none;font-weight:800}.brand{display:flex;align-items:center;gap:10px}.mark{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--pine),var(--mint));font-family:Montserrat,sans-serif}main{max-width:900px;margin:0 auto;padding:52px 24px 90px}.eyebrow{color:var(--pine);font-size:.68rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}h1,h2,h3{font-family:Montserrat,sans-serif}h1{font-size:clamp(2.6rem,6vw,4.8rem);line-height:.96;letter-spacing:-.05em;margin:8px 0 14px}p,li{color:var(--muted);line-height:1.7}.hero{padding-bottom:30px;border-bottom:1px solid var(--line)}section{padding:30px 0;border-bottom:1px solid var(--line)}.steps{display:grid;gap:10px;margin-top:18px}.step{display:grid;grid-template-columns:34px 1fr;gap:12px;padding:14px;border:1px solid var(--line);border-radius:14px;background:#fff}.step>strong{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#edf6f1;color:var(--pine)}.step h3{margin:0 0 3px}.step p{margin:0;font-size:.88rem}.callout{padding:15px 17px;border-left:5px solid var(--mint);border-radius:12px;background:var(--soft)}code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.button{display:inline-flex;margin-top:18px;padding:10px 14px;border-radius:999px;background:linear-gradient(135deg,var(--pine),#3f6868);color:#fff;text-decoration:none;font-weight:800}
+  </style>
+</head>
+<body>
+  <header><a href="../index.html">← Engine home</a><a class="brand" href="../workbench/index.html"><span class="mark">LX</span><span>Learning Project Workbench</span></a></header>
+  <main>
+    <div class="hero"><span class="eyebrow">User Guide · v0.1</span><h1>Start with the source, not the structure.</h1><p>The Workbench is the primary workspace for turning a reusable project pattern or existing learning project into an editable experience with a learner preview. Branching scenarios are the first supported project type.</p><a class="button" href="../workbench/index.html">Open Workbench →</a></div>
+
+    <section><span class="eyebrow">Workflow</span><h2>Five things to think about</h2><div class="steps">
+      <div class="step"><strong>1</strong><div><h3>Source</h3><p>Describe what you want to create and add reference files, documents, media, or a source folder.</p></div></div>
+      <div class="step"><strong>2</strong><div><h3>Edit</h3><p>Review the populated project fields. Internal IDs stay hidden unless you intentionally open Advanced fields.</p></div></div>
+      <div class="step"><strong>3</strong><div><h3>Preview</h3><p>Try the experience as a learner without leaving the workspace.</p></div></div>
+      <div class="step"><strong>4</strong><div><h3>AI actions</h3><p>Prepare instructions to sanitize, rebrand, adapt, or create a similar version. Secure AI execution is the next implementation layer.</p></div></div>
+      <div class="step"><strong>5</strong><div><h3>Save & reuse</h3><p>Download the interaction JSON now. Reusable source-template projects and richer project packages come next.</p></div></div>
+    </div></section>
+
+    <section><span class="eyebrow">Starting points</span><h2>Three ways into a project</h2><h3>Start from a template</h3><p>Use a prebuilt scenario structure such as customer discovery, decision practice, or objection handling. Replace the learning content while keeping the mechanics.</p><h3>Start simple</h3><p>Begin with one decision point and one outcome when you do not need a template structure.</p><h3>Open existing JSON</h3><p>Choose an existing Engine <code>branching-scenario</code> JSON file. The Workbench reconstructs editable fields and a preview from the same structured project.</p></section>
+
+    <section><span class="eyebrow">Source files</span><h2>What happens to uploaded files?</h2><p>In v0.1, files stay local to the current browser session. Text-like reference files (TXT, Markdown, CSV, JSON) can be read in the workspace. Images become selectable in decision/outcome fields and can appear in the learner preview.</p><div class="callout"><strong>AI is not connected yet.</strong> Selecting a PDF, PowerPoint, Word document, or other source file does not send it anywhere. The next secure API phase will define exactly what source content is sent for AI processing.</div></section>
+
+    <section><span class="eyebrow">AI transformation</span><h2>What the next phase will unlock</h2><p>The Workbench is already shaped around the actions that matter most:</p><ul><li>source materials → fully populated scenario project</li><li>sanitize confidential/internal content for portfolio-safe reuse</li><li>apply a saved theme without changing learning structure</li><li>adapt the project for another audience</li><li>use the current project as a structural template for new content</li></ul><p>The browser will call a secure backend/serverless route; the OpenAI API key will never be placed directly in the public GitHub Pages JavaScript.</p></section>
+
+    <section><span class="eyebrow">Current boundary</span><h2>What v0.1 does not pretend to do</h2><p>AI generation is not active yet, source-template saving is not yet persistent, source files do not survive a browser reload, and only branching scenarios are reconstructed in the Workbench today. The specialized Scenario Builder, Interaction Builder, and Course Composer remain available for manual fine-tuning while the Workbench expands.</p></section>
+  </main>
+</body>
+</html>
