@@ -13,6 +13,7 @@ on:
       - 'docs/course-composer/**'
       - 'docs/scenario-builder/**'
       - 'docs/user-guide/**'
+      - 'scripts/preview-docs.js'
       - 'schemas/component.schema.json'
       - 'schemas/course.schema.json'
       - 'tests/component-builder.test.js'
@@ -31,6 +32,7 @@ on:
       - 'docs/course-composer/**'
       - 'docs/scenario-builder/**'
       - 'docs/user-guide/**'
+      - 'scripts/preview-docs.js'
       - 'schemas/component.schema.json'
       - 'schemas/course.schema.json'
       - 'tests/component-builder.test.js'
@@ -68,9 +70,20 @@ jobs:
           node --check docs/course-composer/course-package.js
           node --check docs/scenario-builder/scenario-builder.js
           node --check docs/scenario-builder/scenario-package.js
+          node --check scripts/preview-docs.js
 
       - name: Validate static docs navigation and Workbench UX
         run: node tests/docs-navigation.test.js
+
+      - name: Smoke test local docs preview
+        run: |
+          PREVIEW_NO_OPEN=1 PORT=4173 node scripts/preview-docs.js > /tmp/lx-preview.log 2>&1 &
+          PREVIEW_PID=$!
+          trap 'kill $PREVIEW_PID 2>/dev/null || true' EXIT
+          sleep 1
+          curl --fail --silent --show-error http://127.0.0.1:4173/ > /dev/null
+          curl --fail --silent --show-error http://127.0.0.1:4173/assets/experience-engine-favicon.svg > /dev/null
+          curl --fail --silent --show-error http://127.0.0.1:4173/favicon.ico > /dev/null
 
       - name: Run component builder smoke tests
         run: npm test
