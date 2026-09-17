@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#4A4238">
+  <title>Learning Project Workbench · Learning Experience Engine</title>
+  <link rel="icon" type="image/svg+xml" sizes="any" href="../assets/experience-engine-favicon.svg?v=3">
+  <link rel="shortcut icon" href="../assets/experience-engine-favicon.svg?v=3">
+  <link rel="mask-icon" href="../assets/experience-engine-favicon.svg?v=3" color="#508484">
+  <link rel="stylesheet" href="workbench.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-left">
+      <a class="header-link" href="../index.html">← Engine home</a>
+      <span class="divider" aria-hidden="true"></span>
+      <a class="brand" href="../index.html"><span class="brand-mark">LX</span><span><strong>Learning Experience Engine</strong><small>Learning Project Workbench</small></span></a>
+    </div>
+    <div class="header-actions">
+      <span class="save-state" data-save-state>Local draft</span>
+      <button type="button" class="ghost" data-new-project>New project</button>
+      <button type="button" class="ghost" data-open-project>Open project</button>
+    </div>
+  </header>
+
+  <main class="workbench-shell">
+    <section class="hero-panel">
+      <div>
+        <span class="eyebrow">AI-assisted ID workspace</span>
+        <h1>Start with the content. Let the project structure follow.</h1>
+        <p>Bring an outline, reference files, a reusable template, or an existing interaction. The Workbench turns that material into one editable project with a live learner preview.</p>
+      </div>
+      <div class="status-card">
+        <span>Workbench v0.1</span>
+        <strong>Branching scenarios first</strong>
+        <p>This first version proves the source → project → edit → preview workflow before we connect the secure AI generation layer.</p>
+      </div>
+    </section>
+
+    <section class="start-panel" data-start-panel>
+      <div class="section-head">
+        <div><span class="eyebrow">Start a project</span><h2>How do you want to begin?</h2><p>You can start from a reusable project pattern or open an existing Engine scenario JSON and continue from there.</p></div>
+      </div>
+      <div class="start-grid">
+        <button type="button" class="start-card active" data-start-mode="template"><span class="start-icon">◇</span><strong>Start from a template</strong><small>Use a proven interaction structure, then replace the content.</small></button>
+        <button type="button" class="start-card" data-start-mode="blank"><span class="start-icon">＋</span><strong>Start simple</strong><small>Begin with one decision and one outcome.</small></button>
+        <button type="button" class="start-card" data-start-mode="existing"><span class="start-icon">↥</span><strong>Open existing JSON</strong><small>Load a scenario and get editable fields + preview immediately.</small></button>
+      </div>
+      <div class="template-picker" data-template-picker>
+        <label><span>Source template project</span><select data-template-select>
+          <option value="customer-discovery">Customer discovery conversation</option>
+          <option value="decision-practice">Decision practice with coaching</option>
+          <option value="objection-handling">Objection handling conversation</option>
+        </select></label>
+        <button type="button" class="primary" data-use-template>Use this template →</button>
+      </div>
+      <div class="existing-picker" data-existing-picker hidden>
+        <button type="button" class="primary" data-choose-json>Choose scenario JSON</button>
+        <span>Supported now: Engine <code>branching-scenario</code> JSON.</span>
+      </div>
+    </section>
+
+    <section class="workspace" data-workspace hidden>
+      <nav class="workspace-tabs" aria-label="Project workspace sections">
+        <button type="button" class="active" data-tab="source">1 · Source</button>
+        <button type="button" data-tab="edit">2 · Edit</button>
+        <button type="button" data-tab="preview">3 · Preview</button>
+        <button type="button" data-tab="ai">4 · AI actions</button>
+        <button type="button" data-tab="save">5 · Save & reuse</button>
+      </nav>
+
+      <div class="workspace-layout">
+        <aside class="project-rail">
+          <span class="eyebrow">Current project</span>
+          <h2 data-project-title>Untitled scenario</h2>
+          <p data-project-summary>Branching scenario</p>
+          <div class="project-health" data-project-health>Ready to edit</div>
+          <div class="rail-actions">
+            <button type="button" data-jump="source">Source</button>
+            <button type="button" data-jump="edit">Editable fields</button>
+            <button type="button" data-jump="preview">Learner preview</button>
+          </div>
+          <div class="rail-note"><strong>Workbench rule</strong><span>Internal IDs and JSON stay out of the way unless you intentionally open Advanced project data.</span></div>
+        </aside>
+
+        <section class="workspace-main">
+          <section class="workspace-panel active" data-panel="source">
+            <div class="panel-head"><div><span class="eyebrow">1 · Source</span><h2>What should this project become?</h2><p>Describe the learning experience in normal language, then add any reference files and media you want the project to use.</p></div></div>
+            <label class="field"><span>Project brief / source outline</span><textarea rows="8" data-source-prompt placeholder="Example: Build a branching sales scenario where the learner practices discovery before recommending a solution. Use 3 decision points, coaching feedback, and two realistic outcomes."></textarea></label>
+            <div class="source-actions">
+              <button type="button" class="primary-soft" data-add-source-files>Add source files</button>
+              <button type="button" data-add-source-folder>Add source folder</button>
+            </div>
+            <p class="privacy-note"><strong>Local only in v0.1.</strong> Files you select stay in this browser session. AI upload is not connected yet.</p>
+            <div class="source-file-list" data-source-file-list><div class="empty-state">No source files added yet.</div></div>
+            <div class="reference-content" data-reference-content hidden>
+              <h3>Readable reference content</h3>
+              <div data-reference-list></div>
+            </div>
+            <div class="next-action"><div><strong>Next:</strong> review the project structure generated by your selected template or existing JSON.</div><button type="button" class="primary" data-go-edit>Review editable project →</button></div>
+          </section>
+
+          <section class="workspace-panel" data-panel="edit">
+            <div class="panel-head"><div><span class="eyebrow">2 · Edit</span><h2>Review and fine-tune the generated project</h2><p>Everything important is already populated. Edit the learning content directly; the preview updates with the project.</p></div><button type="button" class="advanced-toggle" data-toggle-advanced>Advanced fields</button></div>
+            <div class="scenario-basics card-panel">
+              <label class="field"><span>Scenario title</span><input type="text" data-project-field="title"></label>
+              <label class="field"><span>Purpose / context</span><textarea rows="3" data-project-field="description"></textarea></label>
+              <label class="field"><span>What should the learner do?</span><input type="text" data-project-field="instruction"></label>
+              <label class="field advanced-field"><span>Internal project ID</span><input type="text" data-project-field="id"></label>
+            </div>
+            <div class="edit-toolbar"><div><strong>Scenario flow</strong><span>Decisions and outcomes remain in one editable view.</span></div><div><button type="button" data-add-decision>+ Decision point</button><button type="button" data-add-outcome>+ Outcome</button></div></div>
+            <div class="flow-check" data-flow-check></div>
+            <div class="section-label"><span>Decision points</span><small>What happens, what can the learner do, and where does each response lead?</small></div>
+            <div class="editor-stack" data-decision-list></div>
+            <div class="section-label"><span>Outcomes</span><small>Where the learner can finish the scenario.</small></div>
+            <div class="editor-stack" data-outcome-list></div>
+          </section>
+
+          <section class="workspace-panel" data-panel="preview">
+            <div class="panel-head"><div><span class="eyebrow">3 · Preview</span><h2>Preview as learner</h2><p>Test the project from the beginning and try alternate paths without leaving the Workbench.</p></div><button type="button" class="primary" data-restart-preview>Restart preview</button></div>
+            <div class="learner-preview" data-preview-root></div>
+          </section>
+
+          <section class="workspace-panel" data-panel="ai">
+            <div class="panel-head"><div><span class="eyebrow">4 · AI actions</span><h2>Transform the project with plain-language instructions</h2><p>The UI is ready for the secure AI layer. These actions are intentionally visible now so we design the workflow around them instead of bolting AI on later.</p></div><span class="coming-chip">API connection next</span></div>
+            <div class="quick-actions">
+              <button type="button" data-ai-preset="sanitize"><strong>Sanitize for portfolio</strong><span>Remove or replace confidential/internal references while preserving the learning design.</span></button>
+              <button type="button" data-ai-preset="rebrand"><strong>Apply another theme</strong><span>Change visual brand rules without changing the instructional structure.</span></button>
+              <button type="button" data-ai-preset="audience"><strong>Adapt for another audience</strong><span>Rewrite examples, terminology, feedback, and context for a new learner group.</span></button>
+              <button type="button" data-ai-preset="similar"><strong>Create a similar version</strong><span>Keep this project structure but rebuild it around new source content and assets.</span></button>
+            </div>
+            <label class="field"><span>Ask AI to change this project</span><textarea rows="6" data-ai-prompt placeholder="Example: Keep the structure, but rebuild this scenario for partner sales reps using the source files I uploaded. Replace all internal-only references and links."></textarea></label>
+            <button type="button" class="primary ai-run" data-run-ai disabled>Connect AI to apply changes</button>
+            <div class="ai-note"><strong>Why disabled?</strong><span>GitHub Pages cannot safely store your OpenAI secret key. The next phase adds a small secure backend/serverless API route, then this workspace will send structured project/source context through that route.</span></div>
+          </section>
+
+          <section class="workspace-panel" data-panel="save">
+            <div class="panel-head"><div><span class="eyebrow">5 · Save & reuse</span><h2>Keep the project reusable</h2><p>Save the interaction itself now. Editable project packaging and reusable template metadata will expand in the next template-system pass.</p></div></div>
+            <div class="save-grid">
+              <article><span class="save-icon">JSON</span><div><strong>Interaction JSON</strong><p>Download the validated scenario definition so you can reopen or transform it later.</p></div><button type="button" class="primary-soft" data-download-json>Download interaction JSON</button></article>
+              <article><span class="save-icon">T</span><div><strong>Source template project</strong><p>Use this project's structure as the starting point for future content.</p></div><button type="button" data-save-template disabled>Template Library comes next</button></article>
+              <article><span class="save-icon">⧉</span><div><strong>Advanced project data</strong><p>Inspect the structured Engine data only when you actually need it.</p></div><button type="button" data-toggle-json>View project JSON</button></article>
+            </div>
+            <details class="json-panel" data-json-panel><summary>Advanced project data</summary><pre data-json-output></pre></details>
+          </section>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <input type="file" data-json-input accept="application/json,.json" hidden>
+  <input type="file" data-source-files multiple accept=".txt,.md,.markdown,.csv,.json,.pdf,.doc,.docx,.ppt,.pptx,.png,.jpg,.jpeg,.gif,.webp,.svg,.mp4,.webm,.mov,.m4v,.mp3,.wav,.m4a,.aac,.ogg,.vtt,.srt" hidden>
+  <input type="file" data-source-folder webkitdirectory multiple hidden>
+  <div class="toast" data-toast hidden></div>
+  <script src="workbench.js"></script>
+</body>
+</html>
