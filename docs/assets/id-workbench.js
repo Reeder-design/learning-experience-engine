@@ -64,6 +64,27 @@
     if(match){setText(title,match[0]);setText(body,match[1]);}
   }
 
+  function humanizeAssetDrawer(){
+    replaceExact(document,'.asset-import-button','Project Assets','Source files & media');
+    replaceExact(document,'.asset-library-head h2','Asset Library','Source files & media');
+    replaceExact(document,'.asset-library-head .eyebrow','Project package','Source library');
+    replaceExact(document,'.asset-import-actions button','Choose project folder','Add source folder');
+    replaceExact(document,'.asset-import-actions button','Choose files','Add selected files');
+    replaceExact(document,'.asset-import-actions button','Auto-fill paths','Fill compatible fields');
+    replaceExact(document,'.asset-library-section h3','Assets','Media & documents');
+    replaceExact(document,'.asset-library-section h3','Source context','Reference content');
+    replaceExact(document,'.asset-empty','No assets selected yet.','No media or documents added yet.');
+    replaceExact(document,'.asset-empty','No source context imported.','No reference content added yet.');
+    replaceExact(document,'[data-asset-summary]','No project files imported','No source files added yet');
+    const privacy=$('.asset-privacy span');
+    if(privacy){
+      const next=(privacy.textContent||'').replace('Component Studio','Interaction Builder');
+      setText(privacy,next);
+    }
+    const help=$('.asset-help');
+    if(help && (help.textContent||'').includes('Recommended folders:')) setText(help,'Add your existing source folder when possible. The builder keeps technical file references underneath so media can stay portable when you save the editable project.');
+  }
+
   function applyInteractionBuilder() {
     if(document.title!=='Interaction Builder · Learning Experience Engine')document.title='Interaction Builder · Learning Experience Engine';
     replaceExact(document,'small','Component Studio','Interaction Builder');
@@ -71,14 +92,11 @@
     replaceExact(document,'a,button','Component Studio','Interaction Builder');
     replaceExact(document,'.preview-actions button','Review interaction','Preview as learner');
     replaceExact(document,'.preview-actions button','Refresh preview','Restart preview');
+    humanizeAssetDrawer();
 
     const labels={
-      'Image path':'Image',
-      'Media path':'Media file',
-      'X %':'Horizontal position (%)',
-      'Y %':'Vertical position (%)',
-      'Correct?':'Correct answer?',
-      'Items per page':'Items shown at once'
+      'Image path':'Image','Media path':'Media file','X %':'Horizontal position (%)','Y %':'Vertical position (%)',
+      'Correct?':'Correct answer?','Items per page':'Items shown at once'
     };
     $$('label > span').forEach((span)=>{const t=(span.textContent||'').trim();if(labels[t])setText(span,labels[t]);});
 
