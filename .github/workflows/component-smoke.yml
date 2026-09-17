@@ -55,6 +55,7 @@ jobs:
         run: |
           node --check builders/component-web/runtime.js
           node --check builders/component-web/scenario-runtime.js
+          node --check docs/assets/app-registry.js
           node --check docs/assets/id-workbench.js
           node --check docs/workbench/workbench.js
           node --check docs/component-studio/studio.js
