@@ -94,6 +94,7 @@ for (const requiredFile of [
   'docs/user-guide/workbench.html',
   'builders/component-web/scenario-runtime.js',
   'builders/component-web/scenario.css',
+  'schemas/workbench-project-profile.schema.json',
 ]) {
   if (!fs.existsSync(path.join(root, requiredFile))) {
     failed = true;
@@ -179,28 +180,43 @@ assertOrder('docs/scenario-builder/index.html', ['id="basics-section"', 'id="ass
 
 assertIncludes('docs/workbench/index.html', [
   'Learning Project Workbench',
-  'Start from a template',
+  'Use a source template',
   'Open existing JSON',
-  '1 · Source',
-  '2 · Edit',
-  '3 · Preview',
-  '4 · AI actions',
-  '5 · Save & reuse',
+  'Build & edit',
+  'Workflow · Source',
+  'Workflow · Build & edit',
+  'Workflow · Preview',
+  'Workflow · Export',
   'Project brief / source outline',
+  'Ask AI',
+  'Set design theme',
+  'Transformation history',
+  'Project settings',
   'Sanitize for portfolio',
   'Create a similar version',
   'Download interaction JSON',
-  'Advanced project data',
-  'Generate project with AI',
+  'Developer project data',
+  'Generate with AI',
   'Secure local AI',
+  'Primary export target',
+  'Rise embed / code block',
+  'Storyline Web Object',
   'data-private-settings',
   'data-workbench-logout',
   'data-header-ai-status',
   'data-header-test-ai',
   '../assets/app-registry.js',
 ], 'Learning Project Workbench');
+
+const workbenchHtml = read('docs/workbench/index.html');
+for (const forbiddenWorkbenchCopy of ['4 · AI actions', '5 · Save & reuse', 'Advanced fields', 'Internal project ID', 'Internal response ID']) {
+  if (workbenchHtml.includes(forbiddenWorkbenchCopy)) {
+    failed = true;
+    console.error(`Learning Project Workbench must not expose old wizard/technical UI: ${forbiddenWorkbenchCopy}`);
+  }
+}
 const workbenchAppJs = read('docs/workbench/workbench.js');
-for (const marker of ['customer-discovery', 'decision-practice', 'objection-handling', 'validScenario', 'openJson', 'renderPreview', 'importSourceFiles', 'downloadJson']) {
+for (const marker of ['customer-discovery', 'decision-practice', 'objection-handling', 'validScenario', 'openJson', 'renderPreview', 'importSourceFiles', 'downloadJson', 'defaultProfile', 'renderProfileFields', 'addHistoryEntry', 'renderHistory', 'openTool']) {
   if (!workbenchAppJs.includes(marker)) {
     failed = true;
     console.error(`Learning Project Workbench JS is missing: ${marker}`);
@@ -294,8 +310,8 @@ assertIncludes('docs/user-guide/workbench.html', ['Learning Project Workbench', 
 
 assertIncludes('server/workbench-auth.js', ['PBKDF2_ITERATIONS = 600000', 'HttpOnly', 'SameSite=Strict', 'checkCsrf', 'SESSION_SECONDS = 8 * 60 * 60'], 'Workbench auth');
 assertIncludes('scripts/preview-docs.js', ['127.0.0.1', 'trustedHost', 'workbench-login', 'workbench-setup', 'workbench-settings', 'checkCsrf', '.env.workbench'], 'Private Workbench server');
-assertIncludes('server/workbench-ai-core.js', ['store: false', 'json_schema', 'validateScenario', 'gpt-5.6-terra'], 'Workbench AI core');
-assertIncludes('docs/workbench/ai-client.js', ['/api/workbench-session', '/api/workbench-ai', 'X-CSRF-Token', 'Undo AI change', 'data-header-ai-status', 'data-header-test-ai'], 'Workbench AI client');
+assertIncludes('server/workbench-ai-core.js', ['store: false', 'json_schema', 'validateScenario', 'profileSchema', 'defaultWorkbenchProfile', 'Set design theme', 'gpt-5.6-terra'], 'Workbench AI core');
+assertIncludes('docs/workbench/ai-client.js', ['/api/workbench-session', '/api/workbench-ai', 'X-CSRF-Token', 'getProfile', 'addHistoryEntry', 'data-header-ai-status', 'data-header-test-ai'], 'Workbench AI client');
 
 for (const [fileName, forbiddenMarker] of [
   ['docs/workbench/index.html', 'data-ai-token'],
