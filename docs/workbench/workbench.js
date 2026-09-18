@@ -745,6 +745,24 @@
     window.addEventListener("beforeunload", revokeUrls);
   }
 
+  window.LX_WORKBENCH = {
+    getProject: () => state.model ? clone(state.model) : null,
+    getSourcePrompt: () => state.sourcePrompt || "",
+    getReference: () => clone(state.reference),
+    getSourceFiles: () => state.sourceFiles.map((item) => ({ ...item })),
+    validScenario,
+    validate,
+    toast,
+    switchTab,
+    replaceProject: (model) => {
+      if (!validScenario(model)) throw new Error("AI returned an unsupported project.");
+      state.model = clone(model);
+      renderAll();
+      saveDraft();
+      switchTab("edit");
+    }
+  };
+
   bind();
   restoreDraft();
 })();
