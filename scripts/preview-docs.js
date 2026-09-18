@@ -175,6 +175,37 @@ function setupPage(error = "") {
   `);
 }
 
+function settingsPage(session, error = "", success = "") {
+  const currentModel = process.env.OPENAI_MODEL || "gpt-5.6-terra";
+  const keyConfigured = Boolean(process.env.OPENAI_API_KEY);
+  return shell("Private settings", `
+    <span class="eyebrow">Private local settings</span>
+    <h1>Workbench settings</h1>
+    <p>Manage the AI connection and local password without exposing secrets in the public site or repository.</p>
+    ${error ? `<div class="error">${escapeHtml(error)}</div>` : ""}
+    ${success ? `<div class="note"><strong>${escapeHtml(success)}</strong></div>` : ""}
+    <form method="post" action="/api/workbench-settings">
+      <input type="hidden" name="csrf" value="${escapeHtml(session.csrf)}">
+      <label>OpenAI API key <span class="optional">${keyConfigured ? "configured · leave blank to keep current key" : "not configured"}</span><input type="password" name="openaiKey" autocomplete="off" placeholder="${keyConfigured ? "••••••••••••••••" : "sk-…"}"></label>
+      <label>AI model
+        <select name="model">
+          <option value="gpt-5.6-terra"${currentModel === "gpt-5.6-terra" ? " selected" : ""}>GPT-5.6 Terra · balanced</option>
+          <option value="gpt-5.6-sol"${currentModel === "gpt-5.6-sol" ? " selected" : ""}>GPT-5.6 Sol · strongest</option>
+          <option value="gpt-5.6-luna"${currentModel === "gpt-5.6-luna" ? " selected" : ""}>GPT-5.6 Luna · economy</option>
+        </select>
+      </label>
+      <div class="note"><strong>Change password</strong><br><span class="optional">Leave these fields blank if you only want to update AI settings.</span></div>
+      <label>Current password <input type="password" name="currentPassword" autocomplete="current-password"></label>
+      <div class="row">
+        <label>New password <input type="password" name="newPassword" minlength="12" autocomplete="new-password"></label>
+        <label>Confirm new password <input type="password" name="confirmPassword" minlength="12" autocomplete="new-password"></label>
+      </div>
+      <button type="submit">Save private settings</button>
+    </form>
+    <div class="note"><a href="/workbench/" style="color:#315c55;font-weight:800;text-decoration:none">← Back to Workbench</a></div>
+  `);
+}
+
 function escapeHtml(value = "") {
   return String(value).replace(/[&<>"']/g, (char) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[char]));
 }
@@ -261,6 +292,44 @@ async function handleLogin(req, res) {
   redirectWithCookie(res, "/workbench/", sessionCookie(token));
 }
 
+async function handleSettings(req, res) {
+  const session = currentSession(req);
+  if (!session) {
+    redirect(res, "/workbench-login");
+    return;
+  }
+  if (req.method === "GET") {
+    sendHtml(res, 200, settingsPage(session));
+    return;
+  }
+  if (req.method !== "POST" || !sameOrigin(req)) {
+    sendHtml(res, 400, settingsPage(session, "Settings request was not accepted."));
+    return;
+  }
+  try {
+    const form = await readForm(req);
+    if (form.csrf !== session.csrf) throw new Error("Session check failed. Refresh and try again.");
+    const existing = readLocalConfig();
+    const config = { ...existing };
+    if (String(form.openaiKey || "").trim()) config.OPENAI_API_KEY = String(form.openaiKey).trim();
+    config.OPENAI_MODEL = ["gpt-5.6-terra","gpt-5.6-sol","gpt-5.6-luna"].includes(form.model) ? form.model : "gpt-5.6-terra";
+
+    const changingPassword = Boolean(form.currentPassword || form.newPassword || form.confirmPassword);
+    if (changingPassword) {
+      if (!verifyPassword(form.currentPassword, process.env.WORKBENCH_PASSWORD_HASH)) throw new Error("Current password did not match.");
+      if (form.newPassword !== form.confirmPassword) throw new Error("The new passwords do not match.");
+      if (String(form.newPassword || "").length < 12) throw new Error("New password must be at least 12 characters.");
+      config.WORKBENCH_PASSWORD_HASH = hashPassword(form.newPassword);
+    }
+
+    writeLocalConfig(config);
+    applyConfig(config);
+    sendHtml(res, 200, settingsPage(session, "", "Private settings saved."));
+  } catch (error) {
+    sendHtml(res, 400, settingsPage(session, error.message));
+  }
+}
+
 async function handleSession(req, res) {
   const session = currentSession(req);
   if (!session) {
@@ -301,6 +370,10 @@ async function handler(req, res) {
   }
   if (pathname === "/workbench-login" || pathname === "/api/workbench-login") {
     await handleLogin(req, res);
+    return;
+  }
+  if (pathname === "/workbench-settings" || pathname === "/api/workbench-settings") {
+    await handleSettings(req, res);
     return;
   }
   if (pathname === "/api/workbench-session") {
