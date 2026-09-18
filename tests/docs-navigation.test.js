@@ -77,6 +77,11 @@ for (const requiredFile of [
   'docs/workbench/index.html',
   'docs/workbench/workbench.css',
   'docs/workbench/workbench.js',
+  'docs/workbench/ai-client.js',
+  'server/workbench-auth.js',
+  'server/local-config.js',
+  'server/workbench-ai-core.js',
+  'api/workbench-ai.js',
   'docs/course-composer/composer.js',
   'docs/course-composer/course-package.js',
   'docs/component-studio/workflow-v2.css',
@@ -186,6 +191,10 @@ assertIncludes('docs/workbench/index.html', [
   'Create a similar version',
   'Download interaction JSON',
   'Advanced project data',
+  'Generate project with AI',
+  'Secure local AI',
+  'data-private-settings',
+  'data-workbench-logout',
   '../assets/app-registry.js',
 ], 'Learning Project Workbench');
 const workbenchAppJs = read('docs/workbench/workbench.js');
@@ -279,7 +288,33 @@ assertIncludes('docs/index.html', [
 assertIncludes('docs/user-guide/index.html', ['Interaction Builder Guide', 'Course Builder', 'Source files & media', 'Save & reuse', 'Advanced project data'], 'Interaction Builder Guide');
 assertIncludes('docs/user-guide/course-composer.html', ['Course Builder Guide', 'Build the course in one canvas', 'Job aid / resource', 'Save & reuse'], 'Course Builder Guide');
 assertIncludes('docs/user-guide/scenario-builder.html', ['Course Builder', 'Build decision points like a simulation worksheet', 'Coaching feedback', 'Optional scoring', 'Save & reuse'], 'Scenario Builder Guide');
-assertIncludes('docs/user-guide/workbench.html', ['Learning Project Workbench', 'Course Builder', 'AI transformation'], 'Workbench Guide');
+assertIncludes('docs/user-guide/workbench.html', ['Learning Project Workbench', 'Course Builder', 'AI transformation', 'npm run workbench', 'PBKDF2-SHA256', 'Private settings'], 'Workbench Guide');
+
+assertIncludes('server/workbench-auth.js', ['PBKDF2_ITERATIONS = 600000', 'HttpOnly', 'SameSite=Strict', 'checkCsrf', 'SESSION_SECONDS = 8 * 60 * 60'], 'Workbench auth');
+assertIncludes('scripts/preview-docs.js', ['127.0.0.1', 'trustedHost', 'workbench-login', 'workbench-setup', 'workbench-settings', 'checkCsrf', '.env.workbench'], 'Private Workbench server');
+assertIncludes('server/workbench-ai-core.js', ['store: false', 'json_schema', 'validateScenario', 'gpt-5.6-terra'], 'Workbench AI core');
+assertIncludes('docs/workbench/ai-client.js', ['/api/workbench-session', '/api/workbench-ai', 'X-CSRF-Token', 'Undo AI change'], 'Workbench AI client');
+
+for (const [fileName, forbiddenMarker] of [
+  ['docs/workbench/index.html', 'data-ai-token'],
+  ['docs/workbench/index.html', 'data-ai-endpoint'],
+  ['docs/workbench/ai-client.js', 'WORKBENCH_ACCESS_TOKEN'],
+  ['docs/workbench/ai-client.js', 'OPENAI_API_KEY='],
+]) {
+  if (read(fileName).includes(forbiddenMarker)) {
+    failed = true;
+    console.error(`${fileName}: public Workbench code must not expose legacy token/key plumbing: ${forbiddenMarker}`);
+  }
+}
+
+if (fs.existsSync(path.join(root, '.env.workbench'))) {
+  failed = true;
+  console.error('.env.workbench must never be committed to the repository.');
+}
+if (!read('.gitignore').includes('.env.*')) {
+  failed = true;
+  console.error('.gitignore must continue ignoring private .env.* files.');
+}
 
 const workbenchJs = read('docs/assets/id-workbench.js');
 for (const marker of ['markTechnicalLabels', 'humanizeAssetDrawer', "'What happens next?'", 'courseName', 'interactionName', 'ux-technical-field']) {
