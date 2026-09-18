@@ -20,7 +20,7 @@ save / reuse / export / template
 
 The technical engine remains underneath for schema validation, rendering, asset handling, branch integrity, themes, and future publishing targets.
 
-## Learning Project Workbench v0.1
+## Learning Project Workbench v0.2 candidate
 
 Public path:
 
@@ -46,7 +46,7 @@ AI actions
 Save & reuse
 ```
 
-Implemented in v0.1:
+Implemented in the current v0.2 candidate:
 
 - three built-in source template projects: customer discovery, decision practice, and objection handling
 - existing Engine `branching-scenario` JSON → editable project reconstruction
@@ -59,10 +59,18 @@ Implemented in v0.1:
 - interactive learner preview
 - local autosave
 - scenario JSON download
-- visible AI transformation workspace with presets for sanitize, rebrand, audience adaptation, and create-similar workflows
-- secure AI execution intentionally disabled until the server-side API layer is connected
+- AI generation from source outline/reference material in private local mode
+- AI transformation presets for sanitize, audience adaptation, and create-similar workflows
+- freeform AI project transformation
+- strict structured-output contract for branching-scenario projects
+- branch/reference validation before AI output is applied
+- one-pass repair attempt when generated branch references fail validation
+- Undo AI change in the Workbench
+- password-protected private local Workbench with signed 8-hour sessions, HttpOnly/SameSite cookies, CSRF protection, and login throttling
+- first-run secure setup for Workbench password + optional OpenAI API key
+- Private settings for API-key rotation, model choice, and password changes
 
-The AI UI is deliberately present now so the project architecture is designed around transformation rather than adding AI as an afterthought.
+The public GitHub Pages site remains a public-safe demo/manual authoring surface. Private source material and AI actions belong in the local password-protected Workbench.
 
 ## Specialized editors
 
@@ -212,43 +220,55 @@ Every public HTML page under `docs/` must explicitly include the Engine SVG favi
 
 The docs regression test discovers `docs/**/*.html` automatically, so new pages fail CI if favicon metadata is omitted.
 
-## AI architecture — next implementation layer
+## Private AI architecture
 
 Do **not** place an OpenAI API key in GitHub Pages JavaScript.
 
-Target architecture:
+Current architecture:
 
 ```text
-Browser Workbench
+npm run workbench
         ↓
-secure backend / serverless API route
+password-protected localhost server (127.0.0.1)
         ↓
-OpenAI API
+source/current project
         ↓
-structured project response
+local authenticated API route + CSRF check
         ↓
-schema + flow validation
+OpenAI Responses API (store: false)
+        ↓
+strict structured scenario output
+        ↓
+branch/reference validation
         ↓
 editable Workbench project + preview
 ```
 
-Initial AI actions:
+On first local launch, the browser creates the Workbench password and optionally accepts the separate OpenAI API key. Secrets are written only to Git-ignored `.env.workbench`; the plaintext password is never stored.
+
+Run locally with:
+
+```bash
+npm run workbench
+```
+
+Current AI actions:
 
 - source materials → populated branching scenario
 - sanitize internal/confidential content for public-safe reuse
-- rebrand using a saved theme
 - adapt for another learner audience
 - create a similar project using a source project as the structural template
-- rewrite coaching feedback / distractors / examples while preserving interaction logic
+- freeform project rewriting while preserving interaction logic
+
+Theme-based rebranding remains visible in the product direction but becomes fully useful after the Theme Library is implemented.
 
 ## Next product milestones
 
-1. **Secure AI generation/transformation layer** for Workbench scenarios.
-2. **Source Template Library** with complete reusable project structures rather than only block-level templates.
-3. **Theme Library** separated from project content/interaction structure.
-4. **Editable project packaging** that preserves source instructions, assets, project JSON, and template metadata together.
-5. Guided Workbench reuse flows for existing Rise and Storyline exports.
-6. Expand the Workbench beyond branching scenarios to other interaction/course project types.
+1. **Source Template Library** with complete reusable project structures rather than only block-level templates.
+2. **Theme Library** separated from project content/interaction structure.
+3. **Editable project packaging** that preserves source instructions, assets, project JSON, and template metadata together.
+4. Guided Workbench reuse flows for existing Rise and Storyline exports.
+5. Expand the Workbench beyond branching scenarios to other interaction/course project types.
 
 ## Public/private boundary
 
@@ -260,6 +280,6 @@ Reusable code, schemas, generic templates, themes, demos, and documentation are 
 
 Active prototype / early product development.
 
-Workbench v0.1, Scenario Builder, Interaction Builder, Course Builder, Rise/Storyline import foundations, engine-native component rendering, local asset workflows, and automated syntax/navigation/naming/favicon/smoke regression checks are functioning.
+Workbench v0.2 candidate, password-protected local AI generation/transformation, Scenario Builder, Interaction Builder, Course Builder, Rise/Storyline import foundations, engine-native component rendering, local asset workflows, and automated syntax/navigation/security/mock-AI/smoke regression checks are functioning on the feature branch.
 
-Still future work includes the secure AI API connection, reusable source-template library, theme library, guided Rise/Storyline Workbench import, richer scenario state, persistent cloud projects, LMS/SCORM/xAPI packaging, Rise Code Block output, Storyline Web Object output, and direct deployment integrations.
+Still future work includes the reusable source-template library, theme library, richer project packaging, guided Rise/Storyline Workbench import, richer scenario state, persistent cloud projects, LMS/SCORM/xAPI packaging, Rise Code Block output, Storyline Web Object output, and direct deployment integrations.
