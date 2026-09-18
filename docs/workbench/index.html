@@ -32,25 +32,25 @@
   <main class="workbench-shell">
     <section class="hero-panel">
       <div>
-        <span class="eyebrow">AI-assisted ID workspace</span>
-        <h1>Start with the content. Let the project structure follow.</h1>
-        <p>Bring an outline, reference files, a reusable template, or an existing interaction. The Workbench turns that material into one editable project with a live learner preview.</p>
+        <span class="eyebrow">Published learning experience workspace</span>
+        <h1>Edit the experience, not the authoring tool.</h1>
+        <p>Bring source content, an existing project, or a reusable structure. Build or transform the published-style learning experience, preview it as a learner, then export it for reuse.</p>
       </div>
       <div class="status-card">
-        <span>Workbench v0.1</span>
+        <span>Workbench v0.3 candidate</span>
         <strong>Branching scenarios first</strong>
-        <p>The public site remains a safe demo. Password-protected local mode adds private source handling and AI generation without exposing your API key.</p>
+        <p>The project model now separates learning content, presentation/theme, behavior, source context, export intent, and transformation history.</p>
       </div>
     </section>
 
     <section class="start-panel" data-start-panel>
       <div class="section-head">
-        <div><span class="eyebrow">Start a project</span><h2>How do you want to begin?</h2><p>You can start from a reusable project pattern or open an existing Engine scenario JSON and continue from there.</p></div>
+        <div><span class="eyebrow">Start a project</span><h2>What are you working from?</h2><p>Use a reusable experience pattern, start simple, or reconstruct an existing Engine webpage project from JSON.</p></div>
       </div>
       <div class="start-grid">
-        <button type="button" class="start-card active" data-start-mode="template"><span class="start-icon">◇</span><strong>Start from a template</strong><small>Use a proven interaction structure, then replace the content.</small></button>
-        <button type="button" class="start-card" data-start-mode="blank"><span class="start-icon">＋</span><strong>Start simple</strong><small>Begin with one decision and one outcome.</small></button>
-        <button type="button" class="start-card" data-start-mode="existing"><span class="start-icon">↥</span><strong>Open existing JSON</strong><small>Load a scenario and get editable fields + preview immediately.</small></button>
+        <button type="button" class="start-card active" data-start-mode="template"><span class="start-icon">◇</span><strong>Use a source template</strong><small>Keep the interaction mechanics and replace the learning content.</small></button>
+        <button type="button" class="start-card" data-start-mode="blank"><span class="start-icon">＋</span><strong>Start simple</strong><small>Begin with a minimal published-style interaction.</small></button>
+        <button type="button" class="start-card" data-start-mode="existing"><span class="start-icon">↥</span><strong>Open existing JSON</strong><small>Reconstruct editable fields, presentation settings, and preview.</small></button>
       </div>
       <div class="template-picker" data-template-picker>
         <label><span>Source template project</span><select data-template-select>
@@ -62,17 +62,16 @@
       </div>
       <div class="existing-picker" data-existing-picker hidden>
         <button type="button" class="primary" data-choose-json>Choose scenario JSON</button>
-        <span>Supported now: Engine <code>branching-scenario</code> JSON.</span>
+        <span>Supported now: Engine <code>branching-scenario</code> JSON. Rise/Storyline published-web reconstruction remains a later import layer.</span>
       </div>
     </section>
 
     <section class="workspace" data-workspace hidden>
-      <nav class="workspace-tabs" aria-label="Project workspace sections">
-        <button type="button" class="active" data-tab="source">1 · Source</button>
-        <button type="button" data-tab="edit">2 · Edit</button>
-        <button type="button" data-tab="preview">3 · Preview</button>
-        <button type="button" data-tab="ai">4 · AI actions</button>
-        <button type="button" data-tab="save">5 · Save & reuse</button>
+      <nav class="workflow-nav" aria-label="Project workflow">
+        <button type="button" class="active" data-tab="source"><span>1</span><strong>Source</strong><small>Brief + files</small></button>
+        <button type="button" data-tab="edit"><span>2</span><strong>Build & edit</strong><small>Learning experience</small></button>
+        <button type="button" data-tab="preview"><span>3</span><strong>Preview</strong><small>Test as learner</small></button>
+        <button type="button" data-tab="save"><span>4</span><strong>Export</strong><small>Save + reuse</small></button>
       </nav>
 
       <div class="workspace-layout">
@@ -81,83 +80,182 @@
           <h2 data-project-title>Untitled scenario</h2>
           <p data-project-summary>Branching scenario</p>
           <div class="project-health" data-project-health>Ready to edit</div>
-          <div class="rail-actions">
-            <button type="button" data-jump="source">Source</button>
-            <button type="button" data-jump="edit">Editable fields</button>
-            <button type="button" data-jump="preview">Learner preview</button>
+
+          <div class="tool-section">
+            <span>Project tools</span>
+            <button type="button" class="tool-button ai-tool" data-open-tool="ai"><b>✦</b><span><strong>Ask AI</strong><small>Generate or transform</small></span></button>
+            <button type="button" class="tool-button" data-open-tool="theme"><b>◫</b><span><strong>Theme</strong><small>Brand + presentation</small></span></button>
+            <button type="button" class="tool-button" data-open-tool="history"><b>↺</b><span><strong>History</strong><small data-history-count>No AI changes yet</small></span></button>
+            <button type="button" class="tool-button" data-open-tool="settings"><b>⚙</b><span><strong>Project settings</strong><small>Audience + behavior</small></span></button>
           </div>
-          <div class="rail-note"><strong>Workbench rule</strong><span>Internal IDs and JSON stay out of the way unless you intentionally open Advanced project data.</span></div>
+
+          <div class="rail-note"><strong>Published-web model</strong><span>The Workbench edits the learning experience that gets rendered/exported. Rise and Storyline authoring interfaces are not the target.</span></div>
         </aside>
 
         <section class="workspace-main">
           <section class="workspace-panel active" data-panel="source">
-            <div class="panel-head"><div><span class="eyebrow">1 · Source</span><h2>What should this project become?</h2><p>Describe the learning experience in normal language, then add any reference files and media you want the project to use.</p></div></div>
+            <div class="panel-head"><div><span class="eyebrow">Workflow · Source</span><h2>What should this experience become?</h2><p>Describe the learning need in normal language, then add the source materials and assets the experience should use.</p></div><span class="stage-chip">Current stage</span></div>
             <label class="field"><span>Project brief / source outline</span><textarea rows="8" data-source-prompt placeholder="Example: Build a branching sales scenario where the learner practices discovery before recommending a solution. Use 3 decision points, coaching feedback, and two realistic outcomes."></textarea></label>
             <div class="source-actions">
               <button type="button" class="primary-soft" data-add-source-files>Add source files</button>
               <button type="button" data-add-source-folder>Add source folder</button>
             </div>
-            <p class="privacy-note"><strong>Private by default.</strong> Files stay in this browser session and are sent to AI only when you explicitly run Generate or Apply AI changes in secure local mode.</p>
+            <p class="privacy-note"><strong>Private by default.</strong> Selecting files does not send them anywhere. They are sent only when you explicitly run an AI action in secure local mode.</p>
             <div class="source-file-list" data-source-file-list><div class="empty-state">No source files added yet.</div></div>
             <div class="reference-content" data-reference-content hidden>
               <h3>Readable reference content</h3>
               <div data-reference-list></div>
             </div>
-            <div class="next-action ai-source-action"><div><strong>Ready to generate?</strong><span>AI can turn your brief, readable references, selected documents, and template structure into a complete editable scenario.</span></div><div class="next-action-buttons"><button type="button" class="primary ai-generate" data-generate-ai>Generate project with AI ✦</button><button type="button" data-go-edit>Review current project →</button></div></div>
+            <div class="next-action ai-source-action"><div><strong>Ready to build?</strong><span>Generate a complete experience from the brief/source or continue into the current project and edit manually.</span></div><div class="next-action-buttons"><button type="button" class="primary ai-generate" data-generate-ai>Generate with AI ✦</button><button type="button" data-go-edit>Build & edit →</button></div></div>
           </section>
 
           <section class="workspace-panel" data-panel="edit">
-            <div class="panel-head"><div><span class="eyebrow">2 · Edit</span><h2>Review and fine-tune the generated project</h2><p>Everything important is already populated. Edit the learning content directly; the preview updates with the project.</p></div><button type="button" class="advanced-toggle" data-toggle-advanced>Advanced fields</button></div>
+            <div class="panel-head"><div><span class="eyebrow">Workflow · Build & edit</span><h2>Edit the published learning experience</h2><p>Work with learner-facing content and behavior. Internal IDs are maintained automatically and never need manual editing.</p></div><span class="stage-chip">Current stage</span></div>
             <div class="scenario-basics card-panel">
-              <label class="field"><span>Scenario title</span><input type="text" data-project-field="title"></label>
+              <label class="field"><span>Experience title</span><input type="text" data-project-field="title"></label>
               <label class="field"><span>Purpose / context</span><textarea rows="3" data-project-field="description"></textarea></label>
-              <label class="field"><span>What should the learner do?</span><input type="text" data-project-field="instruction"></label>
-              <label class="field advanced-field"><span>Internal project ID</span><input type="text" data-project-field="id"></label>
+              <label class="field"><span>Learner instruction</span><input type="text" data-project-field="instruction"></label>
             </div>
-            <div class="edit-toolbar"><div><strong>Scenario flow</strong><span>Decisions and outcomes remain in one editable view.</span></div><div><button type="button" data-add-decision>+ Decision point</button><button type="button" data-add-outcome>+ Outcome</button></div></div>
+            <div class="edit-toolbar"><div><strong>Scenario flow</strong><span>Decision points and outcomes define the current published interaction.</span></div><div><button type="button" data-add-decision>+ Decision point</button><button type="button" data-add-outcome>+ Outcome</button></div></div>
             <div class="flow-check" data-flow-check></div>
-            <div class="section-label"><span>Decision points</span><small>What happens, what can the learner do, and where does each response lead?</small></div>
+            <div class="section-label"><span>Decision points</span><small>Situation → learner responses → coaching → destination</small></div>
             <div class="editor-stack" data-decision-list></div>
-            <div class="section-label"><span>Outcomes</span><small>Where the learner can finish the scenario.</small></div>
+            <div class="section-label"><span>Outcomes</span><small>Where the learner can finish the experience.</small></div>
             <div class="editor-stack" data-outcome-list></div>
           </section>
 
           <section class="workspace-panel" data-panel="preview">
-            <div class="panel-head"><div><span class="eyebrow">3 · Preview</span><h2>Preview as learner</h2><p>Test the project from the beginning and try alternate paths without leaving the Workbench.</p></div><button type="button" class="primary" data-restart-preview>Restart preview</button></div>
+            <div class="panel-head"><div><span class="eyebrow">Workflow · Preview</span><h2>Test the rendered learner experience</h2><p>Try alternate paths and presentation settings without leaving the project.</p></div><button type="button" class="primary" data-restart-preview>Restart preview</button></div>
+            <div class="preview-meta" data-preview-meta></div>
             <div class="learner-preview" data-preview-root></div>
           </section>
 
-          <section class="workspace-panel" data-panel="ai">
-            <div class="panel-head"><div><span class="eyebrow">4 · AI actions</span><h2>Transform the project with plain-language instructions</h2><p>Use the current project as source structure, then sanitize, adapt, or rebuild it without manually rewriting every field.</p></div><span class="coming-chip" data-ai-status>Checking AI…</span></div>
-            <div class="ai-connection ai-local-status" data-ai-connection>
-              <div><strong>Secure local AI</strong><small data-ai-connection-summary>Checking private Workbench session…</small></div>
-              <button type="button" data-test-ai>Check AI</button>
-            </div>
-            <div class="quick-actions">
-              <button type="button" data-ai-preset="sanitize"><strong>Sanitize for portfolio</strong><span>Remove or replace confidential/internal references while preserving the learning design.</span></button>
-              <button type="button" data-ai-preset="rebrand"><strong>Apply another theme</strong><span>Change visual brand rules without changing the instructional structure.</span></button>
-              <button type="button" data-ai-preset="audience"><strong>Adapt for another audience</strong><span>Rewrite examples, terminology, feedback, and context for a new learner group.</span></button>
-              <button type="button" data-ai-preset="similar"><strong>Create a similar version</strong><span>Keep this project structure but rebuild it around new source content and assets.</span></button>
-            </div>
-            <label class="field"><span>Ask AI to change this project</span><textarea rows="6" data-ai-prompt placeholder="Example: Keep the structure, but rebuild this scenario for partner sales reps using the source files I uploaded. Replace all internal-only references and links."></textarea></label>
-            <button type="button" class="primary ai-run" data-run-ai>Apply AI changes ✦</button>
-            <div class="ai-result" data-ai-result hidden></div>
-            <div class="ai-note"><strong>Privacy control</strong><span>Source files are sent only when you explicitly run an AI action in password-protected local mode. The API key stays in your Git-ignored local configuration; the backend requests structured project output with storage disabled, validates it, and only then loads it into the Workbench.</span></div>
-          </section>
-
           <section class="workspace-panel" data-panel="save">
-            <div class="panel-head"><div><span class="eyebrow">5 · Save & reuse</span><h2>Keep the project reusable</h2><p>Save the interaction itself now. Editable project packaging and reusable template metadata will expand in the next template-system pass.</p></div></div>
-            <div class="save-grid">
-              <article><span class="save-icon">JSON</span><div><strong>Interaction JSON</strong><p>Download the validated scenario definition so you can reopen or transform it later.</p></div><button type="button" class="primary-soft" data-download-json>Download interaction JSON</button></article>
-              <article><span class="save-icon">T</span><div><strong>Source template project</strong><p>Use this project's structure as the starting point for future content.</p></div><button type="button" data-save-template disabled>Template Library comes next</button></article>
-              <article><span class="save-icon">⧉</span><div><strong>Advanced project data</strong><p>Inspect the structured Engine data only when you actually need it.</p></div><button type="button" data-toggle-json>View project JSON</button></article>
+            <div class="panel-head"><div><span class="eyebrow">Workflow · Export</span><h2>Save the experience in the form you need</h2><p>The current export is Engine JSON. The Project Profile already records intended web/Rise/Storyline/LMS destinations so future exporters can apply the right packaging rules.</p></div><span class="stage-chip">Final stage</span></div>
+            <div class="export-intent card-panel export-profile">
+              <label class="field"><span>Primary export target</span><select data-profile-field="export.target">
+                <option value="web">Standalone web experience</option>
+                <option value="rise-embed">Rise embed / code block</option>
+                <option value="storyline-web-object">Storyline Web Object</option>
+                <option value="lms-package">LMS package</option>
+              </select></label>
+              <label class="field"><span>Export notes</span><textarea rows="3" data-profile-field="export.notes" placeholder="Anything the exporter should preserve or account for."></textarea></label>
             </div>
-            <details class="json-panel" data-json-panel><summary>Advanced project data</summary><pre data-json-output></pre></details>
+            <div class="save-grid">
+              <article><span class="save-icon">JSON</span><div><strong>Interaction JSON</strong><p>Download the learning interaction plus its Workbench Project Profile so it can be reopened and transformed later.</p></div><button type="button" class="primary-soft" data-download-json>Download interaction JSON</button></article>
+              <article><span class="save-icon">T</span><div><strong>Source template project</strong><p>Save structure + presentation + editable content roles as a reusable source project.</p></div><button type="button" data-save-template disabled>Template Library comes next</button></article>
+              <article><span class="save-icon">⧉</span><div><strong>Developer data</strong><p>Inspect the Engine JSON only for troubleshooting or development.</p></div><button type="button" data-toggle-json>View project JSON</button></article>
+            </div>
+            <details class="json-panel" data-json-panel><summary>Developer project data</summary><pre data-json-output></pre></details>
           </section>
         </section>
       </div>
     </section>
   </main>
+
+  <aside class="utility-drawer" data-utility-drawer aria-hidden="true">
+    <div class="utility-head">
+      <div><span class="eyebrow" data-tool-eyebrow>Project tool</span><h2 data-tool-title>Ask AI</h2></div>
+      <button type="button" class="drawer-close" data-close-tool aria-label="Close project tool">×</button>
+    </div>
+
+    <section class="tool-panel" data-tool-panel="ai">
+      <div class="ai-connection ai-local-status" data-ai-connection>
+        <div><strong>Secure local AI</strong><small data-ai-connection-summary>Checking private Workbench session…</small></div>
+        <button type="button" data-test-ai>Check AI</button>
+      </div>
+      <div class="quick-actions">
+        <button type="button" data-ai-preset="sanitize"><strong>Sanitize for portfolio</strong><span>Remove or replace confidential/internal references while preserving learning structure.</span></button>
+        <button type="button" data-ai-preset="theme"><strong>Set design theme</strong><span>Use the Theme profile and brand/source guidance to create consistent presentation rules.</span></button>
+        <button type="button" data-ai-preset="audience"><strong>Adapt for another audience</strong><span>Rewrite terminology, examples, assumptions, and coaching for another learner group.</span></button>
+        <button type="button" data-ai-preset="similar"><strong>Create a similar version</strong><span>Keep useful mechanics but rebuild the content from new source material.</span></button>
+      </div>
+      <label class="field"><span>Ask AI to change this project</span><textarea rows="7" data-ai-prompt placeholder="Example: Keep the interaction structure, but rebuild this for external partners and apply the theme rules in Project Theme."></textarea></label>
+      <button type="button" class="primary ai-run" data-run-ai>Apply AI changes ✦</button>
+      <div class="ai-result" data-ai-result hidden></div>
+      <div class="ai-note"><strong>Every AI action creates a history version.</strong><span>You can inspect, restore, or edit and rerun previous transformations from History.</span></div>
+    </section>
+
+    <section class="tool-panel" data-tool-panel="theme" hidden>
+      <p class="tool-intro">Theme is presentation data, not learning content. These rules are intended to travel with the rendered webpage experience and future Rise/Storyline/LMS exporters.</p>
+      <div class="profile-grid">
+        <label class="field"><span>Theme name</span><input data-profile-field="presentation.theme.name"></label>
+        <label class="field"><span>Layout treatment</span><select data-profile-field="presentation.theme.layout">
+          <option value="clean-cards">Clean cards</option>
+          <option value="editorial">Editorial</option>
+          <option value="technical-dark">Technical dark</option>
+          <option value="minimal">Minimal</option>
+        </select></label>
+        <label class="field wide"><span>Brand / visual direction</span><textarea rows="4" data-profile-field="presentation.theme.brandNotes" placeholder="Describe the brand, visual tone, logo rules, imagery, and anything AI/renderers should preserve."></textarea></label>
+        <label class="field"><span>Primary</span><input type="color" data-profile-field="presentation.theme.colors.primary"></label>
+        <label class="field"><span>Secondary</span><input type="color" data-profile-field="presentation.theme.colors.secondary"></label>
+        <label class="field"><span>Accent</span><input type="color" data-profile-field="presentation.theme.colors.accent"></label>
+        <label class="field"><span>Background</span><input type="color" data-profile-field="presentation.theme.colors.background"></label>
+        <label class="field"><span>Text</span><input type="color" data-profile-field="presentation.theme.colors.text"></label>
+        <label class="field"><span>Heading font</span><input data-profile-field="presentation.theme.typography.heading"></label>
+        <label class="field"><span>Body font</span><input data-profile-field="presentation.theme.typography.body"></label>
+        <label class="field wide"><span>Logo / identity treatment</span><input data-profile-field="presentation.theme.logoTreatment" placeholder="Example: white logo on dark header; never recolor"></label>
+        <label class="field wide"><span>Motion / interaction treatment</span><input data-profile-field="presentation.theme.motion" placeholder="Example: subtle 160–220ms transitions; respect reduced motion"></label>
+      </div>
+      <div class="target-rules">
+        <strong>Target-specific presentation notes</strong>
+        <label class="field"><span>Standalone web</span><textarea rows="2" data-profile-field="presentation.theme.targetNotes.web"></textarea></label>
+        <label class="field"><span>Rise embed</span><textarea rows="2" data-profile-field="presentation.theme.targetNotes.rise"></textarea></label>
+        <label class="field"><span>Storyline Web Object</span><textarea rows="2" data-profile-field="presentation.theme.targetNotes.storyline"></textarea></label>
+        <label class="field"><span>LMS package</span><textarea rows="2" data-profile-field="presentation.theme.targetNotes.lms"></textarea></label>
+      </div>
+      <button type="button" class="primary-soft" data-theme-with-ai>Ask AI to apply/refine this theme ✦</button>
+    </section>
+
+    <section class="tool-panel" data-tool-panel="history" hidden>
+      <p class="tool-intro">Each AI run creates a recoverable project version. Restore a known state or edit the original instruction and rerun it from that version.</p>
+      <div class="history-list" data-history-list><div class="empty-state">No AI transformations yet.</div></div>
+    </section>
+
+    <section class="tool-panel" data-tool-panel="settings" hidden>
+      <p class="tool-intro">Project settings describe the learning experience around the current interaction. These are the fields a published-course editor needs without exposing engine IDs.</p>
+      <div class="profile-grid">
+        <label class="field"><span>Audience</span><input data-profile-field="learning.audience" placeholder="Who is this for?"></label>
+        <label class="field"><span>Estimated duration</span><input data-profile-field="learning.duration" placeholder="Example: 10–15 minutes"></label>
+        <label class="field wide"><span>Learning purpose</span><textarea rows="3" data-profile-field="learning.purpose"></textarea></label>
+        <label class="field wide"><span>Learning objectives</span><textarea rows="4" data-profile-list="learning.objectives" placeholder="One objective per line"></textarea></label>
+        <label class="field wide"><span>Prerequisites / assumed knowledge</span><textarea rows="3" data-profile-field="learning.prerequisites"></textarea></label>
+        <label class="field"><span>Navigation</span><select data-profile-field="behavior.navigation">
+          <option value="guided">Guided / linear</option>
+          <option value="free">Free navigation</option>
+          <option value="branching">Branch-driven</option>
+        </select></label>
+        <label class="field"><span>Progress display</span><select data-profile-field="behavior.progress">
+          <option value="hidden">Hidden</option>
+          <option value="steps">Steps</option>
+          <option value="percent">Percentage</option>
+        </select></label>
+        <label class="field"><span>Scoring</span><select data-profile-field="behavior.scoring">
+          <option value="none">No learner score</option>
+          <option value="internal">Internal only</option>
+          <option value="visible">Visible to learner</option>
+        </select></label>
+        <label class="field"><span>Feedback style</span><select data-profile-field="behavior.feedback">
+          <option value="coaching">Coaching</option>
+          <option value="concise">Concise</option>
+          <option value="explanatory">Explanatory</option>
+        </select></label>
+        <label class="field wide"><span>Accessibility / rendering notes</span><textarea rows="3" data-profile-field="presentation.accessibility" placeholder="Alt text, captioning, focus, contrast, motion, or responsive expectations."></textarea></label>
+        <label class="field"><span>Source origin</span><select data-profile-field="source.origin">
+          <option value="engine-native">Engine-native</option>
+          <option value="rise-published-web">Rise published web</option>
+          <option value="storyline-published-web">Storyline published web</option>
+          <option value="other-published-web">Other published web</option>
+        </select></label>
+        <label class="field"><span>Experience structure</span><select data-profile-field="source.structureModel">
+          <option value="interaction">Standalone interaction</option>
+          <option value="course-lessons-blocks">Course → lessons → blocks</option>
+          <option value="scenes-slides-layers">Scenes → slides → layers</option>
+        </select></label>
+      </div>
+    </section>
+  </aside>
+  <button type="button" class="drawer-backdrop" data-close-tool aria-label="Close project tool" hidden></button>
 
   <input type="file" data-json-input accept="application/json,.json" hidden>
   <input type="file" data-source-files multiple accept=".txt,.md,.markdown,.csv,.json,.pdf,.doc,.docx,.ppt,.pptx,.png,.jpg,.jpeg,.gif,.webp,.svg,.mp4,.webm,.mov,.m4v,.mp3,.wav,.m4a,.aac,.ogg,.vtt,.srt" hidden>
