@@ -225,6 +225,7 @@
     const mode = state.profile?.behavior?.scoring || "none";
     state.model.content.score.enabled = mode !== "none";
     state.model.content.score.showToLearner = mode === "visible";
+    document.body.dataset.scoring = mode;
     if (!state.model.content.score.label) state.model.content.score.label = "Decision quality";
   }
 
@@ -443,7 +444,7 @@
     const card = document.createElement("div");
     card.className = "choice-card";
     const options = destinationItems().map((item) => `<option value="${escapeAttr(item.id)}"${item.id === choice.targetId ? " selected" : ""}>${escapeHtml(item.label)}</option>`).join("");
-    card.innerHTML = `<button type="button" class="choice-delete" data-delete aria-label="Delete response">×</button><label class="wide"><span>Learner response ${index + 1}</span><input data-choice-field="text" value="${escapeAttr(choice.text || "")}"></label><label><span>What happens next?</span><select data-choice-field="targetId"><option value="">Choose destination…</option>${options}</select></label><label><span>Impact on score</span><input type="number" data-choice-field="scoreDelta" value="${Number(choice.scoreDelta || 0)}"></label><label class="wide"><span>Coaching feedback</span><textarea rows="2" data-choice-field="feedback">${escapeHtml(choice.feedback || "")}</textarea></label>`;
+    card.innerHTML = `<button type="button" class="choice-delete" data-delete aria-label="Delete response">×</button><label class="wide"><span>Learner response ${index + 1}</span><input data-choice-field="text" value="${escapeAttr(choice.text || "")}"></label><label><span>What happens next?</span><select data-choice-field="targetId"><option value="">Choose destination…</option>${options}</select></label><label class="score-field"><span>Impact on score</span><input type="number" data-choice-field="scoreDelta" value="${Number(choice.scoreDelta || 0)}"></label><label class="wide"><span>Coaching feedback</span><textarea rows="2" data-choice-field="feedback">${escapeHtml(choice.feedback || "")}</textarea></label>`;
 
     $$("[data-choice-field]", card).forEach((input) => input.addEventListener("input", () => {
       const key = input.dataset.choiceField;
