@@ -10,7 +10,8 @@ const {
 const {
   validateScenario,
   transformProject,
-  buildInputContent
+  buildInputContent,
+  defaultWorkbenchProfile
 } = require("../server/workbench-ai-core");
 
 function fakeReq(cookie = "", csrf = "") {
@@ -59,6 +60,9 @@ async function run() {
     files: []
   });
   assert.strictEqual(generated.project.type, "branching-scenario");
+  assert.strictEqual(generated.profile.experienceModel, "published-learning-web");
+  assert.strictEqual(generated.profile.behavior.scoring, "none");
+  assert.strictEqual(generated.project.content.score.showToLearner, false);
   assert.ok(generated.project.content.nodes.length >= 1);
   assert.ok(generated.project.content.outcomes.length >= 1);
   assert.deepStrictEqual(validateScenario(generated.project).issues, []);
@@ -70,9 +74,11 @@ async function run() {
     reference: [],
     assetManifest: [],
     files: [],
-    currentProject: generated.project
+    currentProject: generated.project,
+    projectProfile: { ...defaultWorkbenchProfile(), learning: { ...defaultWorkbenchProfile().learning, audience: "External partners" } }
   });
   assert.strictEqual(transformed.project.type, "branching-scenario");
+  assert.strictEqual(transformed.profile.learning.audience, "External partners");
   assert.deepStrictEqual(validateScenario(transformed.project).issues, []);
   assert.ok(transformed.changeSummary.length >= 1);
 
