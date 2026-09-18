@@ -700,6 +700,9 @@
     root.style.setProperty("--experience-accent", colors.accent || "#97DB4F");
     root.style.setProperty("--experience-background", colors.background || "#ffffff");
     root.style.setProperty("--experience-text", colors.text || "#24302D");
+    root.style.setProperty("--experience-heading-font", state.profile.presentation.theme.typography?.heading || "Montserrat");
+    root.style.setProperty("--experience-body-font", state.profile.presentation.theme.typography?.body || "Open Sans");
+    root.dataset.layout = state.profile.presentation.theme.layout || "clean-cards";
   }
 
   function openTool(name) {
