@@ -22,6 +22,7 @@
       <span class="save-state" data-save-state>Local draft</span>
       <button type="button" class="ghost" data-new-project>New project</button>
       <button type="button" class="ghost" data-open-project>Open project</button>
+      <button type="button" class="ghost" data-workbench-logout hidden>Sign out</button>
     </div>
   </header>
 
@@ -35,7 +36,7 @@
       <div class="status-card">
         <span>Workbench v0.1</span>
         <strong>Branching scenarios first</strong>
-        <p>This first version proves the source → project → edit → preview workflow before we connect the secure AI generation layer.</p>
+        <p>The public site remains a safe demo. Password-protected local mode adds private source handling and AI generation without exposing your API key.</p>
       </div>
     </section>
 
@@ -93,7 +94,7 @@
               <button type="button" class="primary-soft" data-add-source-files>Add source files</button>
               <button type="button" data-add-source-folder>Add source folder</button>
             </div>
-            <p class="privacy-note"><strong>Local only in v0.1.</strong> Files you select stay in this browser session. AI upload is not connected yet.</p>
+            <p class="privacy-note"><strong>Private by default.</strong> Files stay in this browser session and are sent to AI only when you explicitly run Generate or Apply AI changes in secure local mode.</p>
             <div class="source-file-list" data-source-file-list><div class="empty-state">No source files added yet.</div></div>
             <div class="reference-content" data-reference-content hidden>
               <h3>Readable reference content</h3>
@@ -125,15 +126,10 @@
 
           <section class="workspace-panel" data-panel="ai">
             <div class="panel-head"><div><span class="eyebrow">4 · AI actions</span><h2>Transform the project with plain-language instructions</h2><p>Use the current project as source structure, then sanitize, adapt, or rebuild it without manually rewriting every field.</p></div><span class="coming-chip" data-ai-status>Checking AI…</span></div>
-            <details class="ai-connection" data-ai-connection>
-              <summary><span><strong>AI connection</strong><small data-ai-connection-summary>Local preview or secure backend</small></span></summary>
-              <div class="ai-connection-grid">
-                <label class="field"><span>Backend endpoint</span><input type="url" data-ai-endpoint placeholder="https://your-secure-backend.example/api/workbench-ai"></label>
-                <label class="field"><span>Workbench access token</span><input type="password" data-ai-token autocomplete="off" placeholder="Stored only for this browser session"></label>
-                <button type="button" data-test-ai>Test connection</button>
-              </div>
-              <p class="privacy-note">Your OpenAI API key stays on the backend. This access token only protects your private Workbench endpoint from public use.</p>
-            </details>
+            <div class="ai-connection ai-local-status" data-ai-connection>
+              <div><strong>Secure local AI</strong><small data-ai-connection-summary>Checking private Workbench session…</small></div>
+              <button type="button" data-test-ai>Check AI</button>
+            </div>
             <div class="quick-actions">
               <button type="button" data-ai-preset="sanitize"><strong>Sanitize for portfolio</strong><span>Remove or replace confidential/internal references while preserving the learning design.</span></button>
               <button type="button" data-ai-preset="rebrand"><strong>Apply another theme</strong><span>Change visual brand rules without changing the instructional structure.</span></button>
@@ -143,7 +139,7 @@
             <label class="field"><span>Ask AI to change this project</span><textarea rows="6" data-ai-prompt placeholder="Example: Keep the structure, but rebuild this scenario for partner sales reps using the source files I uploaded. Replace all internal-only references and links."></textarea></label>
             <button type="button" class="primary ai-run" data-run-ai>Apply AI changes ✦</button>
             <div class="ai-result" data-ai-result hidden></div>
-            <div class="ai-note"><strong>Privacy control</strong><span>Source files are sent only when you explicitly run an AI action. The backend requests structured project output with storage disabled, validates the result, and only then loads it into the Workbench.</span></div>
+            <div class="ai-note"><strong>Privacy control</strong><span>Source files are sent only when you explicitly run an AI action in password-protected local mode. The API key stays in your Git-ignored local configuration; the backend requests structured project output with storage disabled, validates it, and only then loads it into the Workbench.</span></div>
           </section>
 
           <section class="workspace-panel" data-panel="save">
