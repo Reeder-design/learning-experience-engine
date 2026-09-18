@@ -307,7 +307,7 @@ assertIncludes('docs/index.html', [
 assertIncludes('docs/user-guide/index.html', ['Interaction Builder Guide', 'Course Builder', 'Source files & media', 'Save & reuse', 'Advanced project data'], 'Interaction Builder Guide');
 assertIncludes('docs/user-guide/course-composer.html', ['Course Builder Guide', 'Build the course in one canvas', 'Job aid / resource', 'Save & reuse'], 'Course Builder Guide');
 assertIncludes('docs/user-guide/scenario-builder.html', ['Course Builder', 'Build decision points like a simulation worksheet', 'Coaching feedback', 'Optional scoring', 'Save & reuse'], 'Scenario Builder Guide');
-assertIncludes('docs/user-guide/workbench.html', ['Learning Project Workbench', 'Course Builder', 'AI transformation', 'npm run workbench', 'PBKDF2-SHA256', 'Private settings'], 'Workbench Guide');
+assertIncludes('docs/user-guide/workbench.html', ['Learning Project Workbench', 'published learning experience', 'Build & edit', 'Ask AI', 'Theme', 'History', 'Project settings', 'npm run workbench', 'PBKDF2-SHA256', 'Private settings'], 'Workbench Guide');
 
 assertIncludes('server/workbench-auth.js', ['PBKDF2_ITERATIONS = 600000', 'HttpOnly', 'SameSite=Strict', 'checkCsrf', 'SESSION_SECONDS = 8 * 60 * 60'], 'Workbench auth');
 assertIncludes('scripts/preview-docs.js', ['127.0.0.1', 'trustedHost', 'workbench-login', 'workbench-setup', 'workbench-settings', 'checkCsrf', '.env.workbench'], 'Private Workbench server');
