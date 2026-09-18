@@ -1,5 +1,5 @@
 (() => {
-  const STORAGE_KEY = "lx-learning-project-workbench:v0.1";
+  const STORAGE_KEY = "lx-learning-project-workbench:v0.3";
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -18,7 +18,7 @@
       completion: { strategy: "reach-outcome", required: true },
       content: {
         startNodeId: "opening",
-        score: { enabled: true, label: "Decision quality", startingValue: 50, minimum: 0, maximum: 100, showToLearner: true },
+        score: { enabled: false, label: "Decision quality", startingValue: 0, minimum: 0, maximum: 100, showToLearner: false },
         nodes: [
           {
             id: "opening",
@@ -96,7 +96,7 @@
       completion: { strategy: "reach-outcome", required: true },
       content: {
         startNodeId: "objection",
-        score: { enabled: true, label: "Conversation quality", startingValue: 50, minimum: 0, maximum: 100, showToLearner: false },
+        score: { enabled: false, label: "Conversation quality", startingValue: 0, minimum: 0, maximum: 100, showToLearner: false },
         nodes: [
           {
             id: "objection",
@@ -131,6 +131,102 @@
       metadata: { templateId: "objection-handling", workbenchVersion: "0.1" }
     }
   };
+
+  function defaultProfile() {
+    return {
+      schemaVersion: "0.1",
+      experienceModel: "published-learning-web",
+      source: {
+        origin: "engine-native",
+        structureModel: "interaction",
+        templateId: "",
+        notes: ""
+      },
+      learning: {
+        audience: "",
+        purpose: "",
+        objectives: [],
+        duration: "",
+        prerequisites: ""
+      },
+      presentation: {
+        accessibility: "Use meaningful alt text, captions/transcripts where needed, keyboard-friendly focus behavior, sufficient contrast, responsive layout, and reduced-motion support.",
+        theme: {
+          name: "Portfolio",
+          layout: "clean-cards",
+          brandNotes: "Clean, modern, instructional-design portfolio treatment.",
+          colors: {
+            primary: "#508484",
+            secondary: "#79C99E",
+            accent: "#97DB4F",
+            background: "#ffffff",
+            text: "#24302D"
+          },
+          typography: { heading: "Montserrat", body: "Open Sans" },
+          logoTreatment: "",
+          motion: "Subtle transitions; respect reduced-motion preferences.",
+          targetNotes: { web: "", rise: "", storyline: "", lms: "" }
+        }
+      },
+      behavior: {
+        navigation: "branching",
+        progress: "hidden",
+        scoring: "none",
+        feedback: "coaching"
+      },
+      export: {
+        target: "web",
+        notes: ""
+      }
+    };
+  }
+
+  function profileFromModel(model) {
+    const saved = model?.metadata?.workbenchProfile;
+    const base = defaultProfile();
+    if (!saved || typeof saved !== "object") return base;
+    return {
+      ...base,
+      ...clone(saved),
+      source: { ...base.source, ...(saved.source || {}) },
+      learning: { ...base.learning, ...(saved.learning || {}) },
+      presentation: {
+        ...base.presentation,
+        ...(saved.presentation || {}),
+        theme: {
+          ...base.presentation.theme,
+          ...(saved.presentation?.theme || {}),
+          colors: { ...base.presentation.theme.colors, ...(saved.presentation?.theme?.colors || {}) },
+          typography: { ...base.presentation.theme.typography, ...(saved.presentation?.theme?.typography || {}) },
+          targetNotes: { ...base.presentation.theme.targetNotes, ...(saved.presentation?.theme?.targetNotes || {}) }
+        }
+      },
+      behavior: { ...base.behavior, ...(saved.behavior || {}) },
+      export: { ...base.export, ...(saved.export || {}) }
+    };
+  }
+
+  function getPath(object, path) {
+    return String(path).split(".").reduce((value, key) => value?.[key], object);
+  }
+
+  function setPath(object, path, value) {
+    const keys = String(path).split(".");
+    let cursor = object;
+    keys.slice(0, -1).forEach((key) => {
+      if (!cursor[key] || typeof cursor[key] !== "object") cursor[key] = {};
+      cursor = cursor[key];
+    });
+    cursor[keys[keys.length - 1]] = value;
+  }
+
+  function syncScoringFromProfile() {
+    if (!state.model?.content?.score) return;
+    const mode = state.profile?.behavior?.scoring || "none";
+    state.model.content.score.enabled = mode !== "none";
+    state.model.content.score.showToLearner = mode === "visible";
+    if (!state.model.content.score.label) state.model.content.score.label = "Decision quality";
+  }
 
   function blankScenario() {
     return {
@@ -174,6 +270,9 @@
     reference: [],
     objectUrls: new Map(),
     activeTab: "source",
+    activeTool: null,
+    profile: defaultProfile(),
+    history: [],
     saveTimer: null
   };
 
@@ -244,8 +343,12 @@
 
   function startProject(model, prompt = "") {
     state.model = clone(model);
+    state.profile = profileFromModel(model);
+    state.profile.source.templateId = model?.metadata?.templateId || state.profile.source.templateId || "";
+    state.history = [];
     state.sourcePrompt = prompt;
     state.activeTab = "source";
+    syncScoringFromProfile();
     $("[data-start-panel]").hidden = true;
     $("[data-workspace]").hidden = false;
     renderAll();
@@ -258,7 +361,10 @@
     $$("[data-tab]").forEach((button) => button.classList.toggle("active", button.dataset.tab === name));
     $$("[data-panel]").forEach((panel) => panel.classList.toggle("active", panel.dataset.panel === name));
     if (name === "preview") renderPreview();
-    if (name === "save") renderJson();
+    if (name === "save") {
+      renderProfileFields();
+      renderJson();
+    }
     window.scrollTo({ top: Math.max(0, $("[data-workspace]").offsetTop - 72), behavior: "smooth" });
   }
 
@@ -269,7 +375,7 @@
     $("[data-project-field=\"title\"]").value = state.model.title || "";
     $("[data-project-field=\"description\"]").value = state.model.description || "";
     $("[data-project-field=\"instruction\"]").value = state.model.instruction || "";
-    $("[data-project-field=\"id\"]").value = state.model.id || "";
+    renderProfileFields();
   }
 
   function renderSourceFiles() {
@@ -310,22 +416,16 @@
   function decisionCard(node, index) {
     const card = document.createElement("article");
     card.className = "scenario-card";
-    card.innerHTML = `<div class="scenario-head"><div><span class="eyebrow">Decision ${index + 1}</span><strong>${escapeHtml(node.title || "Untitled decision")}</strong></div><div class="card-actions"><button type="button" data-up>↑</button><button type="button" data-down>↓</button><button type="button" data-copy>Duplicate</button><button type="button" data-delete>Delete</button></div></div><div class="field-grid"><label class="advanced-field"><span>Internal ID</span><input data-node-field="id" value="${escapeAttr(node.id)}"></label><label><span>Who is speaking?</span><input data-node-field="speaker" value="${escapeAttr(node.speaker || "")}"></label><label class="wide"><span>What's happening?</span><input data-node-field="title" value="${escapeAttr(node.title || "")}"></label><label class="wide"><span>What does the learner know?</span><textarea rows="3" data-node-field="body">${escapeHtml(node.body || "")}</textarea></label><label><span>Image</span><select data-node-field="image">${imageOptions(node.image || "")}</select></label><label><span>Alt text</span><input data-node-field="alt" value="${escapeAttr(node.alt || "")}"></label></div><div class="choices"><div class="choices-head"><strong>Learner responses</strong><button type="button" data-add-choice>+ Response</button></div><div class="choices-list" data-choices></div></div>`;
+    card.innerHTML = `<div class="scenario-head"><div><span class="eyebrow">Decision ${index + 1}</span><strong>${escapeHtml(node.title || "Untitled decision")}</strong></div><div class="card-actions"><button type="button" data-up>↑</button><button type="button" data-down>↓</button><button type="button" data-copy>Duplicate</button><button type="button" data-delete>Delete</button></div></div><div class="field-grid"><label><span>Who is speaking?</span><input data-node-field="speaker" value="${escapeAttr(node.speaker || "")}"></label><label class="wide"><span>What's happening?</span><input data-node-field="title" value="${escapeAttr(node.title || "")}"></label><label class="wide"><span>What does the learner know?</span><textarea rows="3" data-node-field="body">${escapeHtml(node.body || "")}</textarea></label><label><span>Image</span><select data-node-field="image">${imageOptions(node.image || "")}</select></label><label><span>Alt text</span><input data-node-field="alt" value="${escapeAttr(node.alt || "")}"></label></div><div class="choices"><div class="choices-head"><strong>Learner responses</strong><button type="button" data-add-choice>+ Response</button></div><div class="choices-list" data-choices></div></div>`;
 
     const choiceRoot = $("[data-choices]", card);
     node.choices.forEach((choice, choiceIndex) => choiceRoot.appendChild(choiceCard(node, choice, choiceIndex)));
 
-    $$("[data-node-field]", card).forEach((input) => input.addEventListener(input.dataset.nodeField === "id" ? "change" : "input", () => {
+    $("[data-node-field]", card).forEach((input) => input.addEventListener("input", () => {
       const key = input.dataset.nodeField;
-      if (key === "id") {
-        const oldId = node.id;
-        node.id = input.value.trim() || oldId;
-        renameTarget(oldId, node.id);
-      } else {
-        node[key] = input.value;
-      }
+      node[key] = input.value;
       if (key === "title") $(".scenario-head strong", card).textContent = node.title || "Untitled decision";
-      touch(key === "id");
+      touch(false);
     }));
 
     $("[data-add-choice]", card).addEventListener("click", () => {
@@ -343,7 +443,7 @@
     const card = document.createElement("div");
     card.className = "choice-card";
     const options = destinationItems().map((item) => `<option value="${escapeAttr(item.id)}"${item.id === choice.targetId ? " selected" : ""}>${escapeHtml(item.label)}</option>`).join("");
-    card.innerHTML = `<button type="button" class="choice-delete" data-delete aria-label="Delete response">×</button><label class="wide"><span>Learner response ${index + 1}</span><input data-choice-field="text" value="${escapeAttr(choice.text || "")}"></label><label><span>What happens next?</span><select data-choice-field="targetId"><option value="">Choose destination…</option>${options}</select></label><label><span>Impact on score</span><input type="number" data-choice-field="scoreDelta" value="${Number(choice.scoreDelta || 0)}"></label><label class="wide"><span>Coaching feedback</span><textarea rows="2" data-choice-field="feedback">${escapeHtml(choice.feedback || "")}</textarea></label><label class="advanced-field wide"><span>Internal response ID</span><input data-choice-field="id" value="${escapeAttr(choice.id || "")}"></label>`;
+    card.innerHTML = `<button type="button" class="choice-delete" data-delete aria-label="Delete response">×</button><label class="wide"><span>Learner response ${index + 1}</span><input data-choice-field="text" value="${escapeAttr(choice.text || "")}"></label><label><span>What happens next?</span><select data-choice-field="targetId"><option value="">Choose destination…</option>${options}</select></label><label><span>Impact on score</span><input type="number" data-choice-field="scoreDelta" value="${Number(choice.scoreDelta || 0)}"></label><label class="wide"><span>Coaching feedback</span><textarea rows="2" data-choice-field="feedback">${escapeHtml(choice.feedback || "")}</textarea></label>`;
 
     $$("[data-choice-field]", card).forEach((input) => input.addEventListener("input", () => {
       const key = input.dataset.choiceField;
@@ -360,19 +460,13 @@
   function outcomeCard(outcome, index) {
     const card = document.createElement("article");
     card.className = "outcome-card";
-    card.innerHTML = `<div class="outcome-head"><div><span class="eyebrow">Outcome ${index + 1}</span><strong>${escapeHtml(outcome.title || "Untitled outcome")}</strong></div><div class="card-actions"><button type="button" data-up>↑</button><button type="button" data-down>↓</button><button type="button" data-copy>Duplicate</button><button type="button" data-delete>Delete</button></div></div><div class="field-grid"><label class="advanced-field"><span>Internal ID</span><input data-outcome-field="id" value="${escapeAttr(outcome.id)}"></label><label><span>Outcome name</span><input data-outcome-field="title" value="${escapeAttr(outcome.title || "")}"></label><label class="wide"><span>What happened?</span><textarea rows="3" data-outcome-field="body">${escapeHtml(outcome.body || "")}</textarea></label><label class="wide"><span>Learner takeaway / next step</span><textarea rows="2" data-outcome-field="summary">${escapeHtml(outcome.summary || "")}</textarea></label><label><span>Image</span><select data-outcome-field="image">${imageOptions(outcome.image || "")}</select></label><label><span>Alt text</span><input data-outcome-field="alt" value="${escapeAttr(outcome.alt || "")}"></label></div>`;
+    card.innerHTML = `<div class="outcome-head"><div><span class="eyebrow">Outcome ${index + 1}</span><strong>${escapeHtml(outcome.title || "Untitled outcome")}</strong></div><div class="card-actions"><button type="button" data-up>↑</button><button type="button" data-down>↓</button><button type="button" data-copy>Duplicate</button><button type="button" data-delete>Delete</button></div></div><div class="field-grid"><label><span>Outcome name</span><input data-outcome-field="title" value="${escapeAttr(outcome.title || "")}"></label><label class="wide"><span>What happened?</span><textarea rows="3" data-outcome-field="body">${escapeHtml(outcome.body || "")}</textarea></label><label class="wide"><span>Learner takeaway / next step</span><textarea rows="2" data-outcome-field="summary">${escapeHtml(outcome.summary || "")}</textarea></label><label><span>Image</span><select data-outcome-field="image">${imageOptions(outcome.image || "")}</select></label><label><span>Alt text</span><input data-outcome-field="alt" value="${escapeAttr(outcome.alt || "")}"></label></div>`;
 
-    $$("[data-outcome-field]", card).forEach((input) => input.addEventListener(input.dataset.outcomeField === "id" ? "change" : "input", () => {
+    $("[data-outcome-field]", card).forEach((input) => input.addEventListener("input", () => {
       const key = input.dataset.outcomeField;
-      if (key === "id") {
-        const oldId = outcome.id;
-        outcome.id = input.value.trim() || oldId;
-        renameTarget(oldId, outcome.id);
-      } else {
-        outcome[key] = input.value;
-      }
+      outcome[key] = input.value;
       if (key === "title") $(".outcome-head strong", card).textContent = outcome.title || "Untitled outcome";
-      touch(key === "id");
+      touch(false);
     }));
     $("[data-up]", card).addEventListener("click", () => move(state.model.content.outcomes, index, -1));
     $("[data-down]", card).addEventListener("click", () => move(state.model.content.outcomes, index, 1));
@@ -441,7 +535,7 @@
     const all = [...state.model.content.nodes, ...state.model.content.outcomes];
     const ids = all.map((item) => item.id).filter(Boolean);
     const idSet = new Set(ids);
-    if (ids.length !== all.length) issues.push("Some advanced internal IDs are missing.");
+    if (ids.length !== all.length) issues.push("Internal routing data is incomplete.");
     if (idSet.size !== ids.length) issues.push("Two project items share the same internal ID.");
     if (!state.model.content.nodes.some((node) => node.id === state.model.content.startNodeId)) issues.push("The first decision is missing.");
     state.model.content.nodes.forEach((node) => {
@@ -497,11 +591,14 @@
     const nodes = new Map(model.content.nodes.map((node) => [node.id, node]));
     const outcomes = new Map(model.content.outcomes.map((outcome) => [outcome.id, outcome]));
     const config = model.content.score || {};
+    const scoreMode = state.profile?.behavior?.scoring || "none";
+    const scoringEnabled = scoreMode !== "none";
+    const showScore = scoreMode === "visible";
     let currentId = model.content.startNodeId;
     let score = Number(config.startingValue || 0);
     const history = [];
     const clamp = (value) => Math.max(Number(config.minimum ?? 0), Math.min(Number(config.maximum ?? 100), value));
-    const scoreHtml = () => config.enabled && config.showToLearner ? `<div class="learner-score"><span>${escapeHtml(config.label || "Score")}</span><strong>${score}</strong></div>` : "";
+    const scoreHtml = () => scoringEnabled && showScore ? `<div class="learner-score"><span>${escapeHtml(config.label || "Score")}</span><strong>${score}</strong></div>` : "";
     const imageHtml = (path, alt) => {
       const url = assetUrl(path);
       return url ? `<img class="learner-image" src="${escapeAttr(url)}" alt="${escapeAttr(alt || "")}">` : "";
@@ -533,7 +630,7 @@
         button.className = "learner-choice";
         button.innerHTML = `<span>${index + 1}</span><strong>${escapeHtml(choice.text)}</strong>`;
         button.addEventListener("click", () => {
-          if (config.enabled) score = clamp(score + Number(choice.scoreDelta || 0));
+          if (scoringEnabled) score = clamp(score + Number(choice.scoreDelta || 0));
           history.push(choice.id);
           $$(".learner-choice", root).forEach((item) => { item.disabled = true; });
           const feedback = document.createElement("div");
@@ -566,13 +663,136 @@
     state.sourceFiles.sort((a, b) => a.path.localeCompare(b.path));
     renderSourceFiles();
     renderEditor();
+    renderProfileFields();
+    renderHistory();
     renderPreview();
     saveDraft();
     toast(`${files.length} source file${files.length === 1 ? "" : "s"} added`);
   }
 
+  function renderProfileFields() {
+    if (!state.profile) return;
+    $("[data-profile-field]").forEach((input) => {
+      const value = getPath(state.profile, input.dataset.profileField);
+      if (document.activeElement !== input) input.value = value ?? "";
+    });
+    $("[data-profile-list]").forEach((input) => {
+      const value = getPath(state.profile, input.dataset.profileList);
+      if (document.activeElement !== input) input.value = Array.isArray(value) ? value.join("\n") : "";
+    });
+    const meta = $("[data-preview-meta]");
+    if (meta) {
+      const theme = state.profile.presentation?.theme?.name || "Default";
+      const audience = state.profile.learning?.audience || "Audience not set";
+      const target = state.profile.export?.target || "web";
+      meta.innerHTML = `<span><strong>Theme</strong>${escapeHtml(theme)}</span><span><strong>Audience</strong>${escapeHtml(audience)}</span><span><strong>Export intent</strong>${escapeHtml(target)}</span>`;
+    }
+    applyThemeToPreview();
+  }
+
+  function applyThemeToPreview() {
+    const root = $("[data-preview-root]");
+    if (!root || !state.profile?.presentation?.theme) return;
+    const colors = state.profile.presentation.theme.colors || {};
+    root.style.setProperty("--experience-primary", colors.primary || "#508484");
+    root.style.setProperty("--experience-secondary", colors.secondary || "#79C99E");
+    root.style.setProperty("--experience-accent", colors.accent || "#97DB4F");
+    root.style.setProperty("--experience-background", colors.background || "#ffffff");
+    root.style.setProperty("--experience-text", colors.text || "#24302D");
+  }
+
+  function openTool(name) {
+    state.activeTool = name;
+    const drawer = $("[data-utility-drawer]");
+    const backdrop = $(".drawer-backdrop");
+    const titles = {
+      ai: ["Project tool", "Ask AI"],
+      theme: ["Presentation", "Theme"],
+      history: ["Versions", "Transformation history"],
+      settings: ["Project", "Project settings"]
+    };
+    $("[data-tool-panel]").forEach((panel) => { panel.hidden = panel.dataset.toolPanel !== name; });
+    setText("[data-tool-eyebrow]", titles[name]?.[0] || "Project tool");
+    setText("[data-tool-title]", titles[name]?.[1] || "Project tool");
+    drawer.classList.add("open");
+    drawer.setAttribute("aria-hidden", "false");
+    backdrop.hidden = false;
+    document.body.classList.add("drawer-open");
+    if (name === "history") renderHistory();
+    if (name === "theme" || name === "settings") renderProfileFields();
+  }
+
+  function closeTool() {
+    state.activeTool = null;
+    const drawer = $("[data-utility-drawer]");
+    drawer.classList.remove("open");
+    drawer.setAttribute("aria-hidden", "true");
+    $(".drawer-backdrop").hidden = true;
+    document.body.classList.remove("drawer-open");
+  }
+
+  function addHistoryEntry(entry) {
+    const record = {
+      id: uid("history"),
+      createdAt: new Date().toISOString(),
+      prompt: entry.prompt || "",
+      action: entry.action || "AI transformation",
+      model: entry.model || "",
+      summary: Array.isArray(entry.summary) ? entry.summary : [],
+      reviewNotes: Array.isArray(entry.reviewNotes) ? entry.reviewNotes : [],
+      beforeProject: clone(entry.beforeProject),
+      afterProject: clone(entry.afterProject),
+      beforeProfile: clone(entry.beforeProfile || state.profile),
+      afterProfile: clone(entry.afterProfile || state.profile)
+    };
+    state.history.unshift(record);
+    state.history = state.history.slice(0, 30);
+    renderHistory();
+    saveDraft();
+    return record.id;
+  }
+
+  function restoreVersion(project, profile, message) {
+    if (!validScenario(project)) return toast("That history version is no longer compatible.");
+    state.model = clone(project);
+    state.profile = profile ? clone(profile) : profileFromModel(project);
+    syncScoringFromProfile();
+    renderAll();
+    saveDraft();
+    toast(message || "Version restored");
+  }
+
+  function renderHistory() {
+    const root = $("[data-history-list]");
+    if (!root) return;
+    setText("[data-history-count]", state.history.length ? `${state.history.length} AI change${state.history.length === 1 ? "" : "s"}` : "No AI changes yet");
+    root.innerHTML = "";
+    if (!state.history.length) {
+      root.innerHTML = '<div class="empty-state">No AI transformations yet. Each successful AI action will appear here as a recoverable version.</div>';
+      return;
+    }
+    state.history.forEach((entry, index) => {
+      const article = document.createElement("article");
+      article.className = "history-entry";
+      const date = new Date(entry.createdAt);
+      article.innerHTML = `<div class="history-head"><div><span class="eyebrow">AI version ${state.history.length - index}</span><strong>${escapeHtml(entry.action || "AI transformation")}</strong><small>${escapeHtml(date.toLocaleString())}${entry.model ? ` · ${escapeHtml(entry.model)}` : ""}</small></div></div><p class="history-prompt">${escapeHtml(entry.prompt || "No prompt recorded.")}</p>${entry.summary?.length ? `<ul>${entry.summary.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>` : ""}<div class="history-actions"><button type="button" data-restore-after>Restore this version</button><button type="button" data-restore-before>Restore before change</button><button type="button" class="primary-soft" data-edit-rerun>Edit & rerun</button></div>`;
+      $("[data-restore-after]", article).addEventListener("click", () => restoreVersion(entry.afterProject, entry.afterProfile, "AI version restored"));
+      $("[data-restore-before]", article).addEventListener("click", () => restoreVersion(entry.beforeProject, entry.beforeProfile, "Pre-AI version restored"));
+      $("[data-edit-rerun]", article).addEventListener("click", () => {
+        restoreVersion(entry.beforeProject, entry.beforeProfile, "Starting point restored");
+        $("[data-ai-prompt]").value = entry.prompt || "";
+        openTool("ai");
+        toast("Edit the prompt, then apply AI changes.");
+      });
+      root.appendChild(article);
+    });
+  }
+
   function renderJson() {
-    if (state.model) $("[data-json-output]").textContent = JSON.stringify(state.model, null, 2);
+    if (!state.model) return;
+    const portable = clone(state.model);
+    portable.metadata = { ...(portable.metadata || {}), workbenchProfile: clone(state.profile), workbenchVersion: "0.3" };
+    $("[data-json-output]").textContent = JSON.stringify(portable, null, 2);
   }
 
   function renderAll() {
@@ -598,7 +818,7 @@
     setText("[data-save-state]", "Saving…");
     state.saveTimer = setTimeout(() => {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ model: state.model, sourcePrompt: state.sourcePrompt, reference: state.reference.map((item) => ({ path: item.path, text: item.text })) }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ model: state.model, profile: state.profile, history: state.history, sourcePrompt: state.sourcePrompt, reference: state.reference.map((item) => ({ path: item.path, text: item.text })) }));
         setText("[data-save-state]", "Autosaved locally");
       } catch (_) {
         setText("[data-save-state]", "Local save unavailable");
@@ -611,8 +831,11 @@
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
       if (!saved || !validScenario(saved.model)) return false;
       state.model = saved.model;
+      state.profile = saved.profile ? clone(saved.profile) : profileFromModel(saved.model);
+      state.history = Array.isArray(saved.history) ? saved.history : [];
       state.sourcePrompt = saved.sourcePrompt || "";
       state.reference = Array.isArray(saved.reference) ? saved.reference : [];
+      syncScoringFromProfile();
       $("[data-start-panel]").hidden = true;
       $("[data-workspace]").hidden = false;
       renderAll();
@@ -637,6 +860,7 @@
   function downloadJson() {
     const model = clone(state.model);
     model.id = slug(model.title || model.id);
+    model.metadata = { ...(model.metadata || {}), workbenchProfile: clone(state.profile), workbenchVersion: "0.3" };
     const blob = new Blob([`${JSON.stringify(model, null, 2)}\n`], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
@@ -685,14 +909,18 @@
       state.sourcePrompt = "";
       state.sourceFiles = [];
       state.reference = [];
+      state.profile = defaultProfile();
+      state.history = [];
+      closeTool();
       $("[data-workspace]").hidden = true;
       $("[data-start-panel]").hidden = false;
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
 
-    $$("[data-tab]").forEach((button) => button.addEventListener("click", () => switchTab(button.dataset.tab)));
-    $$("[data-jump]").forEach((button) => button.addEventListener("click", () => switchTab(button.dataset.jump)));
+    $("[data-tab]").forEach((button) => button.addEventListener("click", () => switchTab(button.dataset.tab)));
     $("[data-go-edit]").addEventListener("click", () => switchTab("edit"));
+    $("[data-open-tool]").forEach((button) => button.addEventListener("click", () => openTool(button.dataset.openTool)));
+    $("[data-close-tool]").forEach((button) => button.addEventListener("click", closeTool));
 
     $("[data-source-prompt]").addEventListener("input", (event) => {
       state.sourcePrompt = event.target.value;
@@ -707,11 +935,6 @@
       state.model[input.dataset.projectField] = input.value;
       touch(false);
     }));
-
-    $("[data-toggle-advanced]").addEventListener("click", (event) => {
-      const on = document.body.classList.toggle("show-advanced");
-      event.currentTarget.textContent = on ? "Hide advanced fields" : "Advanced fields";
-    });
 
     $("[data-add-decision]").addEventListener("click", () => {
       const number = state.model.content.nodes.length + 1;
@@ -734,19 +957,40 @@
 
     $$("[data-ai-preset]").forEach((button) => button.addEventListener("click", () => {
       const presets = {
-        sanitize: "Sanitize this project for a public portfolio. Replace confidential, internal-only, customer-specific, proprietary, or identifying information, files, and links with realistic generic alternatives while preserving the instructional structure and interaction logic.",
-        rebrand: "Apply a different saved brand theme to this project without changing the instructional structure or learner flow.",
-        audience: "Adapt this project for a different learner audience. Update terminology, examples, assumptions, coaching feedback, and context while preserving the core learning objective.",
-        similar: "Use this project as the source template. Keep the interaction structure and behavior, but rebuild the content using the source materials I uploaded."
+        sanitize: "Sanitize this project for a public portfolio. Replace confidential, internal-only, customer-specific, proprietary, or identifying information, files, and links with realistic generic alternatives while preserving the learning structure, interaction behavior, and design intent.",
+        theme: "Apply and refine the current Project Theme. Make the rendered learning experience follow the saved brand direction, colors, typography, layout, identity treatment, accessibility rules, and target-specific export notes without changing the learning objective or branch logic.",
+        audience: "Adapt this project for the audience defined in Project Settings. Update terminology, examples, assumptions, coaching feedback, and context while preserving the core learning objective and interaction mechanics.",
+        similar: "Use this project as the source template. Keep useful interaction structure and presentation behavior, but rebuild the learning content using the source materials I uploaded."
       };
       $("[data-ai-prompt]").value = presets[button.dataset.aiPreset] || "";
     }));
+
+    $("[data-profile-field]").forEach((input) => input.addEventListener("input", () => {
+      setPath(state.profile, input.dataset.profileField, input.value);
+      syncScoringFromProfile();
+      renderProfileFields();
+      if (state.activeTab === "preview") renderPreview();
+      saveDraft();
+    }));
+    $("[data-profile-list]").forEach((input) => input.addEventListener("input", () => {
+      setPath(state.profile, input.dataset.profileList, input.value.split(/\r?\n/).map((item) => item.trim()).filter(Boolean));
+      saveDraft();
+    }));
+    $("[data-theme-with-ai]")?.addEventListener("click", () => {
+      $("[data-ai-prompt]").value = "Apply and refine the current Project Theme. Make the rendered learning experience follow the saved brand direction, colors, typography, layout, identity treatment, accessibility rules, and target-specific export notes without changing the learning objective or branch logic.";
+      openTool("ai");
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && state.activeTool) closeTool();
+    });
 
     window.addEventListener("beforeunload", revokeUrls);
   }
 
   window.LX_WORKBENCH = {
     getProject: () => state.model ? clone(state.model) : null,
+    getProfile: () => clone(state.profile),
+    getHistory: () => clone(state.history),
     getSourcePrompt: () => state.sourcePrompt || "",
     getReference: () => clone(state.reference),
     getSourceFiles: () => state.sourceFiles.map((item) => ({ ...item })),
@@ -754,9 +998,13 @@
     validate,
     toast,
     switchTab,
-    replaceProject: (model) => {
+    openTool,
+    addHistoryEntry,
+    replaceProject: (model, profile = null) => {
       if (!validScenario(model)) throw new Error("AI returned an unsupported project.");
       state.model = clone(model);
+      state.profile = profile ? clone(profile) : profileFromModel(model);
+      syncScoringFromProfile();
       renderAll();
       saveDraft();
       switchTab("edit");
