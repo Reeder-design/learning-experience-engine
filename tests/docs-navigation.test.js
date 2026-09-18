@@ -195,6 +195,8 @@ assertIncludes('docs/workbench/index.html', [
   'Secure local AI',
   'data-private-settings',
   'data-workbench-logout',
+  'data-header-ai-status',
+  'data-header-test-ai',
   '../assets/app-registry.js',
 ], 'Learning Project Workbench');
 const workbenchAppJs = read('docs/workbench/workbench.js');
@@ -293,7 +295,7 @@ assertIncludes('docs/user-guide/workbench.html', ['Learning Project Workbench', 
 assertIncludes('server/workbench-auth.js', ['PBKDF2_ITERATIONS = 600000', 'HttpOnly', 'SameSite=Strict', 'checkCsrf', 'SESSION_SECONDS = 8 * 60 * 60'], 'Workbench auth');
 assertIncludes('scripts/preview-docs.js', ['127.0.0.1', 'trustedHost', 'workbench-login', 'workbench-setup', 'workbench-settings', 'checkCsrf', '.env.workbench'], 'Private Workbench server');
 assertIncludes('server/workbench-ai-core.js', ['store: false', 'json_schema', 'validateScenario', 'gpt-5.6-terra'], 'Workbench AI core');
-assertIncludes('docs/workbench/ai-client.js', ['/api/workbench-session', '/api/workbench-ai', 'X-CSRF-Token', 'Undo AI change'], 'Workbench AI client');
+assertIncludes('docs/workbench/ai-client.js', ['/api/workbench-session', '/api/workbench-ai', 'X-CSRF-Token', 'Undo AI change', 'data-header-ai-status', 'data-header-test-ai'], 'Workbench AI client');
 
 for (const [fileName, forbiddenMarker] of [
   ['docs/workbench/index.html', 'data-ai-token'],
