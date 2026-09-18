@@ -18,6 +18,7 @@ on:
       - 'scripts/preview-docs.js'
       - 'schemas/component.schema.json'
       - 'schemas/course.schema.json'
+      - 'schemas/workbench-project-profile.schema.json'
       - 'tests/component-builder.test.js'
       - 'tests/docs-navigation.test.js'
       - 'tests/workbench-ai.test.js'
@@ -40,6 +41,7 @@ on:
       - 'scripts/preview-docs.js'
       - 'schemas/component.schema.json'
       - 'schemas/course.schema.json'
+      - 'schemas/workbench-project-profile.schema.json'
       - 'tests/component-builder.test.js'
       - 'tests/docs-navigation.test.js'
       - 'tests/workbench-ai.test.js'
@@ -112,7 +114,7 @@ jobs:
           test "$FORBIDDEN" = "403"
 
           AI_RESULT=$(curl --fail --silent --show-error             -b /tmp/lx-cookies.txt             -H "X-CSRF-Token: $CSRF"             -H 'Content-Type: application/json'             --data '{"mode":"generate","sourcePrompt":"Build a discovery scenario.","reference":[],"assetManifest":[],"files":[]}'             http://127.0.0.1:4173/api/workbench-ai)
-          printf '%s' "$AI_RESULT" | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const j=JSON.parse(s);if(!j.ok||j.project?.type!=='branching-scenario')process.exit(1)})"
+          printf '%s' "$AI_RESULT" | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const j=JSON.parse(s);if(!j.ok||j.project?.type!=='branching-scenario'||j.profile?.experienceModel!=='published-learning-web')process.exit(1)})"
 
       - name: Run component and Workbench AI tests
         run: npm test
