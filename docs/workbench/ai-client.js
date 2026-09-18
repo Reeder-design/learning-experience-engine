@@ -1,33 +1,19 @@
 (() => {
-  const ENDPOINT_KEY = "lx-workbench-ai:endpoint";
-  const TOKEN_KEY = "lx-workbench-ai:token";
   const $ = (selector, root = document) => root.querySelector(selector);
   const api = window.LX_WORKBENCH;
   if (!api) return;
 
   let connected = false;
+  let csrf = "";
   let lastBeforeAi = null;
+  let localPrivateMode = false;
 
-  const endpointInput = $("[data-ai-endpoint]");
-  const tokenInput = $("[data-ai-token]");
   const statusChip = $("[data-ai-status]");
   const connectionSummary = $("[data-ai-connection-summary]");
   const generateButton = $("[data-generate-ai]");
   const runButton = $("[data-run-ai]");
   const resultPanel = $("[data-ai-result]");
-
-  function defaultEndpoint() {
-    if (location.hostname === "127.0.0.1" || location.hostname === "localhost") return "/api/workbench-ai";
-    return localStorage.getItem(ENDPOINT_KEY) || "";
-  }
-
-  function endpoint() {
-    return (endpointInput?.value || defaultEndpoint()).trim();
-  }
-
-  function token() {
-    return tokenInput?.value || sessionStorage.getItem(TOKEN_KEY) || "";
-  }
+  const logoutButton = $("[data-workbench-logout]");
 
   function setStatus(text, tone = "neutral") {
     if (!statusChip) return;
@@ -37,35 +23,58 @@
 
   function setConnected(value, detail = "") {
     connected = value;
-    generateButton.disabled = !value;
-    runButton.disabled = !value;
-    setStatus(value ? "AI connected" : "AI not connected", value ? "ok" : "warn");
-    if (connectionSummary) connectionSummary.textContent = detail || (value ? "Secure backend ready" : "Connect a secure backend to enable AI");
+    if (generateButton) generateButton.disabled = !value;
+    if (runButton) runButton.disabled = !value;
+    setStatus(value ? "AI connected" : localPrivateMode ? "AI not configured" : "Secure local mode", value ? "ok" : "warn");
+    if (connectionSummary) {
+      connectionSummary.textContent = detail || (value
+        ? "Private local AI is ready"
+        : localPrivateMode
+          ? "Add an OpenAI API key to .env.workbench to enable AI"
+          : "Open the password-protected local Workbench to use AI");
+    }
   }
 
-  function authHeaders() {
-    const headers = { "Content-Type": "application/json" };
-    if (token()) headers.Authorization = `Bearer ${token()}`;
-    return headers;
+  async function loadSession(showToast = false) {
+    try {
+      const response = await fetch("/api/workbench-session", { credentials: "same-origin", cache: "no-store" });
+      const json = await response.json();
+      if (!response.ok || !json.authenticated) throw new Error("Private Workbench session unavailable.");
+      localPrivateMode = true;
+      csrf = json.csrf || "";
+      if (logoutButton) logoutButton.hidden = false;
+      setConnected(Boolean(json.aiConfigured), json.aiConfigured
+        ? `${json.model || "AI model"} ready in private local mode`
+        : "Private Workbench is unlocked; add an OpenAI API key to enable AI");
+      if (showToast) api.toast(json.aiConfigured ? "Workbench AI connected" : "Workbench unlocked; API key still needed");
+      return Boolean(json.aiConfigured);
+    } catch (_) {
+      localPrivateMode = false;
+      csrf = "";
+      if (logoutButton) logoutButton.hidden = true;
+      setConnected(false, "Open this page through npm run preview-docs and sign in to use private AI tools");
+      return false;
+    }
   }
 
   async function testConnection(showToast = true) {
-    const url = endpoint();
-    if (!url) {
-      setConnected(false, "Add your deployed backend endpoint");
-      if (showToast) api.toast("Add a secure AI backend endpoint first.");
+    const sessionReady = await loadSession(false);
+    if (!localPrivateMode) {
+      if (showToast) api.toast("AI is available only in the password-protected local Workbench.");
       return false;
     }
-
+    if (!sessionReady) {
+      if (showToast) api.toast("Private Workbench is unlocked, but the OpenAI API key is not configured yet.");
+      return false;
+    }
     try {
       setStatus("Checking AI…");
-      const response = await fetch(url, { method: "GET", headers: token() ? { Authorization: `Bearer ${token()}` } : {} });
+      const response = await fetch("/api/workbench-ai", { method: "GET", credentials: "same-origin", cache: "no-store" });
       const json = await response.json();
-      if (!response.ok || !json.ok) throw new Error(json.error || "Could not reach Workbench AI.");
-      const ready = Boolean(json.configured);
-      setConnected(ready, ready ? `${json.model || "AI model"} ready` : "Backend reachable, but OPENAI_API_KEY is not configured");
-      if (showToast) api.toast(ready ? "Workbench AI connected" : "Backend connected, API key still needed");
-      return ready;
+      if (!response.ok || !json.ok || !json.configured) throw new Error(json.error || "Workbench AI is not ready.");
+      setConnected(true, `${json.model || "AI model"} ready in private local mode`);
+      if (showToast) api.toast("Workbench AI connected");
+      return true;
     } catch (error) {
       setConnected(false, error.message);
       if (showToast) api.toast(error.message);
@@ -118,6 +127,10 @@
     return api.getSourceFiles().map((entry) => ({ path: entry.path, kind: entry.kind, name: entry.name }));
   }
 
+  function escapeHtml(value = "") {
+    return String(value).replace(/[&<>"']/g, (char) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[char]));
+  }
+
   function renderResult(result) {
     if (!resultPanel) return;
     const changes = (result.changeSummary || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("");
@@ -137,14 +150,11 @@
     });
   }
 
-  function escapeHtml(value = "") {
-    return String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[char]));
-  }
-
   async function runAi(mode, instruction) {
     if (!connected && !(await testConnection(false))) {
-      api.toast("Connect Workbench AI before running this action.");
-      $("[data-ai-connection]")?.setAttribute("open", "");
+      api.toast(localPrivateMode
+        ? "Add the OpenAI API key before running AI."
+        : "Open the password-protected local Workbench before running AI.");
       return;
     }
     if (mode === "generate" && !api.getSourcePrompt().trim() && !api.getReference().length && !api.getSourceFiles().length) {
@@ -173,12 +183,17 @@
         currentProject: mode === "transform" ? current : null
       };
 
-      const response = await fetch(endpoint(), {
+      const response = await fetch("/api/workbench-ai", {
         method: "POST",
-        headers: authHeaders(),
+        credentials: "same-origin",
+        headers: { "Content-Type":"application/json", "X-CSRF-Token":csrf },
         body: JSON.stringify(payload)
       });
       const json = await response.json();
+      if (response.status === 401 || response.status === 403) {
+        location.href = "/workbench-login";
+        return;
+      }
       if (!response.ok || !json.ok) throw new Error(json.error || "AI transformation failed.");
 
       api.replaceProject(json.project);
@@ -201,33 +216,29 @@
     }
   }
 
-  function initializeConnectionFields() {
-    if (endpointInput) endpointInput.value = defaultEndpoint();
-    if (tokenInput) tokenInput.value = sessionStorage.getItem(TOKEN_KEY) || "";
-
-    endpointInput?.addEventListener("change", () => {
-      const value = endpointInput.value.trim();
-      if (value && !value.startsWith("/")) localStorage.setItem(ENDPOINT_KEY, value);
-      else localStorage.removeItem(ENDPOINT_KEY);
-      setConnected(false);
-    });
-
-    tokenInput?.addEventListener("input", () => {
-      if (tokenInput.value) sessionStorage.setItem(TOKEN_KEY, tokenInput.value);
-      else sessionStorage.removeItem(TOKEN_KEY);
-      setConnected(false);
-    });
-  }
-
   $("[data-test-ai]")?.addEventListener("click", () => testConnection(true));
-  generateButton?.addEventListener("click", () => runAi("generate", "Create a complete branching scenario from the project brief and selected source materials. Use the current project as the structural template where helpful."));
+
+  generateButton?.addEventListener("click", () => runAi(
+    "generate",
+    "Create a complete branching scenario from the project brief and selected source materials. Use the current project as the structural template where helpful."
+  ));
+
   runButton?.addEventListener("click", () => {
     const prompt = $("[data-ai-prompt]")?.value.trim();
     if (!prompt) return api.toast("Tell AI what you want to change first.");
     runAi("transform", prompt);
   });
 
-  initializeConnectionFields();
+  logoutButton?.addEventListener("click", async () => {
+    if (!csrf) return;
+    const response = await fetch("/api/workbench-logout", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "X-CSRF-Token":csrf }
+    });
+    if (response.ok) location.href = "/workbench-login";
+  });
+
   setConnected(false);
-  testConnection(false);
+  loadSession(false);
 })();
