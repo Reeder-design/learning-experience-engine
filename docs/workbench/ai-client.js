@@ -14,6 +14,7 @@
   const runButton = $("[data-run-ai]");
   const resultPanel = $("[data-ai-result]");
   const logoutButton = $("[data-workbench-logout]");
+  const settingsLink = $("[data-private-settings]");
 
   function setStatus(text, tone = "neutral") {
     if (!statusChip) return;
@@ -43,6 +44,7 @@
       localPrivateMode = true;
       csrf = json.csrf || "";
       if (logoutButton) logoutButton.hidden = false;
+      if (settingsLink) settingsLink.hidden = false;
       setConnected(Boolean(json.aiConfigured), json.aiConfigured
         ? `${json.model || "AI model"} ready in private local mode`
         : "Private Workbench is unlocked; add an OpenAI API key to enable AI");
@@ -52,6 +54,7 @@
       localPrivateMode = false;
       csrf = "";
       if (logoutButton) logoutButton.hidden = true;
+      if (settingsLink) settingsLink.hidden = true;
       setConnected(false, "Open this page through npm run preview-docs and sign in to use private AI tools");
       return false;
     }
