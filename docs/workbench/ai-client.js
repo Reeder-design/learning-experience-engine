@@ -5,7 +5,6 @@
 
   let connected = false;
   let csrf = "";
-  let lastBeforeAi = null;
   let localPrivateMode = false;
 
   const statusChip = $("[data-ai-status]");
@@ -151,17 +150,11 @@
     const notes = (result.reviewNotes || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("");
     resultPanel.hidden = false;
     resultPanel.innerHTML = `
-      <div class="ai-result-head"><div><strong>AI changes applied</strong><small>${escapeHtml(result.model || "model")}</small></div><button type="button" data-undo-ai>Undo AI change</button></div>
+      <div class="ai-result-head"><div><strong>AI changes applied</strong><small>${escapeHtml(result.model || "model")}</small></div><button type="button" data-open-history>Open history</button></div>
       ${changes ? `<div><span>What changed</span><ul>${changes}</ul></div>` : ""}
       ${notes ? `<div><span>Review notes</span><ul>${notes}</ul></div>` : ""}
     `;
-    $("[data-undo-ai]", resultPanel)?.addEventListener("click", () => {
-      if (!lastBeforeAi) return;
-      api.replaceProject(lastBeforeAi);
-      lastBeforeAi = null;
-      resultPanel.hidden = true;
-      api.toast("AI change undone");
-    });
+    $("[data-open-history]", resultPanel)?.addEventListener("click", () => api.openTool("history"));
   }
 
   async function runAi(mode, instruction) {
@@ -184,8 +177,19 @@
 
     try {
       const { files, skipped } = await buildFiles();
-      lastBeforeAi = api.getProject();
       const current = api.getProject();
+      const beforeProfile = api.getProfile();
+      const actionLabel = mode === "generate"
+        ? "Generate from source"
+        : /theme|brand|visual|typograph|color/i.test(instruction || "")
+          ? "Set design theme"
+          : /sanit/i.test(instruction || "")
+            ? "Sanitize for portfolio"
+            : /audience|partner|employee|learner/i.test(instruction || "")
+              ? "Adapt audience"
+              : /similar|template|rebuild/i.test(instruction || "")
+                ? "Create similar version"
+                : "AI transformation";
       const payload = {
         mode,
         instruction: instruction || "",
@@ -193,6 +197,7 @@
         reference: api.getReference(),
         assetManifest: assetManifest(),
         files,
+        projectProfile: beforeProfile,
         templateProject: mode === "generate" ? current : null,
         currentProject: mode === "transform" ? current : null
       };
@@ -210,7 +215,19 @@
       }
       if (!response.ok || !json.ok) throw new Error(json.error || "AI transformation failed.");
 
-      api.replaceProject(json.project);
+      const nextProfile = json.profile || beforeProfile;
+      api.replaceProject(json.project, nextProfile);
+      api.addHistoryEntry({
+        action: actionLabel,
+        prompt: instruction || (mode === "generate" ? api.getSourcePrompt() : ""),
+        model: json.model || "",
+        summary: json.changeSummary || [],
+        reviewNotes: json.reviewNotes || [],
+        beforeProject: current,
+        afterProject: json.project,
+        beforeProfile,
+        afterProfile: nextProfile
+      });
       renderResult({
         ...json,
         reviewNotes: [...(json.reviewNotes || []), ...(skipped.length ? [`Large source files were not sent to AI: ${skipped.join(", ")}`] : [])]
