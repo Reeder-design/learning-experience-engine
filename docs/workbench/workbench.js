@@ -1,5 +1,6 @@
 (() => {
   const STORAGE_KEY = "lx-learning-project-workbench:v0.3";
+  const LEGACY_STORAGE_KEYS = ["lx-learning-project-workbench:v0.1"];
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -834,7 +835,13 @@
 
   function restoreDraft() {
     try {
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+      let raw = localStorage.getItem(STORAGE_KEY);
+      let migratedFrom = "";
+      if (!raw) {
+        migratedFrom = LEGACY_STORAGE_KEYS.find((key) => localStorage.getItem(key)) || "";
+        raw = migratedFrom ? localStorage.getItem(migratedFrom) : null;
+      }
+      const saved = JSON.parse(raw || "null");
       if (!saved || !validScenario(saved.model)) return false;
       state.model = saved.model;
       state.profile = saved.profile ? clone(saved.profile) : profileFromModel(saved.model);
@@ -846,6 +853,10 @@
       $("[data-workspace]").hidden = false;
       renderAll();
       switchTab("source");
+      if (migratedFrom) {
+        saveDraft();
+        setTimeout(() => toast("Previous Workbench draft migrated to v0.3"), 250);
+      }
       return true;
     } catch (_) {
       return false;
@@ -910,6 +921,7 @@
 
     $("[data-new-project]").addEventListener("click", () => {
       localStorage.removeItem(STORAGE_KEY);
+      LEGACY_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
       revokeUrls();
       state.model = null;
       state.sourcePrompt = "";
