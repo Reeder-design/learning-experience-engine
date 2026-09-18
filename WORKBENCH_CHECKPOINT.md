@@ -1,20 +1,21 @@
-# Learning Project Workbench v0.1 — Checkpoint
+# Learning Project Workbench v0.2 — Checkpoint
 
-**Date:** September 16, 2026  
-**Repository:** `Reeder-design/learning-experience-engine`
+**Date:** September 17, 2026  
+**Repository:** `Reeder-design/learning-experience-engine`  
+**Active feature branch:** `feature/workbench-ai`
 
-## Product pivot
+## Product north star
 
-The primary product direction is now an **AI-assisted Learning Project Workbench**, not a replacement for Rise or Storyline.
-
-North star:
+Learning Experience Engine is evolving into an **AI-assisted Learning Project Workbench**, not a replacement for Rise or Storyline.
 
 ```text
 source content / files / existing project / saved template
         ↓
 Learning Project Workbench
         ↓
-editable populated project + learner preview
+AI-generated or reconstructed project
+        ↓
+editable populated fields + learner preview
         ↓
 AI transformations + manual fine-tuning
         ↓
@@ -25,8 +26,6 @@ The specialized Scenario Builder, Interaction Builder, and Course Builder remain
 
 ## Stable app naming contract
 
-Public display names and implementation identifiers are intentionally separate.
-
 ```text
 workbench        → Learning Project Workbench
 component-studio → Interaction Builder
@@ -34,27 +33,38 @@ scenario-builder → Scenario Builder
 course-composer  → Course Builder
 ```
 
-The canonical browser registry is:
+Canonical registry:
 
 ```text
 docs/assets/app-registry.js
 ```
 
-Important rules:
+Do not rename stable implementation routes just to match public display labels.
 
-- `course-composer` remains the stable internal ID and route even though the public name is **Course Builder**.
-- Do not create a duplicate `course-builder/` implementation folder just to match the label.
-- Do not casually rename existing internal routes, storage keys, or integration identifiers when changing display copy.
-- Public HTML should use **Course Builder**; CI rejects the legacy public label `Course Composer`.
-- Every public `docs/**/*.html` page must explicitly include the Engine SVG favicon, ICO fallback, and Safari mask icon. CI discovers future HTML pages automatically.
+## Public/private product split
 
-## Workbench v0.1
-
-Public path:
+This distinction is intentional and should remain:
 
 ```text
-docs/workbench/
+PUBLIC GITHUB PAGES
+→ generic demos
+→ public-safe manual authoring
+→ engine docs / previews
+→ no secret API key
+→ no confidential source workflow
+
+PRIVATE LOCAL WORKBENCH
+→ npm run workbench
+→ 127.0.0.1 only
+→ password protected
+→ private source materials
+→ local Git-ignored API key
+→ AI generation / transformation
 ```
+
+GitHub Pages is not the private manager.
+
+## Workbench v0.2 candidate
 
 First supported project type:
 
@@ -62,82 +72,217 @@ First supported project type:
 branching-scenario
 ```
 
-### Implemented
+### Source / project entry
 
-- Start from template
+- Start from a source template
 - Start simple
 - Open existing branching-scenario JSON
-- Built-in source templates:
-  - Customer discovery conversation
-  - Decision practice with coaching
-  - Objection handling conversation
-- Source brief / outline field
-- Add source files or a source folder
+- Paste project brief / source outline
+- Add individual source files or a source folder
 - Read local TXT / MD / CSV / JSON reference content
-- Local image files become selectable in project fields and learner preview
-- Reconstruct JSON into editable project fields
-- Edit scenario title, purpose, instruction, decisions, responses, coaching feedback, destinations, and outcomes
-- Internal IDs hidden behind Advanced fields
-- Continuous flow validation
-- Interactive learner preview
-- Local draft autosave
-- Download interaction JSON
-- AI transformation UI/presets for:
-  - Sanitize for portfolio
-  - Apply another theme
-  - Adapt for another audience
-  - Create a similar version
-- AI execution intentionally disabled until a secure backend is added
+- Use local images in project fields and learner preview
 
-### Deliberate v0.1 boundaries
+Built-in source templates:
 
-- AI generation/transformation is not connected yet
-- OpenAI API key must never be placed in GitHub Pages client JavaScript
-- Source Template Library is not persistent yet
-- Theme Library is not implemented yet
-- Source files are current-session browser objects and do not survive reload
-- PDF/PPT/DOC files can be selected but are not parsed locally in v0.1
-- Only branching-scenario JSON is reconstructed in the Workbench today
-- Project ZIP packaging for the Workbench itself is not yet implemented
-- Rise/Storyline guided Workbench import is future work
+- Customer discovery conversation
+- Decision practice with coaching
+- Objection handling conversation
 
-## Secure AI architecture — next implementation layer
+### AI generation / transformation
 
-Target:
+Private local mode now has a secure AI integration contract for:
+
+- project brief + source material → populated branching scenario
+- sanitize for public portfolio
+- adapt for another audience
+- use current project as a structural template for new source content
+- freeform plain-language project transformation
+
+AI behavior:
 
 ```text
-Browser Workbench
+Workbench source/current project
         ↓
-secure backend / serverless route
+local authenticated API route
         ↓
-OpenAI API
+OpenAI Responses API
         ↓
-structured project response
+strict JSON-schema response
         ↓
-component schema + branch validation
+Engine referential/flow validation
         ↓
-editable project + learner preview
+optional one-pass repair if needed
+        ↓
+editable Workbench project + preview
 ```
 
-Initial AI tasks:
+The AI output is not applied until structural validation passes.
 
-1. Source outline/reference content → populated scenario JSON.
-2. Sanitize confidential/internal information, files, and links while preserving learning structure.
-3. Rebrand using a saved theme.
-4. Adapt for another learner audience.
-5. Use an existing project as a source template and rebuild it around new content/assets.
+The Workbench keeps the pre-AI project in memory so **Undo AI change** can restore it.
 
-Use a separate OpenAI API Project/key for Learning Experience Engine rather than placing an existing secret in the public frontend. The same OpenAI organization/account can contain multiple API Projects.
+### Source-file behavior
 
-## Next milestones
+Selecting a file does not send it anywhere.
 
-1. Secure AI API/serverless layer.
-2. Structured AI generation contract + schema validation.
-3. Source Template Library for complete reusable projects.
-4. Theme Library.
-5. Editable Workbench project package containing source brief, source metadata/files, project JSON, and template/theme references.
-6. Guided Rise/Storyline import into the Workbench.
-7. Expand Workbench beyond branching scenarios.
+Only an explicit Generate / Apply AI action packages supported source material for the API request.
+
+Current AI packaging:
+
+- readable reference text is included as project context
+- selected images can be sent as image inputs
+- selected document files can be sent as file inputs
+- a local asset manifest constrains image paths the generated project may reference
+- large source files are skipped and reported rather than silently exceeding the local request limit
+
+OpenAI request uses:
+
+```text
+store: false
+```
+
+The user must still follow applicable company/client rules before sending confidential source material to any external AI API.
+
+## Private local security
+
+The private Workbench server binds only to:
+
+```text
+127.0.0.1
+```
+
+Implemented protections:
+
+- trusted-host enforcement
+- first-run password setup
+- PBKDF2-HMAC-SHA256 password hashing
+- 600,000 iterations
+- unique random salt
+- no plaintext password storage
+- Git-ignored `.env.workbench`
+- random local session signing secret
+- signed 8-hour session
+- HttpOnly cookie
+- SameSite=Strict cookie
+- CSRF token required for modifying API requests
+- login throttling after repeated failures
+- private settings page
+- sign out action
+
+First launch:
+
+```text
+npm run workbench
+        ↓
+first-time secure setup
+        ↓
+create Workbench password
+        ↓
+optionally paste separate OpenAI API key
+        ↓
+private Workbench
+```
+
+Later launches:
+
+```text
+npm run workbench
+→ password
+→ Workbench
+```
+
+Private settings can:
+
+- add / rotate OpenAI API key
+- switch between GPT-5.6 Terra, Sol, and Luna
+- change the Workbench password
+
+Secrets remain in local `.env.workbench`, which is already covered by the repository's `.env.*` Git ignore rule.
+
+## API model choice
+
+Default:
+
+```text
+gpt-5.6-terra
+```
+
+Rationale: balanced intelligence/cost for repeated content transformation.
+
+Available private setting choices:
+
+- `gpt-5.6-terra`
+- `gpt-5.6-sol`
+- `gpt-5.6-luna`
+
+## Current editor / preview behavior
+
+- populated editable scenario fields
+- internal IDs hidden behind Advanced fields
+- decision/response/outcome editing
+- coaching feedback
+- optional score deltas
+- destination dropdowns
+- local image selection
+- continuous branch validation
+- interactive learner preview
+- local autosave
+- download interaction JSON
+- advanced JSON inspection
+
+## Deliberate boundaries
+
+Not implemented yet:
+
+- persistent Source Template Library
+- saved Theme Library
+- Workbench project ZIP containing source + metadata + project JSON
+- source files surviving browser reload
+- broader project types beyond branching scenarios
+- guided Rise/Storyline import inside the Workbench
+- SCORM/xAPI/LMS deployment
+- full arbitrary scenario-variable system
+- hosted/private cloud Workbench authentication
+
+Do not move confidential AI workflows to public GitHub Pages merely for convenience.
+
+## Testing / guardrails
+
+The feature branch now includes regression coverage for:
+
+- browser/server JavaScript syntax
+- Workbench UX markers
+- canonical app naming
+- favicon coverage
+- password hashing / password verification
+- signed session validation
+- CSRF validation
+- unauthenticated Workbench redirect
+- authenticated login
+- protected AI POST rejecting missing CSRF
+- mock AI generation round trip
+- generated branching-scenario validation
+- existing component-builder smoke tests
+
+Relevant files:
+
+```text
+server/workbench-auth.js
+server/local-config.js
+server/workbench-ai-core.js
+api/workbench-ai.js
+docs/workbench/ai-client.js
+scripts/preview-docs.js
+tests/workbench-ai.test.js
+.github/workflows/component-smoke.yml
+```
+
+## Next after this feature is QA'd and merged
+
+1. Source Template Library for complete reusable projects.
+2. Theme Library and AI rebrand transformation contract.
+3. Editable Workbench project package.
+4. Guided Rise/Storyline import.
+5. Expand AI Workbench beyond branching scenarios.
 
 ## UX rule
 
@@ -147,8 +292,4 @@ The user should normally think:
 
 Not:
 
-> Which JSON object, block, node, trigger, or file path do I need to construct?
-
-## Testing
-
-Workbench browser JavaScript syntax, canonical app naming, automatic favicon coverage for all public HTML pages, required Workbench workflow markers, static navigation, and existing component-builder smoke tests are covered by `.github/workflows/component-smoke.yml` and `tests/docs-navigation.test.js`.
+> Which JSON object, block, node, trigger, API route, or file path do I need to construct?
