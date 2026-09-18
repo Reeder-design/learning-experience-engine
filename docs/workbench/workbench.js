@@ -799,6 +799,8 @@
     renderProjectMeta();
     renderSourceFiles();
     renderEditor();
+    renderProfileFields();
+    renderHistory();
     renderPreview();
   }
 
