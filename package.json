@@ -4,7 +4,7 @@
   "private": false,
   "description": "Reusable framework for building data-driven learning experiences, interactions, and course packages.",
   "scripts": {
-    "test": "node tests/component-builder.test.js",
+    "test": "node tests/component-builder.test.js && node tests/workbench-ai.test.js",
     "preview-docs": "node scripts/preview-docs.js",
     "inspect-rise": "node tools/rise-inspector/index.js",
     "extract-rise": "node tools/rise-extractor/index.js",
@@ -18,7 +18,9 @@
     "preview-storyline": "node tools/storyline-preview/index.js",
     "build": "echo \"Build system not implemented yet\"",
     "build-rise": "echo \"Rise Code Block builder not implemented yet\"",
-    "validate-public": "echo \"Public validation not implemented yet\""
+    "validate-public": "echo \"Public validation not implemented yet\"",
+    "workbench": "node scripts/preview-docs.js",
+    "test:workbench-ai": "node tests/workbench-ai.test.js"
   },
   "keywords": [
     "instructional-design",
