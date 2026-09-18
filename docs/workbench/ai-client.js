@@ -15,11 +15,18 @@
   const resultPanel = $("[data-ai-result]");
   const logoutButton = $("[data-workbench-logout]");
   const settingsLink = $("[data-private-settings]");
+  const headerStatus = $("[data-header-ai-status]");
+  const headerTestButton = $("[data-header-test-ai]");
 
   function setStatus(text, tone = "neutral") {
-    if (!statusChip) return;
-    statusChip.textContent = text;
-    statusChip.dataset.tone = tone;
+    if (statusChip) {
+      statusChip.textContent = text;
+      statusChip.dataset.tone = tone;
+    }
+    if (headerStatus) {
+      headerStatus.textContent = text;
+      headerStatus.dataset.tone = tone;
+    }
   }
 
   function setConnected(value, detail = "") {
@@ -45,6 +52,8 @@
       csrf = json.csrf || "";
       if (logoutButton) logoutButton.hidden = false;
       if (settingsLink) settingsLink.hidden = false;
+      if (headerStatus) headerStatus.hidden = false;
+      if (headerTestButton) headerTestButton.hidden = false;
       setConnected(Boolean(json.aiConfigured), json.aiConfigured
         ? `${json.model || "AI model"} ready in private local mode`
         : "Private Workbench is unlocked; add an OpenAI API key to enable AI");
@@ -55,6 +64,8 @@
       csrf = "";
       if (logoutButton) logoutButton.hidden = true;
       if (settingsLink) settingsLink.hidden = true;
+      if (headerStatus) headerStatus.hidden = true;
+      if (headerTestButton) headerTestButton.hidden = true;
       setConnected(false, "Open this page through npm run preview-docs and sign in to use private AI tools");
       return false;
     }
@@ -220,6 +231,7 @@
   }
 
   $("[data-test-ai]")?.addEventListener("click", () => testConnection(true));
+  headerTestButton?.addEventListener("click", () => testConnection(true));
 
   generateButton?.addEventListener("click", () => runAi(
     "generate",
