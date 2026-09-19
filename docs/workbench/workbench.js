@@ -506,6 +506,65 @@
     return /^(button|rectangle|shape)\s*\d*$/i.test(String(value || "").trim());
   }
 
+  function transformColor(value, fallback) {
+    return /^#[0-9a-f]{6}$/i.test(String(value || "")) ? value : fallback;
+  }
+
+  function transformSnapshot() {
+    if (isStorylineExperience()) {
+      const scene = (state.model.content.scenes || [])[0] || {};
+      const slide = (scene.slides || [])[0] || {};
+      const objects = (slide.layers || []).flatMap((layer) => layer.objects || []);
+      const text = objects.map((object) => String(object.title || object.accessibility?.altText || "").trim())
+        .filter((value) => value && !genericControlLabel(value) && !/^(vectorshape|scrollarea|video|image)\b/i.test(value) && value !== slide.title)
+        .slice(0, 3);
+      const controls = objects.filter((object) => storylineNavigation(object) || /start|continue|submit|next|previous|learn more/i.test(String(object.title || object.accessibility?.altText || "")))
+        .map((object) => String(object.title || object.accessibility?.altText || "").trim())
+        .filter(Boolean)
+        .filter((value, index, values) => values.indexOf(value) === index);
+      const media = storylineSlideMedia(slide);
+      return {
+        eyebrow:scene.title || "Imported scene",
+        title:slide.title || state.model.title || "Untitled slide",
+        body:text.length ? text : [state.model.description || "Add learner-facing content in Edit to see it here."],
+        action:controls[0] || "Continue",
+        image:media.background ? media.assetUrlFor(media.background.asset) : media.inlineImages[0] ? media.assetUrlFor(media.inlineImages[0].asset) : null
+      };
+    }
+    if (isRiseCourse()) {
+      const lesson = (state.model.content.lessons || []).find((item) => item.kind !== "assessment") || (state.model.content.lessons || [])[0] || {};
+      const blocks = (lesson.blocks || []).map((block) => riseTextField(block).value || block.title).filter(Boolean).slice(0, 3);
+      return { eyebrow:"Editable lesson", title:lesson.title || state.model.title || "Untitled lesson", body:[lesson.description, ...blocks].filter(Boolean), action:"Continue", image:null };
+    }
+    const node = (state.model.content.nodes || [])[0] || {};
+    return { eyebrow:node.speaker || "Scenario", title:node.title || state.model.title || "Untitled experience", body:[node.body || state.model.description || "Add content in Edit to see it here."], action:node.choices?.[0]?.text || "Continue", image:assetUrl(node.image) || null };
+  }
+
+  function renderTransformStudio() {
+    const root = $("[data-transform-studio]");
+    if (!root || !state.model) return;
+    const theme = state.profile.presentation?.theme || {};
+    const colors = theme.colors || {};
+    const snapshot = transformSnapshot();
+    const style = `--transform-primary:${escapeAttr(transformColor(colors.primary, "#508484"))};--transform-secondary:${escapeAttr(transformColor(colors.secondary, "#79C99E"))};--transform-accent:${escapeAttr(transformColor(colors.accent, "#97DB4F"))};--transform-background:${escapeAttr(transformColor(colors.background, "#ffffff"))};--transform-text:${escapeAttr(transformColor(colors.text, "#24302D"))}`;
+    const source = state.publishedPreviewUrl
+      ? `<div class="transform-player-frame"><iframe title="Original published source reference" src="${escapeAttr(state.publishedPreviewUrl)}" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads"></iframe></div><p class="transform-caption">Source reference · unchanged published player</p>`
+      : `<div class="transform-empty"><strong>Attach the original published export to compare it here.</strong><span>The editable model can still be designed without it.</span></div>`;
+    const image = snapshot.image ? `<img src="${escapeAttr(snapshot.image)}" alt="">` : "";
+    const body = snapshot.body.filter(Boolean).map((item) => `<p>${escapeHtml(item)}</p>`).join("");
+    const presetButtons = [
+      ["portfolio", "Calm studio"], ["warm-studio", "Warm"], ["editorial", "Editorial"], ["technical-dark", "Dark"], ["high-contrast", "Contrast"]
+    ].map(([value, label]) => `<button type="button" data-transform-preset="${value}">${label}</button>`).join("");
+    root.innerHTML = `<div class="transform-head"><div><span class="eyebrow">Transformation studio</span><h3>Compare the source with your new version</h3><p>Edits and theme choices update the new-version card. The original course remains your untouched visual and behavior reference.</p></div><div class="transform-actions"><button type="button" data-transform-edit>Review editable content</button><button type="button" class="primary-soft" data-transform-theme>Fine-tune theme</button></div></div><div class="transform-compare"><article class="transform-source"><div class="transform-label"><span>01</span><div><strong>Original published player</strong><small>Exact source experience</small></div></div>${source}</article><article class="transform-target" style="${style}"><div class="transform-label"><span>02</span><div><strong>New model preview</strong><small>${escapeHtml(theme.name || "Custom theme")} · changes live</small></div></div><div class="transform-model-card">${image}<div class="transform-model-copy"><span>${escapeHtml(snapshot.eyebrow)}</span><h4>${escapeHtml(snapshot.title)}</h4>${body}<button type="button">${escapeHtml(snapshot.action)} <b>→</b></button></div></div><p class="transform-caption">New version · generic web rendering from editable content</p></article></div><div class="transform-looks"><div><strong>Try a starting look</strong><span>These change only the new model preview.</span></div><div>${presetButtons}</div></div>`;
+    $$('[data-transform-preset]', root).forEach((button) => button.addEventListener("click", () => {
+      const select = $("[data-theme-preset]");
+      if (select) select.value = button.dataset.transformPreset;
+      applyThemePreset(button.dataset.transformPreset);
+    }));
+    $("[data-transform-edit]", root)?.addEventListener("click", () => switchTab("edit"));
+    $("[data-transform-theme]", root)?.addEventListener("click", () => openTool("theme"));
+  }
+
   function startProject(model, prompt = "") {
     clearProjectResources();
     state.model = clone(model);
@@ -528,6 +587,7 @@
     $$("[data-panel]").forEach((panel) => panel.classList.toggle("active", panel.dataset.panel === name));
     if (name === "preview") renderPreview();
     if (name === "adapt" || name === "preview") renderProfileFields();
+    if (name === "adapt") renderTransformStudio();
     const job = {
       source: "Review the imported structure and flag what needs attention before changing content.",
       edit: "Edit only the learner-facing content you want to change; source mapping stays available in project data.",
@@ -555,6 +615,7 @@
       targetNotes: { ...(state.profile.presentation.theme.targetNotes || {}) }
     };
     renderProfileFields();
+    renderTransformStudio();
     renderPreview();
     saveDraft();
     toast(`${preset.name} preview applied`);
@@ -1142,6 +1203,7 @@
     renderEditor();
     renderProfileFields();
     renderHistory();
+    renderTransformStudio();
     renderPreview();
     saveDraft();
     if (notify) toast(`${entries.length} source file${entries.length === 1 ? "" : "s"} added`);
@@ -1287,6 +1349,7 @@
     renderEditor();
     renderProfileFields();
     renderHistory();
+    renderTransformStudio();
     renderPreview();
   }
 
@@ -1296,6 +1359,7 @@
     renderFlowCheck();
     renderJson();
     if (structural) renderEditor();
+    if (state.activeTab === "adapt") renderTransformStudio();
     if (state.activeTab === "preview") renderPreview();
     saveDraft();
   }
@@ -1680,6 +1744,7 @@
       setPath(state.profile, input.dataset.profileField, input.value);
       syncScoringFromProfile();
       renderProfileFields();
+      if (state.activeTab === "adapt") renderTransformStudio();
       if (state.activeTab === "preview") renderPreview();
       saveDraft();
     }));

@@ -29,5 +29,7 @@ assert.match(workbench, /published-course-frame/, "Imported published courses mu
 assert.match(workbench, /View editable model/, "The editable extraction must remain clearly separate from the original published preview.");
 assert.match(previewServer, /api\/workbench-published/, "The private preview server must serve the original published course archive to the learner preview.");
 assert.match(previewServer, /publishedPreviewUrl/, "Published import responses must include a source-player entry point.");
+assert.match(page, /data-transform-studio/, "The adaptation stage must provide a source-versus-new-version transformation workspace.");
+assert.match(workbench, /function renderTransformStudio/, "Theme and content changes need a live transformation preview.");
 
 console.log("Workbench UI binding regression checks passed.");
