@@ -22,5 +22,6 @@ assert.match(workbench, /HLS stream/, "The Workbench must distinguish streaming-
 assert.match(workbench, /Open the running Workbench/, "Opening the static file must explain that the private local server is required.");
 assert.match(workbench, /restoreImportedMedia/, "A portable imported project must rehydrate its source media without replacing its edits.");
 assert.match(workbench, /SOURCE MEDIA NOT LOADED/, "An unloaded published source must not be mislabeled as truly missing media.");
+assert.match(workbench, /Attach original export to restore media/, "An existing imported draft must be able to attach its source export without replacement.");
 
 console.log("Workbench UI binding regression checks passed.");

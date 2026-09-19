@@ -428,7 +428,9 @@
     root.hidden = !assets.length;
     if (!assets.length) return;
     const available = assets.filter((asset) => mediaUrl(asset)).length;
-    root.innerHTML = `<details><summary><strong>Media library</strong><span>${assets.length} media asset${assets.length === 1 ? "" : "s"} · ${available} ready to preview</span></summary><p>Each file is a <strong>media asset</strong>. A slide or lesson points to it through a <strong>media reference</strong>. HLS video is a <strong>media bundle</strong>: a playlist plus its video segments.</p><div class="media-grid">${assets.map((asset) => mediaPlayerMarkup(asset)).join("")}</div></details>`;
+    const attach = isImportedProject() && !state.importArchive?.file ? '<button type="button" class="primary-soft" data-attach-import>Attach original export to restore media</button>' : "";
+    root.innerHTML = `<details open><summary><strong>Media library</strong><span>${assets.length} media asset${assets.length === 1 ? "" : "s"} · ${available} ready to preview</span></summary><p>Each file is a <strong>media asset</strong>. A slide or lesson points to it through a <strong>media reference</strong>. HLS video is a <strong>media bundle</strong>: a playlist plus its video segments.</p>${attach}<div class="media-grid">${assets.map((asset) => mediaPlayerMarkup(asset)).join("")}</div></details>`;
+    $("[data-attach-import]", root)?.addEventListener("click", () => $("[data-attach-import-input]").click());
   }
 
   function importedMediaMarkup() {
@@ -1357,9 +1359,30 @@
     });
     const result = await response.json();
     if (!response.ok || !result.ok) throw new Error(result.error || "The source package could not restore its media.");
+    const currentImport = state.model?.metadata?.import || {};
+    const currentSourceId = currentImport.sourceProjectId || currentImport.sourceCourseId || null;
+    const restoredImport = result.project?.metadata?.import || {};
+    const restoredSourceId = restoredImport.sourceProjectId || restoredImport.sourceCourseId || null;
+    if (currentSourceId && restoredSourceId && currentSourceId !== restoredSourceId) throw new Error("That export belongs to a different published project. Choose the original source ZIP for this draft.");
     registerPreviewAssets(result.previewAssets || []);
     registerMediaStreams(result.mediaStreams || []);
     return true;
+  }
+
+  async function attachImportedArchive(file) {
+    const sourceFormat = state.model?.metadata?.import?.sourceFormat;
+    if (!file || !sourceFormat) return;
+    if (file.size > 30 * 1024 * 1024) return toast("The current private import limit is 30 MB.");
+    toast("Restoring source media from the published export…");
+    try {
+      await restoreImportedMedia(file, sourceFormat);
+      state.importArchive = { file, sourceFormat };
+      renderAll();
+      saveDraft();
+      toast("Source media restored and attached to this project");
+    } catch (error) {
+      toast(error.message || "Source media could not be restored.");
+    }
   }
 
   async function openPortableProject(packageData, sourceEntries = [], previewAssets = [], importArchive = null) {
@@ -1501,6 +1524,11 @@
     $("[data-storyline-input]").addEventListener("change", async (event) => {
       const file = event.target.files?.[0];
       if (file) await importStorylineExport(file);
+      event.target.value = "";
+    });
+    $("[data-attach-import-input]").addEventListener("change", async (event) => {
+      const file = event.target.files?.[0];
+      if (file) await attachImportedArchive(file);
       event.target.value = "";
     });
 
