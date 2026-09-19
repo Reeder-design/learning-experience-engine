@@ -484,6 +484,19 @@
     return images || missing || players ? `<div class="storyline-media-strip">${images}${players}${missing}</div>` : "";
   }
 
+  function storylineNavigation(object) {
+    for (const interaction of object?.interactions || []) {
+      for (const action of interaction.actions || []) {
+        if (action.kind === "gotoplay" && action.targetSlideId) return action.targetSlideId;
+      }
+    }
+    return null;
+  }
+
+  function genericControlLabel(value) {
+    return /^(button|rectangle|shape)\s*\d*$/i.test(String(value || "").trim());
+  }
+
   function startProject(model, prompt = "") {
     clearProjectResources();
     state.model = clone(model);
@@ -518,9 +531,12 @@
 
   function applyThemePreset(value) {
     const presets = {
+      "source-neutral": { name:"Source-neutral player", layout:"clean-cards", colors:{ primary:"#416B79", secondary:"#D7E3E7", accent:"#D7A85A", background:"#F7F8F8", text:"#1F2A2E" }, typography:{ heading:"Arial", body:"Arial" } },
       portfolio: { name:"Calm studio", layout:"clean-cards", colors:{ primary:"#508484", secondary:"#79C99E", accent:"#97DB4F", background:"#ffffff", text:"#24302D" }, typography:{ heading:"Montserrat", body:"Open Sans" } },
+      "warm-studio": { name:"Warm studio", layout:"editorial", colors:{ primary:"#7B503C", secondary:"#E8D7C4", accent:"#D8874E", background:"#FFF9F2", text:"#30231D" }, typography:{ heading:"Georgia", body:"Open Sans" } },
       editorial: { name:"Editorial learning", layout:"editorial", colors:{ primary:"#5B4B8A", secondary:"#CFC1E8", accent:"#E4A46D", background:"#FFFDF9", text:"#2E2938" }, typography:{ heading:"Georgia", body:"Open Sans" } },
       "technical-dark": { name:"Workshop dark", layout:"technical-dark", colors:{ primary:"#9DE2CB", secondary:"#5E9E93", accent:"#F5C47B", background:"#16221F", text:"#F0F6F1" }, typography:{ heading:"Montserrat", body:"Open Sans" } },
+      "high-contrast": { name:"High-contrast accessible", layout:"minimal", colors:{ primary:"#003E8A", secondary:"#D7E8FF", accent:"#E05A00", background:"#FFFFFF", text:"#111111" }, typography:{ heading:"Arial", body:"Arial" } },
       minimal: { name:"Minimal course", layout:"minimal", colors:{ primary:"#2E5266", secondary:"#BBD5E5", accent:"#EAB464", background:"#FFFFFF", text:"#1D2730" }, typography:{ heading:"Arial", body:"Arial" } }
     };
     const preset = presets[value] || presets.portfolio;
@@ -1062,10 +1078,19 @@
       const position = flatSlides.findIndex((item) => item.slide.id === slide.id);
       const media = storylineSlideMedia(slide);
       const backgroundUrl = media.background ? media.assetUrlFor(media.background.asset) : null;
-      const layers = (slide.layers || []).map((layer, index) => `<section class="story-layer"><span>${escapeHtml(layer.title || (layer.kind === "base" ? "Base layer" : `Layer ${index + 1}`))}</span>${(layer.objects || []).map((object) => `<p>${escapeHtml(object.title || object.accessibility?.altText || `${object.kind || "Object"} (no exposed text)`)}</p>`).join("") || "<p>No exposed learner-facing text on this layer.</p>"}</section>`).join("") || '<section class="story-layer"><span>Source review needed</span><p>This published slide could not be fully decoded into editable layers.</p></section>';
+      const layers = (slide.layers || []).map((layer, index) => {
+        const objects = layer.objects || [];
+        const controls = objects.map((object) => ({ object, targetId:storylineNavigation(object) })).filter((item) => item.targetId);
+        const meaningfulControls = controls.filter((item) => !genericControlLabel(item.object.title || item.object.accessibility?.altText) || !controls.some((other) => other.targetId === item.targetId && !genericControlLabel(other.object.title || other.object.accessibility?.altText)));
+        const controlIds = new Set(controls.map((item) => item.object.id));
+        const text = objects.filter((object) => !controlIds.has(object.id)).map((object) => object.title || object.accessibility?.altText).filter(Boolean).map((value) => `<p>${escapeHtml(value)}</p>`).join("");
+        const buttons = meaningfulControls.map(({ object, targetId }) => `<button type="button" class="storyline-slide-button" data-storyline-jump="${escapeAttr(targetId)}">${escapeHtml(object.title || object.accessibility?.altText || "Continue")} <span>→</span></button>`).join("");
+        return `<section class="story-layer"><span>${escapeHtml(layer.title || (layer.kind === "base" ? "Base layer" : `Layer ${index + 1}`))}</span>${text || (!buttons ? "<p>No exposed learner-facing text on this layer.</p>" : "")}${buttons ? `<div class="storyline-slide-controls">${buttons}</div>` : ""}</section>`;
+      }).join("") || '<section class="story-layer"><span>Source review needed</span><p>This published slide could not be fully decoded into editable layers.</p></section>';
       root.innerHTML = `<article class="storyline-player"><header><div class="storyline-mark">SL</div><strong>${escapeHtml(state.model.title || "Storyline course")}</strong><span>Menu</span><span>Resources</span><button type="button" aria-label="Close preview">×</button></header><div class="storyline-stage"><div class="storyline-canvas${backgroundUrl ? " storyline-canvas--visual" : ""}"${backgroundUrl ? ` style="--storyline-slide-image:url('${escapeAttr(backgroundUrl)}')"` : ""}><div class="storyline-canvas-content"><span class="eyebrow">${escapeHtml(scene.title || "Scene")}</span><h3>${escapeHtml(slide.title || "Untitled slide")}</h3><p>${escapeHtml(`${slide.layers?.length || 0} layer(s) · ${slide.metadata?.objectCount || 0} object(s) · ${slide.metadata?.actionCount || 0} detected action(s)`)}</p><div class="story-layer-stack">${layers}</div>${storylineMediaMarkup(media)}</div></div></div><footer><div class="storyline-location"><label>Scene<select data-storyline-preview-scene>${sceneOptions}</select></label><label>Slide<select data-storyline-preview-slide>${slideOptions}</select></label></div><div class="storyline-controls"><button type="button" data-storyline-back ${position <= 0 ? "disabled" : ""}>‹ Previous</button><span>${position + 1} / ${flatSlides.length}</span><button type="button" class="primary" data-storyline-next ${position >= flatSlides.length - 1 ? "disabled" : ""}>Next ›</button></div></footer></article>`;
       $("[data-storyline-preview-scene]", root).addEventListener("change", (event) => { scene = scenes.find((item) => item.id === event.target.value) || scene; slide = scene.slides?.[0]; draw(); });
       $("[data-storyline-preview-slide]", root).addEventListener("change", (event) => { slide = scene.slides.find((item) => item.id === event.target.value) || slide; draw(); });
+      $$('[data-storyline-jump]', root).forEach((button) => button.addEventListener("click", () => { const target = flatSlides.find((item) => item.slide.id === button.dataset.storylineJump); if (target) { scene = target.scene; slide = target.slide; draw(); } }));
       $("[data-storyline-back]", root)?.addEventListener("click", () => { const target = flatSlides[position - 1]; if (target) { scene = target.scene; slide = target.slide; draw(); } });
       $("[data-storyline-next]", root)?.addEventListener("click", () => { const target = flatSlides[position + 1]; if (target) { scene = target.scene; slide = target.slide; draw(); } });
     }
@@ -1366,7 +1391,27 @@
     if (currentSourceId && restoredSourceId && currentSourceId !== restoredSourceId) throw new Error("That export belongs to a different published project. Choose the original source ZIP for this draft.");
     registerPreviewAssets(result.previewAssets || []);
     registerMediaStreams(result.mediaStreams || []);
-    return true;
+    return result;
+  }
+
+  function mergeImportedRuntime(importedProject) {
+    const importedSlides = new Map((importedProject?.content?.scenes || []).flatMap((scene) => (scene.slides || []).map((slide) => [slide.id, slide])));
+    for (const scene of state.model?.content?.scenes || []) for (const slide of scene.slides || []) {
+      const importedSlide = importedSlides.get(slide.id);
+      if (!importedSlide) continue;
+      const importedLayers = new Map((importedSlide.layers || []).map((layer) => [layer.id, layer]));
+      for (const layer of slide.layers || []) {
+        const importedLayer = importedLayers.get(layer.id);
+        if (!importedLayer) continue;
+        const importedObjects = new Map((importedLayer.objects || []).map((object) => [object.id, object]));
+        for (const object of layer.objects || []) {
+          const importedObject = importedObjects.get(object.id);
+          if (!importedObject) continue;
+          object.interactions = importedObject.interactions || [];
+          object.assets = importedObject.assets || object.assets || [];
+        }
+      }
+    }
   }
 
   async function attachImportedArchive(file) {
@@ -1375,7 +1420,8 @@
     if (file.size > 30 * 1024 * 1024) return toast("The current private import limit is 30 MB.");
     toast("Restoring source media from the published export…");
     try {
-      await restoreImportedMedia(file, sourceFormat);
+      const restored = await restoreImportedMedia(file, sourceFormat);
+      mergeImportedRuntime(restored.project);
       state.importArchive = { file, sourceFormat };
       renderAll();
       saveDraft();

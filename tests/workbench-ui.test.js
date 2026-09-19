@@ -23,5 +23,6 @@ assert.match(workbench, /Open the running Workbench/, "Opening the static file m
 assert.match(workbench, /restoreImportedMedia/, "A portable imported project must rehydrate its source media without replacing its edits.");
 assert.match(workbench, /SOURCE MEDIA NOT LOADED/, "An unloaded published source must not be mislabeled as truly missing media.");
 assert.match(workbench, /Attach original export to restore media/, "An existing imported draft must be able to attach its source export without replacement.");
+assert.match(workbench, /storyline-slide-button/, "Detected Storyline navigation controls must render as buttons rather than raw labels.");
 
 console.log("Workbench UI binding regression checks passed.");

@@ -88,6 +88,40 @@ function countActions(value) {
   return direct + Object.values(value).reduce((total, item) => total + (item === value.actions ? 0 : countActions(item)), 0);
 }
 
+function refValue(value) {
+  if (value == null) return null;
+  return typeof value === "object" ? (value.value ?? value.id ?? null) : value;
+}
+
+function slideIdFromTarget(value) {
+  const match = String(value || "").match(/\.([A-Za-z0-9]{11})$/);
+  return match ? match[1] : null;
+}
+
+function flatActions(actions, output = []) {
+  for (const action of actions || []) {
+    if (!action || typeof action !== "object") continue;
+    output.push(action);
+    flatActions(action.thenActions, output);
+    flatActions(action.elseActions, output);
+  }
+  return output;
+}
+
+function normalizeInteractions(events) {
+  return (events || []).map((event) => ({
+    event:event?.kind || "event",
+    actions:flatActions(event?.actions).map((action) => {
+      const targetRef = refValue(action.objRef) || refValue(action.slideRef) || null;
+      return {
+        kind:action.kind || "action",
+        targetRef,
+        targetSlideId:action.kind === "gotoplay" ? slideIdFromTarget(targetRef) : null,
+      };
+    }),
+  }));
+}
+
 function collectAssetIds(value, found = new Set()) {
   if (value == null) return found;
   if (Array.isArray(value)) {
@@ -118,6 +152,7 @@ function normalizeObject(object, index, assetLookup) {
     },
     states: (object?.states || []).map((state) => ({ id: state.id || state.name || null, name: state.name || state.id || null })),
     assets: sourceAssetIds.map((id) => assetLookup.get(id)?.id).filter(Boolean),
+    interactions:normalizeInteractions(object?.events),
     source: { platform:"storyline", sourceKind:object?.kind || null },
   };
 }

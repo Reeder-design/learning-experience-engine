@@ -65,7 +65,7 @@ function run() {
       id:"base",
       isBaseLayer:true,
       timeline:{ duration:5000 },
-      objects:[{ id:"title", kind:"shape", altText:"The customer describes repeated handoffs.", tabEnabled:true, data:{ imageLib:[{ assetId:1 }] } }, { id:"movie", kind:"video", data:{ media:{ assetId:2 } } }],
+      objects:[{ id:"title", kind:"shape", altText:"The customer describes repeated handoffs.", tabEnabled:true, data:{ imageLib:[{ assetId:1 }] }, events:[{ kind:"onrelease", actions:[{ kind:"gotoplay", objRef:{ value:"_player.scene.6Abc123DefG" } }] }] }, { id:"movie", kind:"video", data:{ media:{ assetId:2 } } }],
       events:[{ actions:[{ kind:"adjustvar" }] }],
     }],
   };
@@ -83,6 +83,7 @@ function run() {
   assert.strictEqual(project.content.scenes[0].slides[0].title, "Hear the signal");
   assert.strictEqual(project.content.scenes[0].slides[0].layers[0].objects[0].title, "The customer describes repeated handoffs.");
   assert.deepStrictEqual(project.content.scenes[0].slides[0].layers[0].objects[0].assets, ["storyline-asset-001"]);
+  assert.deepStrictEqual(project.content.scenes[0].slides[0].layers[0].objects[0].interactions, [{ event:"onrelease", actions:[{ kind:"gotoplay", targetRef:"_player.scene.6Abc123DefG", targetSlideId:"6Abc123DefG" }] }]);
   assert.deepStrictEqual(project.content.scenes[0].slides[0].layers[0].objects[1].assets, ["storyline-asset-002"]);
   assert.strictEqual(project.metadata.courseCover.id, "storyline-course-cover");
   assert.strictEqual(project.metadata.importSummary.actions, 1);
