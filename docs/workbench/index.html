@@ -9,7 +9,7 @@
   <link rel="icon" type="image/x-icon" href="../favicon.ico?v=4">
   <link rel="shortcut icon" href="../favicon.ico?v=4">
   <link rel="mask-icon" href="../assets/experience-engine-favicon.svg?v=4" color="#508484">
-  <link rel="stylesheet" href="workbench.css?v=10">
+  <link rel="stylesheet" href="workbench.css?v=12">
 </head>
 <body>
   <header class="app-header">
@@ -132,12 +132,12 @@
           <section class="workspace-panel" data-panel="adapt">
             <div class="panel-head"><div><span class="eyebrow">Workflow · Adapt</span><h2>Make the draft fit its next use</h2><p>Apply a visual direction and capture the few project details that matter for reuse. Sanitization and templates will live here when they are ready—not in a permanent tool drawer.</p></div><span class="stage-chip">Current stage</span></div>
             <div class="adapt-grid">
-              <section class="adapt-card"><span class="eyebrow">Presentation</span><h3>Choose a starting look</h3><p>These are safe preview treatments only. They never alter the imported Storyline/Rise player, source layout, or media.</p><label class="field"><span>Preview direction</span><select data-theme-preset><option value="source-neutral">Source-neutral player</option><option value="portfolio">Calm studio</option><option value="warm-studio">Warm studio</option><option value="editorial">Editorial learning</option><option value="technical-dark">Workshop dark</option><option value="high-contrast">High-contrast accessible</option><option value="minimal">Minimal course</option></select></label></section>
+              <section class="adapt-card"><span class="eyebrow">Presentation</span><h3>Choose a starting look</h3><p>Original theme leaves the source and the current new-version theme untouched. The other choices change only the new model preview.</p><label class="field"><span>Preview direction</span><select data-theme-preset><option value="original">Original theme · reference only</option><option value="portfolio">Calm studio</option><option value="warm-studio">Warm studio</option><option value="editorial">Editorial learning</option><option value="technical-dark">Workshop dark</option><option value="high-contrast">High-contrast accessible</option><option value="minimal">Minimal course</option></select></label></section>
               <section class="adapt-card"><span class="eyebrow">Reuse notes</span><h3>Capture the handoff context</h3><label class="field"><span>Audience</span><input data-profile-field="learning.audience" placeholder="Who is this next version for?"></label><label class="field"><span>Learning purpose</span><textarea rows="3" data-profile-field="learning.purpose" placeholder="What should learners be able to do?"></textarea></label></section>
             </div>
             <section class="transformation-studio" data-transform-studio></section>
             <div class="adapt-note"><strong>Coming next in this stage:</strong><span>guided sanitization and saving selected lessons, slide sequences, or interactions as reusable patterns.</span></div>
-            <div class="next-action"><div><strong>Ready to test it?</strong><span>Open the course in a learner-style player, then package the editable draft for reuse.</span></div><button type="button" class="primary" data-go-preview>Preview as learner →</button></div>
+            <div class="next-action"><div><strong>Ready to test it?</strong><span>Preview the new web version, or return to the untouched original player as a reference.</span></div><div class="next-action-buttons"><button type="button" class="primary" data-go-model-preview>Preview new version →</button><button type="button" data-go-source-preview>Open original player</button></div></div>
           </section>
 
           <section class="workspace-panel" data-panel="preview">
@@ -281,7 +281,7 @@
   <input type="file" data-source-folder webkitdirectory multiple hidden>
   <div class="toast" data-toast hidden></div>
   <script src="../assets/app-registry.js"></script>
-  <script src="workbench.js?v=16"></script>
+  <script src="workbench.js?v=18"></script>
   <script src="workbench-package.js?v=3"></script>
   <script src="ai-client.js?v=5"></script>
 </body>

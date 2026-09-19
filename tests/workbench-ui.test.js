@@ -31,5 +31,8 @@ assert.match(previewServer, /api\/workbench-published/, "The private preview ser
 assert.match(previewServer, /publishedPreviewUrl/, "Published import responses must include a source-player entry point.");
 assert.match(page, /data-transform-studio/, "The adaptation stage must provide a source-versus-new-version transformation workspace.");
 assert.match(workbench, /function renderTransformStudio/, "Theme and content changes need a live transformation preview.");
+assert.match(workbench, /transformFocusItems/, "The transformation preview must be able to follow an individual editable slide or lesson.");
+assert.match(page, /Preview new version/, "The adaptation workflow must offer a direct path to preview the new model instead of only the original player.");
+assert.match(page, /Original theme · reference only/, "The original theme option must not imply an unsupported source-theme conversion.");
 
 console.log("Workbench UI binding regression checks passed.");

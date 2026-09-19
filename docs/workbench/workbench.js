@@ -157,6 +157,7 @@
       presentation: {
         accessibility: "Use meaningful alt text, captions/transcripts where needed, keyboard-friendly focus behavior, sufficient contrast, responsive layout, and reduced-motion support.",
         theme: {
+          presetId: "portfolio",
           name: "Portfolio",
           layout: "clean-cards",
           brandNotes: "Clean, modern, instructional-design portfolio treatment.",
@@ -281,6 +282,7 @@
     importArchive: null,
     publishedPreviewUrl: null,
     publishedPreviewMode: "published",
+    transformFocusId: null,
     activeTab: "source",
     activeTool: null,
     profile: defaultProfile(),
@@ -322,6 +324,7 @@
     state.importArchive = null;
     state.publishedPreviewUrl = null;
     state.publishedPreviewMode = "published";
+    state.transformFocusId = null;
   }
 
   function filePath(file, fromFolder = false) {
@@ -510,17 +513,25 @@
     return /^#[0-9a-f]{6}$/i.test(String(value || "")) ? value : fallback;
   }
 
+  function transformFocusItems() {
+    if (isStorylineExperience()) return (state.model.content.scenes || []).flatMap((scene) => (scene.slides || []).map((slide, index) => ({ id:slide.id, label:`${scene.title || "Scene"} · ${index + 1}. ${slide.title || "Untitled slide"}` })));
+    if (isRiseCourse()) return (state.model.content.lessons || []).map((lesson, index) => ({ id:lesson.id, label:`${index + 1}. ${lesson.title || "Untitled lesson"}` }));
+    return (state.model.content.nodes || []).map((node, index) => ({ id:node.id, label:`${index + 1}. ${node.title || "Untitled decision"}` }));
+  }
+
   function transformSnapshot() {
     if (isStorylineExperience()) {
-      const scene = (state.model.content.scenes || [])[0] || {};
-      const slide = (scene.slides || [])[0] || {};
+      const candidates = (state.model.content.scenes || []).flatMap((scene) => (scene.slides || []).map((slide) => ({ scene, slide })));
+      const current = candidates.find((item) => item.slide.id === state.transformFocusId) || candidates[0] || {};
+      const scene = current.scene || {};
+      const slide = current.slide || {};
       const objects = (slide.layers || []).flatMap((layer) => layer.objects || []);
       const text = objects.map((object) => String(object.title || object.accessibility?.altText || "").trim())
-        .filter((value) => value && !genericControlLabel(value) && !/^(vectorshape|scrollarea|video|image)\b/i.test(value) && value !== slide.title)
+        .filter((value) => value && !genericControlLabel(value) && !/^(vectorshape|scrollarea|video|image)\b/i.test(value) && !/\.(png|jpe?g|gif|webp|svg|mp4|webm|m3u8)$/i.test(value) && value !== slide.title)
         .slice(0, 3);
       const controls = objects.filter((object) => storylineNavigation(object) || /start|continue|submit|next|previous|learn more/i.test(String(object.title || object.accessibility?.altText || "")))
         .map((object) => String(object.title || object.accessibility?.altText || "").trim())
-        .filter(Boolean)
+        .filter((value) => value && !genericControlLabel(value))
         .filter((value, index, values) => values.indexOf(value) === index);
       const media = storylineSlideMedia(slide);
       return {
@@ -532,11 +543,11 @@
       };
     }
     if (isRiseCourse()) {
-      const lesson = (state.model.content.lessons || []).find((item) => item.kind !== "assessment") || (state.model.content.lessons || [])[0] || {};
+      const lesson = (state.model.content.lessons || []).find((item) => item.id === state.transformFocusId) || (state.model.content.lessons || []).find((item) => item.kind !== "assessment") || (state.model.content.lessons || [])[0] || {};
       const blocks = (lesson.blocks || []).map((block) => riseTextField(block).value || block.title).filter(Boolean).slice(0, 3);
       return { eyebrow:"Editable lesson", title:lesson.title || state.model.title || "Untitled lesson", body:[lesson.description, ...blocks].filter(Boolean), action:"Continue", image:null };
     }
-    const node = (state.model.content.nodes || [])[0] || {};
+    const node = (state.model.content.nodes || []).find((item) => item.id === state.transformFocusId) || (state.model.content.nodes || [])[0] || {};
     return { eyebrow:node.speaker || "Scenario", title:node.title || state.model.title || "Untitled experience", body:[node.body || state.model.description || "Add content in Edit to see it here."], action:node.choices?.[0]?.text || "Continue", image:assetUrl(node.image) || null };
   }
 
@@ -546,6 +557,9 @@
     const theme = state.profile.presentation?.theme || {};
     const colors = theme.colors || {};
     const snapshot = transformSnapshot();
+    const focusItems = transformFocusItems();
+    const focusedId = focusItems.some((item) => item.id === state.transformFocusId) ? state.transformFocusId : focusItems[0]?.id || "";
+    if (focusedId && !state.transformFocusId) state.transformFocusId = focusedId;
     const style = `--transform-primary:${escapeAttr(transformColor(colors.primary, "#508484"))};--transform-secondary:${escapeAttr(transformColor(colors.secondary, "#79C99E"))};--transform-accent:${escapeAttr(transformColor(colors.accent, "#97DB4F"))};--transform-background:${escapeAttr(transformColor(colors.background, "#ffffff"))};--transform-text:${escapeAttr(transformColor(colors.text, "#24302D"))}`;
     const source = state.publishedPreviewUrl
       ? `<div class="transform-player-frame"><iframe title="Original published source reference" src="${escapeAttr(state.publishedPreviewUrl)}" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads"></iframe></div><p class="transform-caption">Source reference · unchanged published player</p>`
@@ -555,7 +569,8 @@
     const presetButtons = [
       ["portfolio", "Calm studio"], ["warm-studio", "Warm"], ["editorial", "Editorial"], ["technical-dark", "Dark"], ["high-contrast", "Contrast"]
     ].map(([value, label]) => `<button type="button" data-transform-preset="${value}">${label}</button>`).join("");
-    root.innerHTML = `<div class="transform-head"><div><span class="eyebrow">Transformation studio</span><h3>Compare the source with your new version</h3><p>Edits and theme choices update the new-version card. The original course remains your untouched visual and behavior reference.</p></div><div class="transform-actions"><button type="button" data-transform-edit>Review editable content</button><button type="button" class="primary-soft" data-transform-theme>Fine-tune theme</button></div></div><div class="transform-compare"><article class="transform-source"><div class="transform-label"><span>01</span><div><strong>Original published player</strong><small>Exact source experience</small></div></div>${source}</article><article class="transform-target" style="${style}"><div class="transform-label"><span>02</span><div><strong>New model preview</strong><small>${escapeHtml(theme.name || "Custom theme")} · changes live</small></div></div><div class="transform-model-card">${image}<div class="transform-model-copy"><span>${escapeHtml(snapshot.eyebrow)}</span><h4>${escapeHtml(snapshot.title)}</h4>${body}<button type="button">${escapeHtml(snapshot.action)} <b>→</b></button></div></div><p class="transform-caption">New version · generic web rendering from editable content</p></article></div><div class="transform-looks"><div><strong>Try a starting look</strong><span>These change only the new model preview.</span></div><div>${presetButtons}</div></div>`;
+    const focusControl = focusItems.length > 1 ? `<label class="transform-focus"><span>Compare this editable ${isStorylineExperience() ? "slide" : isRiseCourse() ? "lesson" : "decision"}</span><select data-transform-focus>${focusItems.map((item) => `<option value="${escapeAttr(item.id)}"${item.id === focusedId ? " selected" : ""}>${escapeHtml(item.label)}</option>`).join("")}</select></label>` : "";
+    root.innerHTML = `<div class="transform-head"><div><span class="eyebrow">Transformation studio</span><h3>Compare the source with your new version</h3><p>Edits and theme choices update the new-version card. The original course remains your untouched visual and behavior reference.</p></div><div class="transform-actions"><button type="button" data-transform-edit>Review editable content</button><button type="button" class="primary-soft" data-transform-theme>Fine-tune theme</button></div></div>${focusControl}<div class="transform-compare"><article class="transform-source"><div class="transform-label"><span>01</span><div><strong>Original published player</strong><small>Exact source experience</small></div></div>${source}</article><article class="transform-target" style="${style}"><div class="transform-label"><span>02</span><div><strong>New model preview</strong><small>${escapeHtml(theme.name || "Custom theme")} · changes live</small></div></div><div class="transform-model-card">${image}<div class="transform-model-copy"><span>${escapeHtml(snapshot.eyebrow)}</span><h4>${escapeHtml(snapshot.title)}</h4>${body}<button type="button">${escapeHtml(snapshot.action)} <b>→</b></button></div></div><p class="transform-caption">New version · generic web rendering from editable content</p></article></div><div class="transform-looks"><div><strong>Try a starting look</strong><span>Original theme leaves the current new-version styling alone. The other choices change only this card.</span></div><div>${presetButtons}</div></div>`;
     $$('[data-transform-preset]', root).forEach((button) => button.addEventListener("click", () => {
       const select = $("[data-theme-preset]");
       if (select) select.value = button.dataset.transformPreset;
@@ -563,6 +578,7 @@
     }));
     $("[data-transform-edit]", root)?.addEventListener("click", () => switchTab("edit"));
     $("[data-transform-theme]", root)?.addEventListener("click", () => openTool("theme"));
+    $("[data-transform-focus]", root)?.addEventListener("change", (event) => { state.transformFocusId = event.target.value; renderTransformStudio(); });
   }
 
   function startProject(model, prompt = "") {
@@ -599,8 +615,12 @@
   }
 
   function applyThemePreset(value) {
+    if (value === "original") {
+      renderTransformStudio();
+      toast("Original theme stays unchanged in the source reference");
+      return;
+    }
     const presets = {
-      "source-neutral": { name:"Source-neutral player", layout:"clean-cards", colors:{ primary:"#416B79", secondary:"#D7E3E7", accent:"#D7A85A", background:"#F7F8F8", text:"#1F2A2E" }, typography:{ heading:"Arial", body:"Arial" } },
       portfolio: { name:"Calm studio", layout:"clean-cards", colors:{ primary:"#508484", secondary:"#79C99E", accent:"#97DB4F", background:"#ffffff", text:"#24302D" }, typography:{ heading:"Montserrat", body:"Open Sans" } },
       "warm-studio": { name:"Warm studio", layout:"editorial", colors:{ primary:"#7B503C", secondary:"#E8D7C4", accent:"#D8874E", background:"#FFF9F2", text:"#30231D" }, typography:{ heading:"Georgia", body:"Open Sans" } },
       editorial: { name:"Editorial learning", layout:"editorial", colors:{ primary:"#5B4B8A", secondary:"#CFC1E8", accent:"#E4A46D", background:"#FFFDF9", text:"#2E2938" }, typography:{ heading:"Georgia", body:"Open Sans" } },
@@ -612,6 +632,7 @@
     state.profile.presentation.theme = {
       ...state.profile.presentation.theme,
       ...clone(preset),
+      presetId:value,
       targetNotes: { ...(state.profile.presentation.theme.targetNotes || {}) }
     };
     renderProfileFields();
@@ -733,7 +754,7 @@
     card.className = "scenario-card";
     const slides = Array.isArray(scene.slides) ? scene.slides : [];
     card.innerHTML = `<div class="scenario-head"><div><span class="eyebrow">Scene ${index + 1}</span><strong>${escapeHtml(scene.title || "Untitled scene")}</strong></div><small>${slides.length} slide${slides.length === 1 ? "" : "s"}</small></div><div class="field-grid"><label class="wide"><span>Scene title</span><input data-storyline-scene-title value="${escapeAttr(scene.title || "")}"></label></div><div class="choices" data-storyline-slides></div>`;
-    $("[data-storyline-scene-title]", card).addEventListener("input", (event) => { scene.title = event.target.value; touch(false); });
+    $("[data-storyline-scene-title]", card).addEventListener("input", (event) => { scene.title = event.target.value; state.transformFocusId = slides[0]?.id || state.transformFocusId; touch(false); });
     const root = $("[data-storyline-slides]", card);
     if (!slides.length) root.innerHTML = '<div class="empty-state">No published slides were found in this scene.</div>';
     slides.forEach((slide, slideIndex) => root.appendChild(storylineSlideCard(slide, slideIndex)));
@@ -746,23 +767,24 @@
     const layers = Array.isArray(slide.layers) ? slide.layers : [];
     const detail = `${layers.length} layer${layers.length === 1 ? "" : "s"} · ${slide.metadata?.objectCount || 0} object${slide.metadata?.objectCount === 1 ? "" : "s"} · ${slide.metadata?.actionCount || 0} action${slide.metadata?.actionCount === 1 ? "" : "s"}`;
     card.innerHTML = `<div class="choices-head"><strong>Slide ${index + 1} · ${escapeHtml(slide.title || "Untitled slide")}</strong><small>${escapeHtml(detail)}</small></div><label class="wide"><span>Slide title</span><input data-storyline-slide-title value="${escapeAttr(slide.title || "")}"></label><div class="choices" data-storyline-layers></div>`;
-    $("[data-storyline-slide-title]", card).addEventListener("input", (event) => { slide.title = event.target.value; touch(false); });
+    $("[data-storyline-slide-title]", card).addEventListener("input", (event) => { slide.title = event.target.value; state.transformFocusId = slide.id; touch(false); });
     const root = $("[data-storyline-layers]", card);
     if (!layers.length) root.innerHTML = '<small>This published slide could not be fully decoded. Its slide title and source mapping are preserved for review.</small>';
-    layers.forEach((layer, layerIndex) => root.appendChild(storylineLayerCard(layer, layerIndex)));
+    layers.forEach((layer, layerIndex) => root.appendChild(storylineLayerCard(layer, layerIndex, slide)));
     return card;
   }
 
-  function storylineLayerCard(layer, index) {
+  function storylineLayerCard(layer, index, slide) {
     const card = document.createElement("div");
     card.className = "choice-card";
     const objects = Array.isArray(layer.objects) ? layer.objects : [];
     card.innerHTML = `<div class="choices-head"><strong>${escapeHtml(layer.kind === "base" ? "Base layer" : `Layer ${index + 1}`)} · ${escapeHtml(layer.title || "Untitled layer")}</strong><small>${objects.length} object${objects.length === 1 ? "" : "s"}</small></div><label class="wide"><span>Layer title</span><input data-storyline-layer-title value="${escapeAttr(layer.title || "")}"></label><div class="field-grid">${objects.map((object, objectIndex) => `<label><span>${escapeHtml(object.kind || "Object")} ${objectIndex + 1}</span><input data-storyline-object="${objectIndex}" value="${escapeAttr(object.title || "")}" placeholder="No exposed text or alt text"></label>`).join("")}</div>`;
-    $("[data-storyline-layer-title]", card).addEventListener("input", (event) => { layer.title = event.target.value; touch(false); });
+    $("[data-storyline-layer-title]", card).addEventListener("input", (event) => { layer.title = event.target.value; state.transformFocusId = slide.id; touch(false); });
     $$('[data-storyline-object]', card).forEach((input) => input.addEventListener("input", () => {
       const object = objects[Number(input.dataset.storylineObject)];
       object.title = input.value;
       object.accessibility = { ...(object.accessibility || {}), altText: input.value };
+      state.transformFocusId = slide.id;
       touch(false);
     }));
     return card;
@@ -789,21 +811,21 @@
     card.className = "scenario-card";
     const blocks = Array.isArray(lesson.blocks) ? lesson.blocks : [];
     card.innerHTML = `<div class="scenario-head"><div><span class="eyebrow">Lesson ${index + 1}</span><strong>${escapeHtml(lesson.title || "Untitled lesson")}</strong></div><small>${blocks.length} block${blocks.length === 1 ? "" : "s"}</small></div><div class="field-grid"><label class="wide"><span>Lesson title</span><input data-rise-lesson-title value="${escapeAttr(lesson.title || "")}"></label><label class="wide"><span>Lesson description</span><textarea rows="2" data-rise-lesson-description>${escapeHtml(lesson.description || "")}</textarea></label></div><div class="choices" data-rise-blocks></div>`;
-    $("[data-rise-lesson-title]", card).addEventListener("input", (event) => { lesson.title = event.target.value; touch(false); });
-    $("[data-rise-lesson-description]", card).addEventListener("input", (event) => { lesson.description = event.target.value; touch(false); });
+    $("[data-rise-lesson-title]", card).addEventListener("input", (event) => { lesson.title = event.target.value; state.transformFocusId = lesson.id; touch(false); });
+    $("[data-rise-lesson-description]", card).addEventListener("input", (event) => { lesson.description = event.target.value; state.transformFocusId = lesson.id; touch(false); });
     const root = $("[data-rise-blocks]", card);
     if (!blocks.length) root.innerHTML = '<div class="empty-state">This lesson has no editable content blocks in the published export.</div>';
-    blocks.forEach((block, blockIndex) => root.appendChild(riseBlockCard(block, blockIndex)));
+    blocks.forEach((block, blockIndex) => root.appendChild(riseBlockCard(block, blockIndex, lesson)));
     return card;
   }
 
-  function riseBlockCard(block, index) {
+  function riseBlockCard(block, index, lesson) {
     const card = document.createElement("div");
     card.className = "choice-card";
     const field = riseTextField(block);
     card.innerHTML = `<div class="choices-head"><strong>Block ${index + 1} · ${escapeHtml(block.kind || "custom")}</strong><small>${escapeHtml(block.variant || "Preserved normalized block")}</small></div><label class="wide"><span>Block title</span><input data-rise-block-title value="${escapeAttr(block.title || "")}"></label><label class="wide"><span>Editable content</span><textarea rows="3" data-rise-block-content>${escapeHtml(field.value)}</textarea></label>${field.value ? "" : '<small>There is no single text field to expose for this block. Its normalized source data remains available in Developer project data.</small>'}`;
-    $("[data-rise-block-title]", card).addEventListener("input", (event) => { block.title = event.target.value; touch(false); });
-    $("[data-rise-block-content]", card).addEventListener("input", (event) => { block.content = { ...field.content, [field.key]: event.target.value }; touch(false); });
+    $("[data-rise-block-title]", card).addEventListener("input", (event) => { block.title = event.target.value; state.transformFocusId = lesson.id; touch(false); });
+    $("[data-rise-block-content]", card).addEventListener("input", (event) => { block.content = { ...field.content, [field.key]: event.target.value }; state.transformFocusId = lesson.id; touch(false); });
     return card;
   }
 
@@ -1019,10 +1041,11 @@
   function renderPreview() {
     const root = $("[data-preview-root]");
     setText("[data-preview-heading]", isRiseCourse() ? "Preview the responsive course" : isStorylineExperience() ? "Preview the Storyline-style player" : "Test the learner experience");
+    const showingOriginal = state.publishedPreviewUrl && state.publishedPreviewMode !== "model";
     setText("[data-preview-description]", isRiseCourse()
-      ? state.publishedPreviewUrl ? "This is the original published Rise player, shown exactly as learners receive it. Switch to the model view only when you want to review the editable extraction." : "This responsive course-style preview shows lesson navigation, normalized content, and available media in a learner context."
+      ? showingOriginal ? "This is the untouched original published Rise player, shown exactly as learners received it." : "This is the new web model preview. It reflects editable content and theme choices, not the original Rise runtime."
       : isStorylineExperience()
-        ? state.publishedPreviewUrl ? "This is the original published Storyline player, shown exactly as learners receive it. Switch to the model view only when you want to review the editable extraction." : "This Storyline-style player preview preserves the published scene and slide structure. Complex triggers and timeline behavior remain review items."
+        ? showingOriginal ? "This is the untouched original published Storyline player, shown exactly as learners received it." : "This is the new web model preview. It reflects editable content and theme choices, not the original Storyline runtime."
         : "Try alternate paths and presentation settings without leaving the project.");
     const { issues } = validate();
     if (issues.length) {
@@ -1116,7 +1139,7 @@
     const lessons = state.model.content.lessons || [];
     const normalLessons = lessons.filter((lesson) => lesson.kind !== "assessment");
     const assessments = lessons.filter((lesson) => lesson.kind === "assessment");
-    let current = normalLessons[0] || assessments[0];
+    let current = lessons.find((lesson) => lesson.id === state.transformFocusId) || normalLessons[0] || assessments[0];
     const blockText = (block) => {
       const field = riseTextField(block);
       return field.value || block.title || "This normalized block has no standalone text field.";
@@ -1142,11 +1165,12 @@
       return;
     }
     const scenes = state.model.content.scenes || [];
-    let scene = scenes[0];
-    let slide = scene?.slides?.[0];
+    const initial = scenes.flatMap((item) => (item.slides || []).map((candidate) => ({ scene:item, slide:candidate }))).find((item) => item.slide.id === state.transformFocusId);
+    let scene = initial?.scene || scenes[0];
+    let slide = initial?.slide || scene?.slides?.[0];
     const courseCover = state.model?.metadata?.courseCover || null;
     const courseCoverUrl = courseCover ? (assetUrl(`asset:${courseCover.id}`) || assetUrl(courseCover.path)) : null;
-    let showingCourseCover = Boolean(courseCoverUrl);
+    let showingCourseCover = Boolean(courseCoverUrl) && state.publishedPreviewMode !== "model";
     function draw() {
       if (!scene || !slide) {
         root.innerHTML = '<div class="empty-state">This imported Storyline experience has no previewable slides.</div>';
@@ -1232,6 +1256,8 @@
       const target = state.profile.export?.target || "web";
       meta.innerHTML = `<span><strong>Theme</strong>${escapeHtml(theme)}</span><span><strong>Audience</strong>${escapeHtml(audience)}</span><span><strong>Export intent</strong>${escapeHtml(target)}</span>`;
     }
+    const preset = $("[data-theme-preset]");
+    if (preset && document.activeElement !== preset) preset.value = state.profile.presentation?.theme?.presetId || "original";
     applyThemeToPreview();
   }
 
@@ -1691,7 +1717,8 @@
     $$('[data-tab]').forEach((button) => button.addEventListener("click", () => switchTab(button.dataset.tab)));
     $("[data-go-edit]").addEventListener("click", () => switchTab("edit"));
     $("[data-go-adapt]").addEventListener("click", () => switchTab("adapt"));
-    $("[data-go-preview]").addEventListener("click", () => switchTab("preview"));
+    $("[data-go-model-preview]").addEventListener("click", () => { state.publishedPreviewMode = "model"; switchTab("preview"); });
+    $("[data-go-source-preview]").addEventListener("click", () => { state.publishedPreviewMode = "published"; switchTab("preview"); });
     $$('[data-open-tool]').forEach((button) => button.addEventListener("click", () => openTool(button.dataset.openTool)));
     $$('[data-close-tool]').forEach((button) => button.addEventListener("click", closeTool));
 
