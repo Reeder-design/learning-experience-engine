@@ -3,6 +3,8 @@ const fs = require("fs");
 const path = require("path");
 const { spawn } = require("child_process");
 const aiHandler = require("../api/workbench-ai");
+const { importRiseArchive, MAX_ARCHIVE_BYTES } = require("../server/rise-import");
+const { importStorylineArchive, MAX_ARCHIVE_BYTES: MAX_STORYLINE_ARCHIVE_BYTES } = require("../server/storyline-import");
 const {
   hashPassword,
   verifyPassword,
@@ -354,6 +356,60 @@ async function handleLogout(req, res) {
   sendJson(res, 200, { ok:true }, { "Set-Cookie": clearSessionCookie() });
 }
 
+function decodeBase64File(value) {
+  const text = String(value || "");
+  if (!text || !/^[A-Za-z0-9+/]+={0,2}$/.test(text) || text.length % 4 === 1) {
+    throw new Error("The selected file could not be read.");
+  }
+  return Buffer.from(text, "base64");
+}
+
+async function handleRiseImport(req, res) {
+  const session = currentSession(req);
+  if (!session) {
+    sendJson(res, 401, { ok:false, error:"Sign in to the private Workbench first." });
+    return;
+  }
+  if (req.method !== "POST" || !checkCsrf(req, session)) {
+    sendJson(res, 403, { ok:false, error:"Workbench session check failed. Refresh and sign in again." });
+    return;
+  }
+  try {
+    const raw = await readBody(req, Math.ceil(MAX_ARCHIVE_BYTES * 1.37) + 1024 * 1024);
+    const payload = JSON.parse(raw);
+    const sourceName = String(payload?.name || "rise-export.zip").replace(/[\\/]/g, "_");
+    const archive = decodeBase64File(payload?.base64);
+    if (archive.length > MAX_ARCHIVE_BYTES) throw new Error("That ZIP is too large for the current private Workbench import limit.");
+    const imported = importRiseArchive(archive, sourceName);
+    sendJson(res, 200, { ok:true, project:imported.project, previewAssets:imported.previewAssets });
+  } catch (error) {
+    sendJson(res, 400, { ok:false, error:error.message || "Rise import could not be completed." });
+  }
+}
+
+async function handleStorylineImport(req, res) {
+  const session = currentSession(req);
+  if (!session) {
+    sendJson(res, 401, { ok:false, error:"Sign in to the private Workbench first." });
+    return;
+  }
+  if (req.method !== "POST" || !checkCsrf(req, session)) {
+    sendJson(res, 403, { ok:false, error:"Workbench session check failed. Refresh and sign in again." });
+    return;
+  }
+  try {
+    const raw = await readBody(req, Math.ceil(MAX_STORYLINE_ARCHIVE_BYTES * 1.37) + 1024 * 1024);
+    const payload = JSON.parse(raw);
+    const sourceName = String(payload?.name || "storyline-web.zip").replace(/[\\/]/g, "_");
+    const archive = decodeBase64File(payload?.base64);
+    if (archive.length > MAX_STORYLINE_ARCHIVE_BYTES) throw new Error("That ZIP is too large for the current private Workbench import limit.");
+    const imported = importStorylineArchive(archive, sourceName);
+    sendJson(res, 200, { ok:true, project:imported.project, previewAssets:imported.previewAssets });
+  } catch (error) {
+    sendJson(res, 400, { ok:false, error:error.message || "Storyline import could not be completed." });
+  }
+}
+
 async function handler(req, res) {
   if (!trustedHost(req)) {
     res.writeHead(400, { "Content-Type":"text/plain; charset=utf-8" });
@@ -382,6 +438,14 @@ async function handler(req, res) {
   }
   if (pathname === "/api/workbench-logout") {
     await handleLogout(req, res);
+    return;
+  }
+  if (pathname === "/api/workbench-rise-import") {
+    await handleRiseImport(req, res);
+    return;
+  }
+  if (pathname === "/api/workbench-storyline-import") {
+    await handleStorylineImport(req, res);
     return;
   }
 

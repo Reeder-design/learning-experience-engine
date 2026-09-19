@@ -54,6 +54,9 @@ Implemented in the current v0.3 candidate:
 
 - three built-in source template projects: customer discovery, decision practice, and objection handling
 - existing Engine `branching-scenario` JSON → editable project reconstruction
+- guided private import of a published Rise web ZIP → editable normalized course draft
+- guided private import of a published Storyline web ZIP → editable normalized scene/slide/layer draft
+- small imported images, audio, and video available in the current local preview session
 - local source-file and source-folder intake
 - readable TXT/MD/CSV/JSON reference content
 - local image assets available inside scenario image selectors and learner preview
@@ -168,7 +171,7 @@ tools/rise-normalizer/
 builders/web/
 ```
 
-The technical pipeline can inspect, extract, normalize, and render published Rise Web exports. A human-facing Workbench import flow is planned after the source/template/AI transformation model is proven.
+The technical pipeline can inspect, extract, normalize, and render published Rise Web exports. The private Workbench now offers a first guided import: select a published Rise web ZIP, then review and edit the normalized course, lesson, block, and quiz content before exporting portable Engine JSON. Small packaged media can be previewed in the current local browser session; source-asset packaging is still future work. The original authoring file is not edited, and blocks without a clear single text field remain preserved for review in Developer project data.
 
 ### Storyline
 
@@ -183,6 +186,8 @@ builders/stateful-web/
 ```
 
 The prototype stateful runtime supports useful subsets of scenes, slides, layers, objects, variables, conditions, actions, navigation, media, and timelines. Storyline-derived adapters include carousel, hotspot reveal, assessment shell, and media presentation.
+
+The private Workbench now offers a first guided Storyline import: select a published Storyline web ZIP, then review and edit normalized scene names, slide titles, layer labels, and exposed object text/alt text. Small packaged media can be previewed in the current local browser session; source-asset packaging remains future work. Trigger sequencing, conditions, variable behavior, media timelines, and custom JavaScript remain source-derived review items rather than claims of full authoring-file reconstruction.
 
 Do not claim pixel-perfect Storyline reconstruction or full Storyline parity.
 
@@ -295,7 +300,7 @@ Theme changes currently affect the Workbench learner preview and travel as porta
 1. **Source Template Library** with complete reusable project structures rather than only block-level templates.
 2. **Saved Theme Library** built on the new Project Profile theme contract.
 3. **Editable project packaging** that preserves source instructions, assets, interaction JSON, Project Profile, history metadata, and template/theme references together.
-4. Guided Workbench reuse flows for existing Rise and Storyline exports.
+4. Deepen Rise/Storyline import with source-asset handling, richer block/object editing, and guided behavior review.
 5. Expand the Workbench beyond branching scenarios to other interaction/course project types.
 
 ## Public/private boundary
@@ -310,4 +315,4 @@ Active prototype / early product development.
 
 Workbench v0.3 candidate, Project Profile/theme/history tooling, password-protected local AI generation/transformation, Scenario Builder, Interaction Builder, Course Builder, Rise/Storyline import foundations, engine-native component rendering, local asset workflows, and automated syntax/navigation/security/mock-AI/smoke regression checks are functioning on the feature branch.
 
-Still future work includes the reusable source-template library, theme library, richer project packaging, guided Rise/Storyline Workbench import, richer scenario state, persistent cloud projects, LMS/SCORM/xAPI packaging, Rise Code Block output, Storyline Web Object output, and direct deployment integrations.
+Still future work includes the reusable source-template library, theme library, richer project packaging, deeper Rise/Storyline source-asset handling, richer scenario state, persistent cloud projects, LMS/SCORM/xAPI packaging, Rise Code Block output, Storyline Web Object output, and direct deployment integrations.

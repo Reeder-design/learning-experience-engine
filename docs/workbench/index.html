@@ -51,6 +51,8 @@
         <button type="button" class="start-card active" data-start-mode="template"><span class="start-icon">◇</span><strong>Use a source template</strong><small>Keep the interaction mechanics and replace the learning content.</small></button>
         <button type="button" class="start-card" data-start-mode="blank"><span class="start-icon">＋</span><strong>Start simple</strong><small>Begin with a minimal published-style interaction.</small></button>
         <button type="button" class="start-card" data-start-mode="existing"><span class="start-icon">↥</span><strong>Open existing JSON</strong><small>Reconstruct editable fields, presentation settings, and preview.</small></button>
+        <button type="button" class="start-card" data-start-mode="rise"><span class="start-icon">R</span><strong>Import a Rise web export</strong><small>Bring a published Rise ZIP into an editable course draft.</small></button>
+        <button type="button" class="start-card" data-start-mode="storyline"><span class="start-icon">S</span><strong>Import a Storyline web export</strong><small>Bring published scenes, slides, and layers into an editable draft.</small></button>
       </div>
       <div class="template-picker" data-template-picker>
         <label><span>Source template project</span><select data-template-select>
@@ -62,7 +64,15 @@
       </div>
       <div class="existing-picker" data-existing-picker hidden>
         <button type="button" class="primary" data-choose-json>Choose scenario JSON</button>
-        <span>Supported now: Engine <code>branching-scenario</code> JSON. Rise/Storyline published-web reconstruction remains a later import layer.</span>
+        <span>Open an Engine project JSON and continue editing its saved project data.</span>
+      </div>
+      <div class="existing-picker" data-rise-picker hidden>
+        <button type="button" class="primary" data-choose-rise>Choose published Rise ZIP</button>
+        <span>Private local import only. This reads a published Rise web export, preserves source mapping, and creates an editable normalized draft. It does not edit a native <code>.rise</code> authoring file.</span>
+      </div>
+      <div class="existing-picker" data-storyline-picker hidden>
+        <button type="button" class="primary" data-choose-storyline>Choose published Storyline ZIP</button>
+        <span>Private local import only. This reads a published Storyline web export, preserves scene/slide/layer mapping, and creates an editable normalized draft. It does not edit a native <code>.story</code> authoring file.</span>
       </div>
     </section>
 
@@ -258,6 +268,8 @@
   <button type="button" class="drawer-backdrop" data-close-tool aria-label="Close project tool" hidden></button>
 
   <input type="file" data-json-input accept="application/json,.json" hidden>
+  <input type="file" data-rise-input accept=".zip,application/zip,application/x-zip-compressed" hidden>
+  <input type="file" data-storyline-input accept=".zip,application/zip,application/x-zip-compressed" hidden>
   <input type="file" data-source-files multiple accept=".txt,.md,.markdown,.csv,.json,.pdf,.doc,.docx,.ppt,.pptx,.png,.jpg,.jpeg,.gif,.webp,.svg,.mp4,.webm,.mov,.m4v,.mp3,.wav,.m4a,.aac,.ogg,.vtt,.srt" hidden>
   <input type="file" data-source-folder webkitdirectory multiple hidden>
   <div class="toast" data-toast hidden></div>

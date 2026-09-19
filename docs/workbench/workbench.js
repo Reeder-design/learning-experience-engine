@@ -222,6 +222,7 @@
   }
 
   function syncScoringFromProfile() {
+    if (state.model?.type === "rise-course" || state.model?.type === "storyline-experience") return;
     if (!state.model?.content?.score) return;
     const mode = state.profile?.behavior?.scoring || "none";
     state.model.content.score.enabled = mode !== "none";
@@ -271,6 +272,7 @@
     sourceFiles: [],
     reference: [],
     objectUrls: new Map(),
+    inlineAssets: new Map(),
     activeTab: "source",
     activeTool: null,
     profile: defaultProfile(),
@@ -321,12 +323,26 @@
     return !!(model && model.type === "branching-scenario" && model.schemaVersion === "0.1" && Array.isArray(model.content?.nodes) && model.content.nodes.length && Array.isArray(model.content?.outcomes) && model.content.outcomes.length);
   }
 
+  function validRiseCourse(model) {
+    return !!(model && model.type === "rise-course" && model.schemaVersion === "0.1" && Array.isArray(model.content?.lessons) && model.content.lessons.length);
+  }
+
+  function validStorylineExperience(model) {
+    return !!(model && model.type === "storyline-experience" && model.schemaVersion === "0.1" && Array.isArray(model.content?.scenes) && model.content.scenes.length);
+  }
+
+  function validProject(model) { return validScenario(model) || validRiseCourse(model) || validStorylineExperience(model); }
+  function isRiseCourse() { return state.model?.type === "rise-course"; }
+  function isStorylineExperience() { return state.model?.type === "storyline-experience"; }
+  function isImportedProject() { return isRiseCourse() || isStorylineExperience(); }
+
   function setText(selector, text) {
     const element = $(selector);
     if (element) element.textContent = text;
   }
 
   function destinationItems() {
+    if (!validScenario(state.model)) return [];
     return [
       ...state.model.content.nodes.map((item) => ({ id: item.id, label: `Next decision · ${item.title || item.id}` })),
       ...state.model.content.outcomes.map((item) => ({ id: item.id, label: `Outcome · ${item.title || item.id}` }))
@@ -341,9 +357,34 @@
     return html;
   }
 
-  function assetUrl(path) { return state.objectUrls.get(path) || null; }
+  function assetUrl(path) { return state.objectUrls.get(path) || state.inlineAssets.get(path) || null; }
+
+  function registerPreviewAssets(assets = []) {
+    state.inlineAssets.clear();
+    assets.forEach((asset) => {
+      if (!asset?.dataUrl) return;
+      if (asset.id) state.inlineAssets.set(`asset:${asset.id}`, asset.dataUrl);
+      if (asset.path) state.inlineAssets.set(asset.path, asset.dataUrl);
+    });
+  }
+
+  function importedMediaMarkup() {
+    const assets = state.model?.metadata?.assetManifest || [];
+    const previewable = assets.filter((asset) => assetUrl(`asset:${asset.id}`) || assetUrl(asset.path));
+    if (!previewable.length) return "";
+    const cards = previewable.map((asset) => {
+      const url = assetUrl(`asset:${asset.id}`) || assetUrl(asset.path);
+      const label = escapeHtml(String(asset.path || asset.id || "Imported asset").split("/").pop());
+      if (asset.kind === "image") return `<figure class="learner-feedback"><img class="learner-image" src="${escapeAttr(url)}" alt="${label}"><figcaption>${label}</figcaption></figure>`;
+      if (asset.kind === "audio") return `<div class="learner-feedback"><strong>${label}</strong><audio controls src="${escapeAttr(url)}"></audio></div>`;
+      if (asset.kind === "video") return `<div class="learner-feedback"><strong>${label}</strong><video controls src="${escapeAttr(url)}"></video></div>`;
+      return "";
+    }).join("");
+    return cards ? `<div class="learner-prompt">Imported media available in this browser session</div>${cards}` : "";
+  }
 
   function startProject(model, prompt = "") {
+    state.inlineAssets.clear();
     state.model = clone(model);
     state.profile = profileFromModel(model);
     state.profile.source.templateId = model?.metadata?.templateId || state.profile.source.templateId || "";
@@ -372,11 +413,23 @@
 
   function renderProjectMeta() {
     setText("[data-project-title]", state.model.title || "Untitled scenario");
-    setText("[data-project-summary]", `${state.model.content.nodes.length} decision${state.model.content.nodes.length === 1 ? "" : "s"} · ${state.model.content.outcomes.length} outcome${state.model.content.outcomes.length === 1 ? "" : "s"}`);
+    if (isRiseCourse()) {
+      const lessons = state.model.content.lessons || [];
+      const blocks = lessons.reduce((total, lesson) => total + (Array.isArray(lesson.blocks) ? lesson.blocks.length : 0), 0);
+      setText("[data-project-summary]", `${lessons.length} lesson${lessons.length === 1 ? "" : "s"} · ${blocks} normalized block${blocks === 1 ? "" : "s"}`);
+    } else if (isStorylineExperience()) {
+      const scenes = state.model.content.scenes || [];
+      const slides = scenes.reduce((total, scene) => total + (scene.slides || []).length, 0);
+      setText("[data-project-summary]", `${scenes.length} scene${scenes.length === 1 ? "" : "s"} · ${slides} slide${slides === 1 ? "" : "s"}`);
+    } else {
+      setText("[data-project-summary]", `${state.model.content.nodes.length} decision${state.model.content.nodes.length === 1 ? "" : "s"} · ${state.model.content.outcomes.length} outcome${state.model.content.outcomes.length === 1 ? "" : "s"}`);
+    }
     $("[data-source-prompt]").value = state.sourcePrompt || "";
     $("[data-project-field=\"title\"]").value = state.model.title || "";
     $("[data-project-field=\"description\"]").value = state.model.description || "";
     $("[data-project-field=\"instruction\"]").value = state.model.instruction || "";
+    const aiButton = $("[data-open-tool=\"ai\"]");
+    if (aiButton) aiButton.disabled = isImportedProject();
     renderProfileFields();
   }
 
@@ -405,14 +458,140 @@
   function renderEditor() {
     renderProjectMeta();
     const nodes = $("[data-decision-list]");
+    const outcomes = $("[data-outcome-list]");
+    const toolbar = $(".edit-toolbar");
+    const sectionLabels = $$(".section-label", nodes.parentElement);
     nodes.innerHTML = "";
+    if (isStorylineExperience()) {
+      toolbar.hidden = true;
+      if (sectionLabels[0]) sectionLabels[0].innerHTML = "<span>Imported scenes and slides</span><small>Editable normalized learner-facing text and layer labels</small>";
+      if (sectionLabels[1]) sectionLabels[1].innerHTML = "<span>Imported runtime notes</span><small>Structure detected from the published Storyline web export</small>";
+      state.model.content.scenes.forEach((scene, index) => nodes.appendChild(storylineSceneCard(scene, index)));
+      outcomes.innerHTML = "";
+      outcomes.appendChild(storylineImportNotes());
+      renderFlowCheck();
+      renderJson();
+      return;
+    }
+    if (isRiseCourse()) {
+      toolbar.hidden = true;
+      if (sectionLabels[0]) sectionLabels[0].innerHTML = "<span>Imported lessons</span><small>Editable normalized learner-facing content</small>";
+      if (sectionLabels[1]) sectionLabels[1].innerHTML = "<span>Imported assessments</span><small>Questions preserved from the published Rise export</small>";
+      state.model.content.lessons.filter((lesson) => lesson.kind !== "assessment").forEach((lesson, index) => nodes.appendChild(riseLessonCard(lesson, index)));
+      outcomes.innerHTML = "";
+      state.model.content.lessons.filter((lesson) => lesson.kind === "assessment").forEach((lesson, index) => outcomes.appendChild(riseAssessmentCard(lesson, index)));
+      if (!outcomes.children.length) outcomes.innerHTML = '<div class="empty-state">No scored Rise assessment was found in this export.</div>';
+      renderFlowCheck();
+      renderJson();
+      return;
+    }
+    toolbar.hidden = false;
+    if (sectionLabels[0]) sectionLabels[0].innerHTML = "<span>Decision points</span><small>Situation → learner responses → coaching → destination</small>";
+    if (sectionLabels[1]) sectionLabels[1].innerHTML = "<span>Outcomes</span><small>Where the learner can finish the experience.</small>";
     state.model.content.nodes.forEach((node, index) => nodes.appendChild(decisionCard(node, index)));
 
-    const outcomes = $("[data-outcome-list]");
     outcomes.innerHTML = "";
     state.model.content.outcomes.forEach((outcome, index) => outcomes.appendChild(outcomeCard(outcome, index)));
     renderFlowCheck();
     renderJson();
+  }
+
+  function storylineSceneCard(scene, index) {
+    const card = document.createElement("article");
+    card.className = "scenario-card";
+    const slides = Array.isArray(scene.slides) ? scene.slides : [];
+    card.innerHTML = `<div class="scenario-head"><div><span class="eyebrow">Scene ${index + 1}</span><strong>${escapeHtml(scene.title || "Untitled scene")}</strong></div><small>${slides.length} slide${slides.length === 1 ? "" : "s"}</small></div><div class="field-grid"><label class="wide"><span>Scene title</span><input data-storyline-scene-title value="${escapeAttr(scene.title || "")}"></label></div><div class="choices" data-storyline-slides></div>`;
+    $("[data-storyline-scene-title]", card).addEventListener("input", (event) => { scene.title = event.target.value; touch(false); });
+    const root = $("[data-storyline-slides]", card);
+    if (!slides.length) root.innerHTML = '<div class="empty-state">No published slides were found in this scene.</div>';
+    slides.forEach((slide, slideIndex) => root.appendChild(storylineSlideCard(slide, slideIndex)));
+    return card;
+  }
+
+  function storylineSlideCard(slide, index) {
+    const card = document.createElement("div");
+    card.className = "choice-card";
+    const layers = Array.isArray(slide.layers) ? slide.layers : [];
+    const detail = `${layers.length} layer${layers.length === 1 ? "" : "s"} · ${slide.metadata?.objectCount || 0} object${slide.metadata?.objectCount === 1 ? "" : "s"} · ${slide.metadata?.actionCount || 0} action${slide.metadata?.actionCount === 1 ? "" : "s"}`;
+    card.innerHTML = `<div class="choices-head"><strong>Slide ${index + 1} · ${escapeHtml(slide.title || "Untitled slide")}</strong><small>${escapeHtml(detail)}</small></div><label class="wide"><span>Slide title</span><input data-storyline-slide-title value="${escapeAttr(slide.title || "")}"></label><div class="choices" data-storyline-layers></div>`;
+    $("[data-storyline-slide-title]", card).addEventListener("input", (event) => { slide.title = event.target.value; touch(false); });
+    const root = $("[data-storyline-layers]", card);
+    if (!layers.length) root.innerHTML = '<small>This published slide could not be fully decoded. Its slide title and source mapping are preserved for review.</small>';
+    layers.forEach((layer, layerIndex) => root.appendChild(storylineLayerCard(layer, layerIndex)));
+    return card;
+  }
+
+  function storylineLayerCard(layer, index) {
+    const card = document.createElement("div");
+    card.className = "choice-card";
+    const objects = Array.isArray(layer.objects) ? layer.objects : [];
+    card.innerHTML = `<div class="choices-head"><strong>${escapeHtml(layer.kind === "base" ? "Base layer" : `Layer ${index + 1}`)} · ${escapeHtml(layer.title || "Untitled layer")}</strong><small>${objects.length} object${objects.length === 1 ? "" : "s"}</small></div><label class="wide"><span>Layer title</span><input data-storyline-layer-title value="${escapeAttr(layer.title || "")}"></label><div class="field-grid">${objects.map((object, objectIndex) => `<label><span>${escapeHtml(object.kind || "Object")} ${objectIndex + 1}</span><input data-storyline-object="${objectIndex}" value="${escapeAttr(object.title || "")}" placeholder="No exposed text or alt text"></label>`).join("")}</div>`;
+    $("[data-storyline-layer-title]", card).addEventListener("input", (event) => { layer.title = event.target.value; touch(false); });
+    $$('[data-storyline-object]', card).forEach((input) => input.addEventListener("input", () => {
+      const object = objects[Number(input.dataset.storylineObject)];
+      object.title = input.value;
+      object.accessibility = { ...(object.accessibility || {}), altText: input.value };
+      touch(false);
+    }));
+    return card;
+  }
+
+  function storylineImportNotes() {
+    const card = document.createElement("article");
+    card.className = "outcome-card";
+    const summary = state.model.metadata?.importSummary || {};
+    const variables = state.model.metadata?.variables || [];
+    card.innerHTML = `<div class="outcome-head"><div><span class="eyebrow">Published-web import</span><strong>Review runtime behavior before reuse</strong></div></div><p>This editable draft preserves scene, slide, layer, object-state, and action counts from the published Storyline web export. Trigger sequencing, conditions, variable behavior, media timelines, and custom JavaScript remain source-derived review items in this first pass.</p><div class="field-grid"><div><span>Parsed slides</span><strong>${Number(summary.parsedSlides || 0)} / ${Number(summary.slides || 0)}</strong></div><div><span>Layers</span><strong>${Number(summary.layers || 0)}</strong></div><div><span>Objects</span><strong>${Number(summary.objects || 0)}</strong></div><div><span>Detected actions</span><strong>${Number(summary.actions || 0)}</strong></div></div>${variables.length ? `<p><strong>Project variables:</strong> ${escapeHtml(variables.map((item) => item.name).filter(Boolean).join(", ") || "present in source data")}</p>` : ""}`;
+    return card;
+  }
+
+  function riseTextField(block) {
+    const content = block.content || {};
+    const keys = ["body", "text", "description", "caption", "heading", "subheading", "quote", "prompt"];
+    const key = keys.find((candidate) => typeof content[candidate] === "string") || "body";
+    return { content, key, value: content[key] || "" };
+  }
+
+  function riseLessonCard(lesson, index) {
+    const card = document.createElement("article");
+    card.className = "scenario-card";
+    const blocks = Array.isArray(lesson.blocks) ? lesson.blocks : [];
+    card.innerHTML = `<div class="scenario-head"><div><span class="eyebrow">Lesson ${index + 1}</span><strong>${escapeHtml(lesson.title || "Untitled lesson")}</strong></div><small>${blocks.length} block${blocks.length === 1 ? "" : "s"}</small></div><div class="field-grid"><label class="wide"><span>Lesson title</span><input data-rise-lesson-title value="${escapeAttr(lesson.title || "")}"></label><label class="wide"><span>Lesson description</span><textarea rows="2" data-rise-lesson-description>${escapeHtml(lesson.description || "")}</textarea></label></div><div class="choices" data-rise-blocks></div>`;
+    $("[data-rise-lesson-title]", card).addEventListener("input", (event) => { lesson.title = event.target.value; touch(false); });
+    $("[data-rise-lesson-description]", card).addEventListener("input", (event) => { lesson.description = event.target.value; touch(false); });
+    const root = $("[data-rise-blocks]", card);
+    if (!blocks.length) root.innerHTML = '<div class="empty-state">This lesson has no editable content blocks in the published export.</div>';
+    blocks.forEach((block, blockIndex) => root.appendChild(riseBlockCard(block, blockIndex)));
+    return card;
+  }
+
+  function riseBlockCard(block, index) {
+    const card = document.createElement("div");
+    card.className = "choice-card";
+    const field = riseTextField(block);
+    card.innerHTML = `<div class="choices-head"><strong>Block ${index + 1} · ${escapeHtml(block.kind || "custom")}</strong><small>${escapeHtml(block.variant || "Preserved normalized block")}</small></div><label class="wide"><span>Block title</span><input data-rise-block-title value="${escapeAttr(block.title || "")}"></label><label class="wide"><span>Editable content</span><textarea rows="3" data-rise-block-content>${escapeHtml(field.value)}</textarea></label>${field.value ? "" : '<small>There is no single text field to expose for this block. Its normalized source data remains available in Developer project data.</small>'}`;
+    $("[data-rise-block-title]", card).addEventListener("input", (event) => { block.title = event.target.value; touch(false); });
+    $("[data-rise-block-content]", card).addEventListener("input", (event) => { block.content = { ...field.content, [field.key]: event.target.value }; touch(false); });
+    return card;
+  }
+
+  function riseAssessmentCard(assessment, index) {
+    const card = document.createElement("article");
+    card.className = "outcome-card";
+    const questions = Array.isArray(assessment.questions) ? assessment.questions : [];
+    card.innerHTML = `<div class="outcome-head"><div><span class="eyebrow">Assessment ${index + 1}</span><strong>${escapeHtml(assessment.title || "Untitled assessment")}</strong></div><small>${questions.length} question${questions.length === 1 ? "" : "s"}</small></div><div class="field-grid"><label class="wide"><span>Assessment title</span><input data-rise-assessment-title value="${escapeAttr(assessment.title || "")}"></label></div><div class="choices" data-rise-questions></div>`;
+    $("[data-rise-assessment-title]", card).addEventListener("input", (event) => { assessment.title = event.target.value; touch(false); });
+    const root = $("[data-rise-questions]", card);
+    questions.forEach((question, questionIndex) => {
+      const questionCard = document.createElement("div");
+      questionCard.className = "choice-card";
+      questionCard.innerHTML = `<div class="choices-head"><strong>Question ${questionIndex + 1} · ${escapeHtml(question.type || "custom")}</strong></div><label class="wide"><span>Question prompt</span><textarea rows="2" data-rise-question-prompt>${escapeHtml(question.prompt || "")}</textarea></label><div class="field-grid">${(question.answers || []).map((answer, answerIndex) => `<label><span>Answer ${answerIndex + 1}${answer.correct ? " · correct" : ""}</span><input data-rise-answer="${answerIndex}" value="${escapeAttr(answer.text || "")}"></label>`).join("")}</div>`;
+      $("[data-rise-question-prompt]", questionCard).addEventListener("input", (event) => { question.prompt = event.target.value; touch(false); });
+      $$('[data-rise-answer]', questionCard).forEach((input) => input.addEventListener("input", () => { question.answers[Number(input.dataset.riseAnswer)].text = input.value; touch(false); }));
+      root.appendChild(questionCard);
+    });
+    if (!questions.length) root.innerHTML = '<div class="empty-state">No editable questions were found in this assessment.</div>';
+    return card;
   }
 
   function decisionCard(node, index) {
@@ -532,6 +711,26 @@
   }
 
   function validate() {
+    if (isStorylineExperience()) {
+      const scenes = state.model.content.scenes || [];
+      const issues = scenes.length ? [] : ["The imported Storyline experience does not contain any scenes."];
+      const warnings = [];
+      scenes.forEach((scene, sceneIndex) => {
+        if (!String(scene.title || "").trim()) warnings.push(`Scene ${sceneIndex + 1} needs a title.`);
+        if (!(scene.slides || []).length) warnings.push(`${scene.title || `Scene ${sceneIndex + 1}`} has no published slides to review.`);
+      });
+      return { issues, warnings };
+    }
+    if (isRiseCourse()) {
+      const lessons = state.model.content.lessons || [];
+      const issues = lessons.length ? [] : ["The imported course does not contain any lessons."];
+      const warnings = [];
+      lessons.forEach((lesson, index) => {
+        if (!String(lesson.title || "").trim()) warnings.push(`Lesson ${index + 1} needs a title.`);
+        if (lesson.kind !== "assessment" && !Array.isArray(lesson.blocks)) warnings.push(`${lesson.title || `Lesson ${index + 1}`} has no normalized blocks to review.`);
+      });
+      return { issues, warnings };
+    }
     const issues = [];
     const warnings = [];
     const all = [...state.model.content.nodes, ...state.model.content.outcomes];
@@ -576,7 +775,11 @@
       setText("[data-project-health]", "Ready with notes");
     } else {
       element.className = "flow-check";
-      element.textContent = "Ready to preview ✓ Every learner response leads somewhere and an outcome is reachable.";
+      element.textContent = isRiseCourse()
+        ? "Rise course draft ready to review ✓ Learner-facing normalized content is editable; source mapping is preserved in project data."
+        : isStorylineExperience()
+          ? "Storyline experience draft ready to review ✓ Scenes, slides, layers, and exposed learner-facing text are editable; runtime behavior remains a review item."
+          : "Ready to preview ✓ Every learner response leads somewhere and an outcome is reachable.";
       setText("[data-project-health]", "Ready to preview");
     }
   }
@@ -586,6 +789,15 @@
     const { issues } = validate();
     if (issues.length) {
       root.innerHTML = `<div class="empty-state">Fix the project flow before previewing: ${escapeHtml(issues[0])}</div>`;
+      return;
+    }
+
+    if (isRiseCourse()) {
+      renderRisePreview(root);
+      return;
+    }
+    if (isStorylineExperience()) {
+      renderStorylinePreview(root);
       return;
     }
 
@@ -646,6 +858,49 @@
         });
         choicesRoot.appendChild(button);
       });
+    }
+    draw();
+  }
+
+  function renderRisePreview(root) {
+    const lessons = state.model.content.lessons || [];
+    const normalLessons = lessons.filter((lesson) => lesson.kind !== "assessment");
+    const assessments = lessons.filter((lesson) => lesson.kind === "assessment");
+    let current = normalLessons[0] || assessments[0];
+    const blockText = (block) => {
+      const field = riseTextField(block);
+      return field.value || block.title || "This normalized block has no standalone text field.";
+    };
+    function draw() {
+      if (!current) {
+        root.innerHTML = '<div class="empty-state">This imported course has no previewable lessons.</div>';
+        return;
+      }
+      const options = lessons.map((lesson) => `<option value="${escapeAttr(lesson.id)}"${lesson.id === current.id ? " selected" : ""}>${escapeHtml(lesson.kind === "assessment" ? "Assessment · " : "Lesson · ")}${escapeHtml(lesson.title || "Untitled")}</option>`).join("");
+      const content = current.kind === "assessment"
+        ? (current.questions || []).map((question, index) => `<div class="learner-feedback"><strong>Question ${index + 1}</strong><p>${escapeHtml(question.prompt || "Untitled question")}</p>${(question.answers || []).map((answer) => `<div class="learner-choice" aria-disabled="true"><strong>${escapeHtml(answer.text || "Untitled answer")}</strong></div>`).join("")}</div>`).join("") || '<p>No questions were found in this assessment.</p>'
+        : (current.blocks || []).map((block, index) => `<div class="learner-feedback"><strong>${escapeHtml(block.title || `Block ${index + 1}`)}</strong><p>${escapeHtml(blockText(block))}</p></div>`).join("") || '<p>No normalized blocks were found in this lesson.</p>';
+      root.innerHTML = `<article class="learner-card"><span class="eyebrow">Imported Rise course preview</span><label class="field"><span>Preview lesson</span><select data-rise-preview-select>${options}</select></label><h3>${escapeHtml(current.title || "Untitled lesson")}</h3>${current.description ? `<p>${escapeHtml(current.description)}</p>` : ""}<div class="learner-prompt">Normalized preview</div>${content}${importedMediaMarkup()}</article>`;
+      $("[data-rise-preview-select]", root).addEventListener("change", (event) => { current = lessons.find((lesson) => lesson.id === event.target.value) || current; draw(); });
+    }
+    draw();
+  }
+
+  function renderStorylinePreview(root) {
+    const scenes = state.model.content.scenes || [];
+    let scene = scenes[0];
+    let slide = scene?.slides?.[0];
+    function draw() {
+      if (!scene || !slide) {
+        root.innerHTML = '<div class="empty-state">This imported Storyline experience has no previewable slides.</div>';
+        return;
+      }
+      const sceneOptions = scenes.map((item) => `<option value="${escapeAttr(item.id)}"${item.id === scene.id ? " selected" : ""}>${escapeHtml(item.title || "Untitled scene")}</option>`).join("");
+      const slideOptions = (scene.slides || []).map((item) => `<option value="${escapeAttr(item.id)}"${item.id === slide.id ? " selected" : ""}>${escapeHtml(item.title || "Untitled slide")}</option>`).join("");
+      const layers = (slide.layers || []).map((layer, index) => `<div class="learner-feedback"><strong>${escapeHtml(layer.title || (layer.kind === "base" ? "Base layer" : `Layer ${index + 1}`))}</strong>${(layer.objects || []).map((object) => `<p>${escapeHtml(object.title || object.accessibility?.altText || `${object.kind || "Object"} (no exposed text)`)}</p>`).join("") || "<p>No exposed learner-facing text on this layer.</p>"}</div>`).join("") || '<div class="learner-feedback"><strong>Source review needed</strong><p>This published slide could not be fully decoded into editable layers.</p></div>';
+      root.innerHTML = `<article class="learner-card"><span class="eyebrow">Imported Storyline experience preview</span><div class="field-grid"><label><span>Scene</span><select data-storyline-preview-scene>${sceneOptions}</select></label><label><span>Slide</span><select data-storyline-preview-slide>${slideOptions}</select></label></div><h3>${escapeHtml(slide.title || "Untitled slide")}</h3><p>${escapeHtml(`${slide.layers?.length || 0} layer(s) · ${slide.metadata?.objectCount || 0} object(s) · ${slide.metadata?.actionCount || 0} detected action(s)`)}</p><div class="learner-prompt">Normalized layer preview</div>${layers}${importedMediaMarkup()}</article>`;
+      $("[data-storyline-preview-scene]", root).addEventListener("change", (event) => { scene = scenes.find((item) => item.id === event.target.value) || scene; slide = scene.slides?.[0]; draw(); });
+      $("[data-storyline-preview-slide]", root).addEventListener("change", (event) => { slide = scene.slides.find((item) => item.id === event.target.value) || slide; draw(); });
     }
     draw();
   }
@@ -758,7 +1013,7 @@
   }
 
   function restoreVersion(project, profile, message) {
-    if (!validScenario(project)) return toast("That history version is no longer compatible.");
+    if (!validProject(project)) return toast("That history version is no longer compatible.");
     state.model = clone(project);
     state.profile = profile ? clone(profile) : profileFromModel(project);
     syncScoringFromProfile();
@@ -842,7 +1097,7 @@
         raw = migratedFrom ? localStorage.getItem(migratedFrom) : null;
       }
       const saved = JSON.parse(raw || "null");
-      if (!saved || !validScenario(saved.model)) return false;
+      if (!saved || !validProject(saved.model)) return false;
       state.model = saved.model;
       state.profile = saved.profile ? clone(saved.profile) : profileFromModel(saved.model);
       state.history = Array.isArray(saved.history) ? saved.history : [];
@@ -866,7 +1121,7 @@
   async function openJson(file) {
     try {
       const model = JSON.parse(await file.text());
-      if (!validScenario(model)) throw new Error("This is not a valid branching-scenario JSON file.");
+      if (!validProject(model)) throw new Error("This is not a compatible Workbench project JSON file.");
       startProject(model, "");
       toast("Existing scenario opened");
     } catch (error) {
@@ -887,6 +1142,79 @@
     setTimeout(() => URL.revokeObjectURL(url), 500);
   }
 
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || "").split(",").pop() || "");
+      reader.onerror = () => reject(reader.error || new Error("The Rise export could not be read."));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function importRiseExport(file) {
+    const MAX_ARCHIVE_BYTES = 30 * 1024 * 1024;
+    if (!file) return;
+    if (file.size > MAX_ARCHIVE_BYTES) return toast("This first import pass supports Rise ZIP exports up to 30 MB.");
+    toast("Reading the Rise export locally…");
+    try {
+      const sessionResponse = await fetch("/api/workbench-session", { credentials:"same-origin", cache:"no-store" });
+      const session = await sessionResponse.json();
+      if (!sessionResponse.ok || !session.authenticated || !session.csrf) throw new Error("Open the password-protected local Workbench before importing a Rise export.");
+      const response = await fetch("/api/workbench-rise-import", {
+        method:"POST",
+        credentials:"same-origin",
+        headers: { "Content-Type":"application/json", "X-CSRF-Token":session.csrf },
+        body: JSON.stringify({ name:file.name, base64:await fileToBase64(file) })
+      });
+      const result = await response.json();
+      if (!response.ok || !result.ok || !validRiseCourse(result.project)) throw new Error(result.error || "Rise import could not create an editable course draft.");
+      startProject(result.project, `Imported from published Rise web export: ${file.name}`);
+      registerPreviewAssets(result.previewAssets || []);
+      state.profile.source.origin = "rise-published-web";
+      state.profile.source.structureModel = "course-lessons-blocks";
+      state.profile.source.notes = "Normalized from a private published Rise web export. Review every imported block before reuse or export.";
+      state.profile.behavior.navigation = "free";
+      state.profile.export.target = "web";
+      renderAll();
+      saveDraft();
+      toast("Rise course imported as an editable draft");
+    } catch (error) {
+      toast(error.message || "Rise import could not be completed.");
+    }
+  }
+
+  async function importStorylineExport(file) {
+    const MAX_ARCHIVE_BYTES = 30 * 1024 * 1024;
+    if (!file) return;
+    if (file.size > MAX_ARCHIVE_BYTES) return toast("This first import pass supports Storyline ZIP exports up to 30 MB.");
+    toast("Reading the Storyline export locally…");
+    try {
+      const sessionResponse = await fetch("/api/workbench-session", { credentials:"same-origin", cache:"no-store" });
+      const session = await sessionResponse.json();
+      if (!sessionResponse.ok || !session.authenticated || !session.csrf) throw new Error("Open the password-protected local Workbench before importing a Storyline export.");
+      const response = await fetch("/api/workbench-storyline-import", {
+        method:"POST",
+        credentials:"same-origin",
+        headers: { "Content-Type":"application/json", "X-CSRF-Token":session.csrf },
+        body: JSON.stringify({ name:file.name, base64:await fileToBase64(file) })
+      });
+      const result = await response.json();
+      if (!response.ok || !result.ok || !validStorylineExperience(result.project)) throw new Error(result.error || "Storyline import could not create an editable experience draft.");
+      startProject(result.project, `Imported from published Storyline web export: ${file.name}`);
+      registerPreviewAssets(result.previewAssets || []);
+      state.profile.source.origin = "storyline-published-web";
+      state.profile.source.structureModel = "scenes-slides-layers";
+      state.profile.source.notes = "Normalized from a private published Storyline web export. Review every scene, layer, object, variable, and runtime behavior before reuse or export.";
+      state.profile.behavior.navigation = "guided";
+      state.profile.export.target = "web";
+      renderAll();
+      saveDraft();
+      toast("Storyline experience imported as an editable draft");
+    } catch (error) {
+      toast(error.message || "Storyline import could not be completed.");
+    }
+  }
+
   function toast(message) {
     const element = $("[data-toast]");
     element.textContent = message;
@@ -901,6 +1229,8 @@
       const mode = button.dataset.startMode;
       $("[data-template-picker]").hidden = mode !== "template";
       $("[data-existing-picker]").hidden = mode !== "existing";
+      $("[data-rise-picker]").hidden = mode !== "rise";
+      $("[data-storyline-picker]").hidden = mode !== "storyline";
       if (mode === "blank") startProject(blankScenario(), "");
     }));
 
@@ -912,10 +1242,22 @@
     });
 
     $("[data-choose-json]").addEventListener("click", () => $("[data-json-input]").click());
+    $("[data-choose-rise]").addEventListener("click", () => $("[data-rise-input]").click());
+    $("[data-choose-storyline]").addEventListener("click", () => $("[data-storyline-input]").click());
     $("[data-open-project]").addEventListener("click", () => $("[data-json-input]").click());
     $("[data-json-input]").addEventListener("change", async (event) => {
       const file = event.target.files?.[0];
       if (file) await openJson(file);
+      event.target.value = "";
+    });
+    $("[data-rise-input]").addEventListener("change", async (event) => {
+      const file = event.target.files?.[0];
+      if (file) await importRiseExport(file);
+      event.target.value = "";
+    });
+    $("[data-storyline-input]").addEventListener("change", async (event) => {
+      const file = event.target.files?.[0];
+      if (file) await importStorylineExport(file);
       event.target.value = "";
     });
 
@@ -955,12 +1297,14 @@
     }));
 
     $("[data-add-decision]").addEventListener("click", () => {
+      if (isRiseCourse()) return;
       const number = state.model.content.nodes.length + 1;
       state.model.content.nodes.push({ id: uniqueId(`decision-${number}`), speaker: "", title: `Decision ${number}`, body: "Describe what the learner knows at this point.", image: "", alt: "", choices: [{ id: uid("choice"), text: "New learner response", targetId: state.model.content.outcomes[0]?.id || "", feedback: "Add coaching feedback.", scoreDelta: 0 }] });
       touch(true);
     });
 
     $("[data-add-outcome]").addEventListener("click", () => {
+      if (isRiseCourse()) return;
       const number = state.model.content.outcomes.length + 1;
       state.model.content.outcomes.push({ id: uniqueId(`outcome-${number}`), title: `Outcome ${number}`, body: "Describe what happened.", image: "", alt: "", summary: "Add the learner takeaway." });
       touch(true);
@@ -1013,13 +1357,16 @@
     getReference: () => clone(state.reference),
     getSourceFiles: () => state.sourceFiles.map((item) => ({ ...item })),
     validScenario,
+    validRiseCourse,
+    validStorylineExperience,
+    validProject,
     validate,
     toast,
     switchTab,
     openTool,
     addHistoryEntry,
     replaceProject: (model, profile = null) => {
-      if (!validScenario(model)) throw new Error("AI returned an unsupported project.");
+      if (!validProject(model)) throw new Error("AI returned an unsupported project.");
       state.model = clone(model);
       state.profile = profile ? clone(profile) : profileFromModel(model);
       syncScoringFromProfile();

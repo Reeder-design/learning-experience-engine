@@ -13,8 +13,8 @@ function findEndOfCentralDirectory(buffer) {
   throw new Error('ZIP end-of-central-directory record was not found.');
 }
 
-function readZip(zipPath) {
-  const buffer = fs.readFileSync(zipPath);
+function readZipBuffer(buffer) {
+  if (!Buffer.isBuffer(buffer)) throw new Error('ZIP source must be a Buffer.');
   const eocdOffset = findEndOfCentralDirectory(buffer);
   const entryCount = buffer.readUInt16LE(eocdOffset + 10);
   const centralOffset = buffer.readUInt32LE(eocdOffset + 16);
@@ -72,4 +72,8 @@ function readZip(zipPath) {
   return { entries, readEntry };
 }
 
-module.exports = { readZip };
+function readZip(zipPath) {
+  return readZipBuffer(fs.readFileSync(zipPath));
+}
+
+module.exports = { readZip, readZipBuffer };

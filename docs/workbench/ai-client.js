@@ -17,6 +17,10 @@
   const headerStatus = $("[data-header-ai-status]");
   const headerTestButton = $("[data-header-test-ai]");
 
+  function activeProjectSupportsAi() {
+    return !["rise-course", "storyline-experience"].includes(api.getProject()?.type);
+  }
+
   function setStatus(text, tone = "neutral") {
     if (statusChip) {
       statusChip.textContent = text;
@@ -30,8 +34,8 @@
 
   function setConnected(value, detail = "") {
     connected = value;
-    if (generateButton) generateButton.disabled = !value;
-    if (runButton) runButton.disabled = !value;
+    if (generateButton) generateButton.disabled = !value || !activeProjectSupportsAi();
+    if (runButton) runButton.disabled = !value || !activeProjectSupportsAi();
     setStatus(value ? "AI connected" : localPrivateMode ? "AI not configured" : "Secure local mode", value ? "ok" : "warn");
     if (connectionSummary) {
       connectionSummary.textContent = detail || (value
@@ -158,6 +162,10 @@
   }
 
   async function runAi(mode, instruction) {
+    if (!activeProjectSupportsAi()) {
+      api.toast("AI transformations for imported Rise or Storyline projects are not enabled in this first pass. Review and edit the normalized draft first.");
+      return;
+    }
     if (!connected && !(await testConnection(false))) {
       api.toast(localPrivateMode
         ? "Add the OpenAI API key before running AI."
@@ -242,7 +250,7 @@
         resultPanel.innerHTML = `<div class="ai-error"><strong>AI action did not change your project.</strong><span>${escapeHtml(error.message)}</span></div>`;
       }
     } finally {
-      activeButton.disabled = !connected;
+      activeButton.disabled = !connected || !activeProjectSupportsAi();
       activeButton.textContent = originalText;
     }
   }
