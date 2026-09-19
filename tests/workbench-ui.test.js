@@ -19,5 +19,6 @@ assert.match(workbench, /storyline-course-cover/, "Storyline imports with a publ
 assert.match(workbench, /NEEDS MEDIA/, "Unavailable linked Storyline media must be clearly flagged.");
 assert.match(workbench, /Media library/, "Imported projects need a plain-language media inventory.");
 assert.match(workbench, /HLS stream/, "The Workbench must distinguish streaming-video bundles from ordinary video files.");
+assert.match(workbench, /Open the running Workbench/, "Opening the static file must explain that the private local server is required.");
 
 console.log("Workbench UI binding regression checks passed.");

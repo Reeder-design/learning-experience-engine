@@ -1,4 +1,8 @@
 (() => {
+  if (window.location.protocol === "file:") {
+    document.body.innerHTML = `<main class="local-workbench-notice"><span class="eyebrow">Private local Workbench</span><h1>Open the running Workbench, not this source file.</h1><p>This file can display the interface, but it cannot sign in, import a course, or play protected media bundles. Those features run only through the local Workbench server.</p><a class="primary" href="http://127.0.0.1:4192/workbench/">Open the local Workbench →</a><small>Bookmark this address for future use: http://127.0.0.1:4192/workbench/</small></main>`;
+    return;
+  }
   const STORAGE_KEY = "lx-learning-project-workbench:v0.3";
   const LEGACY_STORAGE_KEYS = ["lx-learning-project-workbench:v0.1"];
   const $ = (selector, root = document) => root.querySelector(selector);
