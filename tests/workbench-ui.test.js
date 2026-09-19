@@ -32,6 +32,9 @@ assert.match(previewServer, /publishedPreviewUrl/, "Published import responses m
 assert.match(page, /data-transform-studio/, "The adaptation stage must provide a source-versus-new-version transformation workspace.");
 assert.match(workbench, /function renderTransformStudio/, "Theme and content changes need a live transformation preview.");
 assert.match(workbench, /transformFocusItems/, "The transformation preview must be able to follow an individual editable slide or lesson.");
+assert.match(workbench, /restoreCachedImportedArchive/, "An imported source archive should restore after a browser refresh without a new file picker.");
+assert.match(workbench, /renderStorylineModelPlayer/, "The new Storyline model needs its own learner-facing, navigable player.");
+assert.match(workbench, /Replace across editable content/, "Editing should support a focused batch replacement workflow.");
 assert.match(page, /Preview new version/, "The adaptation workflow must offer a direct path to preview the new model instead of only the original player.");
 assert.match(page, /Original theme · reference only/, "The original theme option must not imply an unsupported source-theme conversion.");
 

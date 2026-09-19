@@ -5,6 +5,8 @@
   }
   const STORAGE_KEY = "lx-learning-project-workbench:v0.3";
   const LEGACY_STORAGE_KEYS = ["lx-learning-project-workbench:v0.1"];
+  const ARCHIVE_DB_NAME = "lx-learning-project-workbench-source-v1";
+  const ARCHIVE_STORE_NAME = "archives";
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -290,6 +292,69 @@
     saveTimer: null
   };
 
+  function importedSourceKey(model = state.model) {
+    const imported = model?.metadata?.import || {};
+    const sourceId = imported.sourceProjectId || imported.sourceCourseId || model?.id || "";
+    return imported.sourceFormat && sourceId ? `${imported.sourceFormat}:${sourceId}` : "";
+  }
+
+  function sourceArchiveDb() {
+    return new Promise((resolve, reject) => {
+      if (!window.indexedDB) { reject(new Error("This browser cannot save the local source archive.")); return; }
+      const request = window.indexedDB.open(ARCHIVE_DB_NAME, 1);
+      request.onupgradeneeded = () => request.result.createObjectStore(ARCHIVE_STORE_NAME, { keyPath:"key" });
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || new Error("Local source storage is unavailable."));
+    });
+  }
+
+  async function cacheImportedArchive(file, sourceFormat) {
+    const key = importedSourceKey();
+    if (!file || !sourceFormat || !key) return false;
+    const db = await sourceArchiveDb();
+    await new Promise((resolve, reject) => {
+      const transaction = db.transaction(ARCHIVE_STORE_NAME, "readwrite");
+      transaction.objectStore(ARCHIVE_STORE_NAME).put({ key, sourceFormat, name:file.name, type:file.type || "application/zip", blob:file, savedAt:Date.now() });
+      transaction.oncomplete = resolve;
+      transaction.onerror = () => reject(transaction.error || new Error("The source archive could not be saved locally."));
+      transaction.onabort = () => reject(transaction.error || new Error("The source archive could not be saved locally."));
+    });
+    db.close();
+    return true;
+  }
+
+  async function cachedImportedArchive() {
+    const key = importedSourceKey();
+    if (!key) return null;
+    const db = await sourceArchiveDb();
+    const record = await new Promise((resolve, reject) => {
+      const request = db.transaction(ARCHIVE_STORE_NAME, "readonly").objectStore(ARCHIVE_STORE_NAME).get(key);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error || new Error("The local source archive could not be read."));
+    });
+    db.close();
+    if (!record?.blob) return null;
+    return { file:new File([record.blob], record.name || "published-course.zip", { type:record.type || "application/zip" }), sourceFormat:record.sourceFormat };
+  }
+
+  async function restoreCachedImportedArchive() {
+    if (!isImportedProject() || state.importArchive?.file) return false;
+    try {
+      const saved = await cachedImportedArchive();
+      if (!saved) return false;
+      toast("Restoring the saved original course…");
+      const restored = await restoreImportedMedia(saved.file, saved.sourceFormat);
+      mergeImportedRuntime(restored.project);
+      state.importArchive = saved;
+      renderAll();
+      toast("Original player and media restored from this browser");
+      return true;
+    } catch (error) {
+      toast(error.message || "The project opened, but its saved source archive could not be restored.");
+      return false;
+    }
+  }
+
   function escapeHtml(value = "") {
     return String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[char]));
   }
@@ -535,7 +600,7 @@
         .filter((value, index, values) => values.indexOf(value) === index);
       const media = storylineSlideMedia(slide);
       return {
-        eyebrow:scene.title || "Imported scene",
+        eyebrow:"New learning experience",
         title:slide.title || state.model.title || "Untitled slide",
         body:text.length ? text : [state.model.description || "Add learner-facing content in Edit to see it here."],
         action:controls[0] || "Continue",
@@ -567,7 +632,7 @@
     const image = snapshot.image ? `<img src="${escapeAttr(snapshot.image)}" alt="">` : "";
     const body = snapshot.body.filter(Boolean).map((item) => `<p>${escapeHtml(item)}</p>`).join("");
     const presetButtons = [
-      ["portfolio", "Calm studio"], ["warm-studio", "Warm"], ["editorial", "Editorial"], ["technical-dark", "Dark"], ["high-contrast", "Contrast"]
+      ["original", "Original theme"], ["portfolio", "Calm studio"], ["warm-studio", "Warm"], ["editorial", "Editorial"], ["technical-dark", "Dark"], ["high-contrast", "Contrast"]
     ].map(([value, label]) => `<button type="button" data-transform-preset="${value}">${label}</button>`).join("");
     const focusControl = focusItems.length > 1 ? `<label class="transform-focus"><span>Compare this editable ${isStorylineExperience() ? "slide" : isRiseCourse() ? "lesson" : "decision"}</span><select data-transform-focus>${focusItems.map((item) => `<option value="${escapeAttr(item.id)}"${item.id === focusedId ? " selected" : ""}>${escapeHtml(item.label)}</option>`).join("")}</select></label>` : "";
     root.innerHTML = `<div class="transform-head"><div><span class="eyebrow">Transformation studio</span><h3>Compare the source with your new version</h3><p>Edits and theme choices update the new-version card. The original course remains your untouched visual and behavior reference.</p></div><div class="transform-actions"><button type="button" data-transform-edit>Review editable content</button><button type="button" class="primary-soft" data-transform-theme>Fine-tune theme</button></div></div>${focusControl}<div class="transform-compare"><article class="transform-source"><div class="transform-label"><span>01</span><div><strong>Original published player</strong><small>Exact source experience</small></div></div>${source}</article><article class="transform-target" style="${style}"><div class="transform-label"><span>02</span><div><strong>New model preview</strong><small>${escapeHtml(theme.name || "Custom theme")} · changes live</small></div></div><div class="transform-model-card">${image}<div class="transform-model-copy"><span>${escapeHtml(snapshot.eyebrow)}</span><h4>${escapeHtml(snapshot.title)}</h4>${body}<button type="button">${escapeHtml(snapshot.action)} <b>→</b></button></div></div><p class="transform-caption">New version · generic web rendering from editable content</p></article></div><div class="transform-looks"><div><strong>Try a starting look</strong><span>Original theme leaves the current new-version styling alone. The other choices change only this card.</span></div><div>${presetButtons}</div></div>`;
@@ -710,6 +775,7 @@
 
   function renderEditor() {
     renderProjectMeta();
+    renderEditFocusPanel();
     const nodes = $("[data-decision-list]");
     const outcomes = $("[data-outcome-list]");
     const toolbar = $(".edit-toolbar");
@@ -719,7 +785,10 @@
       toolbar.hidden = true;
       if (sectionLabels[0]) sectionLabels[0].innerHTML = "<span>Imported scenes and slides</span><small>Editable normalized learner-facing text and layer labels</small>";
       if (sectionLabels[1]) sectionLabels[1].innerHTML = "<span>Imported runtime notes</span><small>Structure detected from the published Storyline web export</small>";
-      state.model.content.scenes.forEach((scene, index) => nodes.appendChild(storylineSceneCard(scene, index)));
+      const slides = state.model.content.scenes.flatMap((scene) => (scene.slides || []).map((slide, index) => ({ scene, slide, index })));
+      const current = slides.find((item) => item.slide.id === state.transformFocusId) || slides[0];
+      if (current) nodes.appendChild(storylineFocusedSlideCard(current.scene, current.slide, current.index));
+      else nodes.innerHTML = '<div class="empty-state">No editable slides were found in this published export.</div>';
       outcomes.innerHTML = "";
       outcomes.appendChild(storylineImportNotes());
       renderFlowCheck();
@@ -730,9 +799,12 @@
       toolbar.hidden = true;
       if (sectionLabels[0]) sectionLabels[0].innerHTML = "<span>Imported lessons</span><small>Editable normalized learner-facing content</small>";
       if (sectionLabels[1]) sectionLabels[1].innerHTML = "<span>Imported assessments</span><small>Questions preserved from the published Rise export</small>";
-      state.model.content.lessons.filter((lesson) => lesson.kind !== "assessment").forEach((lesson, index) => nodes.appendChild(riseLessonCard(lesson, index)));
+      const lessons = state.model.content.lessons || [];
+      const current = lessons.find((lesson) => lesson.id === state.transformFocusId) || lessons.find((lesson) => lesson.kind !== "assessment") || lessons[0];
+      if (current?.kind !== "assessment") nodes.appendChild(riseLessonCard(current, lessons.indexOf(current)));
+      else nodes.innerHTML = '<div class="empty-state">Choose a lesson above to edit its learner-facing blocks.</div>';
       outcomes.innerHTML = "";
-      state.model.content.lessons.filter((lesson) => lesson.kind === "assessment").forEach((lesson, index) => outcomes.appendChild(riseAssessmentCard(lesson, index)));
+      if (current?.kind === "assessment") outcomes.appendChild(riseAssessmentCard(current, lessons.filter((lesson) => lesson.kind === "assessment").indexOf(current)));
       if (!outcomes.children.length) outcomes.innerHTML = '<div class="empty-state">No scored Rise assessment was found in this export.</div>';
       renderFlowCheck();
       renderJson();
@@ -747,6 +819,57 @@
     state.model.content.outcomes.forEach((outcome, index) => outcomes.appendChild(outcomeCard(outcome, index)));
     renderFlowCheck();
     renderJson();
+  }
+
+  function renderEditFocusPanel() {
+    const root = $("[data-edit-focus-panel]");
+    if (!root || !state.model) return;
+    const items = transformFocusItems();
+    const focusedId = items.some((item) => item.id === state.transformFocusId) ? state.transformFocusId : items[0]?.id || "";
+    if (focusedId && !state.transformFocusId) state.transformFocusId = focusedId;
+    const noun = isStorylineExperience() ? "slide" : isRiseCourse() ? "lesson or assessment" : "decision point";
+    root.innerHTML = `<div class="edit-focus-head"><div><span class="eyebrow">Focused editing</span><strong>Work on one ${noun} at a time</strong><small>Use find and replace when the same wording appears across the draft.</small></div>${items.length > 1 ? `<label><span>Currently editing</span><select data-edit-focus>${items.map((item) => `<option value="${escapeAttr(item.id)}"${item.id === focusedId ? " selected" : ""}>${escapeHtml(item.label)}</option>`).join("")}</select></label>` : ""}</div><div class="edit-batch"><label><span>Find</span><input data-edit-find placeholder="Example: old company name"></label><label><span>Replace with</span><input data-edit-replace placeholder="Example: sanitized client name"></label><button type="button" data-edit-batch-replace>Replace across editable content</button></div>`;
+    $("[data-edit-focus]", root)?.addEventListener("change", (event) => { state.transformFocusId = event.target.value; renderEditor(); renderTransformStudio(); });
+    $("[data-edit-batch-replace]", root)?.addEventListener("click", () => {
+      const find = $("[data-edit-find]", root).value;
+      const replace = $("[data-edit-replace]", root).value;
+      if (!find) return toast("Enter the wording you want to replace first.");
+      const count = replaceEditableText(find, replace);
+      if (!count) return toast("That wording was not found in editable learner content.");
+      touch(true);
+      toast(`Updated ${count} editable text value${count === 1 ? "" : "s"}`);
+    });
+  }
+
+  function replaceEditableText(find, replace) {
+    let changed = 0;
+    const swap = (owner, key) => {
+      if (typeof owner?.[key] !== "string" || !owner[key].includes(find)) return;
+      owner[key] = owner[key].split(find).join(replace);
+      changed += 1;
+    };
+    swap(state.model, "title"); swap(state.model, "description"); swap(state.model, "instruction");
+    if (isStorylineExperience()) for (const scene of state.model.content.scenes || []) {
+      swap(scene, "title");
+      for (const slide of scene.slides || []) { swap(slide, "title"); for (const layer of slide.layers || []) { swap(layer, "title"); for (const object of layer.objects || []) { swap(object, "title"); if (object.accessibility) swap(object.accessibility, "altText"); } } }
+    } else if (isRiseCourse()) for (const lesson of state.model.content.lessons || []) {
+      swap(lesson, "title"); swap(lesson, "description");
+      for (const block of lesson.blocks || []) { swap(block, "title"); for (const key of ["body", "text", "description", "caption", "heading", "subheading", "quote", "prompt"]) swap(block.content || {}, key); }
+      for (const question of lesson.questions || []) { swap(question, "prompt"); for (const answer of question.answers || []) swap(answer, "text"); }
+    } else {
+      for (const node of state.model.content.nodes || []) { swap(node, "speaker"); swap(node, "title"); swap(node, "body"); for (const choice of node.choices || []) { swap(choice, "text"); swap(choice, "feedback"); } }
+      for (const outcome of state.model.content.outcomes || []) { swap(outcome, "title"); swap(outcome, "body"); swap(outcome, "summary"); }
+    }
+    return changed;
+  }
+
+  function storylineFocusedSlideCard(scene, slide, index) {
+    const card = document.createElement("article");
+    card.className = "scenario-card";
+    card.innerHTML = `<div class="scenario-head"><div><span class="eyebrow">Current scene</span><strong>${escapeHtml(scene.title || "Untitled scene")}</strong></div><small>Slide ${index + 1}</small></div><div class="field-grid"><label class="wide"><span>Scene title</span><input data-storyline-scene-title value="${escapeAttr(scene.title || "")}"></label></div>`;
+    $("[data-storyline-scene-title]", card).addEventListener("input", (event) => { scene.title = event.target.value; touch(false); });
+    card.appendChild(storylineSlideCard(slide, index));
+    return card;
   }
 
   function storylineSceneCard(scene, index) {
@@ -1159,9 +1282,50 @@
     draw();
   }
 
+  function storylineLearnerContent(slide) {
+    const seen = new Set();
+    return (slide.layers || []).flatMap((layer) => layer.objects || []).map((object) => String(object.title || object.accessibility?.altText || "").trim()).filter((value) => {
+      if (!value || seen.has(value) || value === slide.title || genericControlLabel(value)) return false;
+      if (/^(vectorshape|scrollarea|video|image)\b/i.test(value) || /\.(png|jpe?g|gif|webp|svg|mp4|webm|m3u8)$/i.test(value)) return false;
+      seen.add(value); return true;
+    });
+  }
+
+  function renderStorylineModelPlayer(root) {
+    const slides = (state.model.content.scenes || []).flatMap((scene) => (scene.slides || []).map((slide) => ({ scene, slide })));
+    let position = Math.max(0, slides.findIndex((item) => item.slide.id === state.transformFocusId));
+    let started = false;
+    const theme = state.profile.presentation?.theme || {};
+    function draw() {
+      const current = slides[position];
+      if (!current) { root.innerHTML = '<div class="empty-state">This new course model does not have any learner-facing slides yet.</div>'; return; }
+      const { slide } = current;
+      const media = storylineSlideMedia(slide);
+      const backgroundUrl = media.background ? media.assetUrlFor(media.background.asset) : media.inlineImages[0] ? media.assetUrlFor(media.inlineImages[0].asset) : null;
+      const lines = storylineLearnerContent(slide).slice(0, 6);
+      const body = lines.length ? lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("") : `<p>${escapeHtml(state.model.description || "Add learner-facing content in Edit to complete this slide.")}</p>`;
+      const mediaMarkup = storylineMediaMarkup(media);
+      if (!started) {
+        root.innerHTML = `<article class="model-course-player"><header><div class="storyline-mark">LX</div><strong>${escapeHtml(state.model.title || "New course")}</strong><span>${escapeHtml(theme.name || "New version")}</span>${state.publishedPreviewUrl ? '<button type="button" data-model-original>View original</button>' : ""}</header><main class="model-course-launch${backgroundUrl ? " model-course-launch--image" : ""}"${backgroundUrl ? ` style="--model-cover:url('${escapeAttr(backgroundUrl)}')"` : ""}><div><span class="eyebrow">New course preview</span><h3>${escapeHtml(state.model.title || "New course")}</h3><p>This is the editable web version. Start it to move through the learner-facing model.</p><button type="button" class="primary" data-model-start>Start course →</button></div></main></article>`;
+        $("[data-model-start]", root).addEventListener("click", () => { started = true; draw(); });
+        $("[data-model-original]", root)?.addEventListener("click", () => { state.publishedPreviewMode = "published"; renderPreview(); });
+        return;
+      }
+      root.innerHTML = `<article class="model-course-player"><header><div class="storyline-mark">LX</div><strong>${escapeHtml(state.model.title || "New course")}</strong><span>New version</span>${state.publishedPreviewUrl ? '<button type="button" data-model-original>View original</button>' : ""}</header><main class="model-course-stage${backgroundUrl ? " model-course-stage--image" : ""}"${backgroundUrl ? ` style="--model-cover:url('${escapeAttr(backgroundUrl)}')"` : ""}><section class="model-course-card"><h3>${escapeHtml(slide.title || "Untitled slide")}</h3><div class="model-course-copy">${body}</div>${mediaMarkup}</section></main><footer><span>${position + 1} of ${slides.length}</span><div><button type="button" data-model-back ${position === 0 ? "disabled" : ""}>Previous</button><button type="button" class="primary" data-model-next>${position === slides.length - 1 ? "Finish" : "Continue →"}</button></div></footer></article>`;
+      $("[data-model-original]", root)?.addEventListener("click", () => { state.publishedPreviewMode = "published"; renderPreview(); });
+      $("[data-model-back]", root)?.addEventListener("click", () => { position -= 1; draw(); });
+      $("[data-model-next]", root)?.addEventListener("click", () => { if (position >= slides.length - 1) { started = false; draw(); } else { position += 1; draw(); } });
+    }
+    draw();
+  }
+
   function renderStorylinePreview(root) {
     if (state.publishedPreviewUrl && state.publishedPreviewMode !== "model") {
       renderPublishedPlayer(root, "Storyline");
+      return;
+    }
+    if (state.publishedPreviewMode === "model") {
+      renderStorylineModelPlayer(root);
       return;
     }
     const scenes = state.model.content.scenes || [];
@@ -1424,6 +1588,7 @@
       $("[data-workspace]").hidden = false;
       renderAll();
       switchTab("source");
+      void restoreCachedImportedArchive();
       if (migratedFrom) {
         saveDraft();
         setTimeout(() => toast("Previous Workbench draft migrated to v0.3"), 250);
@@ -1541,6 +1706,7 @@
       const restored = await restoreImportedMedia(file, sourceFormat);
       mergeImportedRuntime(restored.project);
       state.importArchive = { file, sourceFormat };
+      await cacheImportedArchive(file, sourceFormat);
       renderAll();
       saveDraft();
       toast("Source media restored and attached to this project");
@@ -1557,7 +1723,10 @@
     registerPreviewAssets(previewAssets);
     if (importArchive?.file) {
       state.importArchive = importArchive;
-      try { await restoreImportedMedia(importArchive.file, importArchive.sourceFormat); } catch (error) { toast(error.message || "The project opened, but its source media could not be restored."); }
+      try {
+        await restoreImportedMedia(importArchive.file, importArchive.sourceFormat);
+        await cacheImportedArchive(importArchive.file, importArchive.sourceFormat);
+      } catch (error) { toast(error.message || "The project opened, but its source media could not be restored."); }
     }
     renderAll();
     saveDraft();
@@ -1593,6 +1762,7 @@
       if (!response.ok || !result.ok || !validRiseCourse(result.project)) throw new Error(result.error || "Rise import could not create an editable course draft.");
       startProject(result.project, `Imported from published Rise web export: ${file.name}`);
       state.importArchive = { file, sourceFormat:"rise-published-web" };
+      void cacheImportedArchive(file, "rise-published-web").catch(() => toast("The course opened, but this browser could not save its source ZIP for refresh restore."));
       registerPreviewAssets(result.previewAssets || []);
       registerMediaStreams(result.mediaStreams || []);
       registerPublishedPreview(result.publishedPreviewUrl);
@@ -1628,6 +1798,7 @@
       if (!response.ok || !result.ok || !validStorylineExperience(result.project)) throw new Error(result.error || "Storyline import could not create an editable experience draft.");
       startProject(result.project, `Imported from published Storyline web export: ${file.name}`);
       state.importArchive = { file, sourceFormat:"storyline-published-web" };
+      void cacheImportedArchive(file, "storyline-published-web").catch(() => toast("The course opened, but this browser could not save its source ZIP for refresh restore."));
       registerPreviewAssets(result.previewAssets || []);
       registerMediaStreams(result.mediaStreams || []);
       registerPublishedPreview(result.publishedPreviewUrl);

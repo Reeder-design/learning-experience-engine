@@ -9,7 +9,7 @@
   <link rel="icon" type="image/x-icon" href="../favicon.ico?v=4">
   <link rel="shortcut icon" href="../favicon.ico?v=4">
   <link rel="mask-icon" href="../assets/experience-engine-favicon.svg?v=4" color="#508484">
-  <link rel="stylesheet" href="workbench.css?v=12">
+  <link rel="stylesheet" href="workbench.css?v=13">
 </head>
 <body>
   <header class="app-header">
@@ -120,6 +120,7 @@
               <label class="field"><span>Purpose / context</span><textarea rows="3" data-project-field="description"></textarea></label>
               <label class="field"><span>Learner instruction</span><input type="text" data-project-field="instruction"></label>
             </div>
+            <section class="edit-focus-panel" data-edit-focus-panel></section>
             <div class="edit-toolbar"><div><strong>Scenario flow</strong><span>Decision points and outcomes define the current published interaction.</span></div><div><button type="button" data-add-decision>+ Decision point</button><button type="button" data-add-outcome>+ Outcome</button></div></div>
             <div class="flow-check" data-flow-check></div>
             <div class="section-label"><span>Decision points</span><small>Situation → learner responses → coaching → destination</small></div>
@@ -281,7 +282,7 @@
   <input type="file" data-source-folder webkitdirectory multiple hidden>
   <div class="toast" data-toast hidden></div>
   <script src="../assets/app-registry.js"></script>
-  <script src="workbench.js?v=18"></script>
+  <script src="workbench.js?v=19"></script>
   <script src="workbench-package.js?v=3"></script>
   <script src="ai-client.js?v=5"></script>
 </body>
