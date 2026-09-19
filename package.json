@@ -4,7 +4,7 @@
   "private": false,
   "description": "Reusable framework for building data-driven learning experiences, interactions, and course packages.",
   "scripts": {
-    "test": "node tests/component-builder.test.js && node tests/workbench-ai.test.js && node tests/rise-import.test.js && node tests/storyline-import.test.js",
+    "test": "node tests/component-builder.test.js && node tests/workbench-ai.test.js && node tests/workbench-ui.test.js && node tests/rise-import.test.js && node tests/storyline-import.test.js",
     "preview-docs": "node scripts/preview-docs.js",
     "inspect-rise": "node tools/rise-inspector/index.js",
     "extract-rise": "node tools/rise-extractor/index.js",

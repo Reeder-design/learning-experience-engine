@@ -436,14 +436,35 @@
     $("[data-project-field=\"description\"]").value = state.model.description || "";
     $("[data-project-field=\"instruction\"]").value = state.model.instruction || "";
     const aiButton = $("[data-open-tool=\"ai\"]");
-    if (aiButton) aiButton.disabled = isImportedProject();
+    if (aiButton) {
+      aiButton.disabled = isImportedProject();
+      $("small", aiButton).textContent = isImportedProject() ? "Manual review for imported drafts" : "Generate or transform";
+    }
+    const imported = isImportedProject();
+    setText("[data-source-heading]", imported ? "Your imported experience is ready to review" : "What should this experience become?");
+    setText("[data-source-description]", imported
+      ? "The published export is now an editable normalized draft. Continue to Build & edit to review learner-facing content, then test it in Preview."
+      : "Describe the learning need in normal language, then add the source materials and assets the experience should use.");
+    setText("[data-source-next-title]", imported ? "Ready to review the imported draft?" : "Ready to build?");
+    setText("[data-source-next-description]", imported
+      ? "Open the editor to review scenes, slides, layers, and learner-facing text."
+      : "Generate a complete experience from the brief/source or continue into the current project and edit manually.");
+    const generate = $("[data-generate-ai]");
+    if (generate) generate.hidden = imported;
+    const edit = $("[data-go-edit]");
+    if (edit) {
+      edit.classList.toggle("primary", imported);
+      edit.textContent = imported ? "Review imported content →" : "Build & edit →";
+    }
     renderProfileFields();
   }
 
   function renderSourceFiles() {
     const root = $("[data-source-file-list]");
     root.innerHTML = "";
-    if (!state.sourceFiles.length) root.innerHTML = '<div class="empty-state">No source files added yet.</div>';
+    if (!state.sourceFiles.length) root.innerHTML = isImportedProject()
+      ? '<div class="empty-state">The published export is already connected as this project’s source. Add extra files only if you need supporting material.</div>'
+      : '<div class="empty-state">No source files added yet.</div>';
     for (const entry of state.sourceFiles) {
       const row = document.createElement("div");
       row.className = "source-file";
@@ -943,11 +964,11 @@
 
   function renderProfileFields() {
     if (!state.profile) return;
-    $("[data-profile-field]").forEach((input) => {
+    $$('[data-profile-field]').forEach((input) => {
       const value = getPath(state.profile, input.dataset.profileField);
       if (document.activeElement !== input) input.value = value ?? "";
     });
-    $("[data-profile-list]").forEach((input) => {
+    $$('[data-profile-list]').forEach((input) => {
       const value = getPath(state.profile, input.dataset.profileList);
       if (document.activeElement !== input) input.value = Array.isArray(value) ? value.join("\n") : "";
     });
@@ -985,7 +1006,7 @@
       history: ["Versions", "Transformation history"],
       settings: ["Project", "Project settings"]
     };
-    $("[data-tool-panel]").forEach((panel) => { panel.hidden = panel.dataset.toolPanel !== name; });
+    $$('[data-tool-panel]').forEach((panel) => { panel.hidden = panel.dataset.toolPanel !== name; });
     setText("[data-tool-eyebrow]", titles[name]?.[0] || "Project tool");
     setText("[data-tool-title]", titles[name]?.[1] || "Project tool");
     drawer.classList.add("open");
@@ -1333,10 +1354,10 @@
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
 
-    $("[data-tab]").forEach((button) => button.addEventListener("click", () => switchTab(button.dataset.tab)));
+    $$('[data-tab]').forEach((button) => button.addEventListener("click", () => switchTab(button.dataset.tab)));
     $("[data-go-edit]").addEventListener("click", () => switchTab("edit"));
-    $("[data-open-tool]").forEach((button) => button.addEventListener("click", () => openTool(button.dataset.openTool)));
-    $("[data-close-tool]").forEach((button) => button.addEventListener("click", closeTool));
+    $$('[data-open-tool]').forEach((button) => button.addEventListener("click", () => openTool(button.dataset.openTool)));
+    $$('[data-close-tool]').forEach((button) => button.addEventListener("click", closeTool));
 
     $("[data-source-prompt]").addEventListener("input", (event) => {
       state.sourcePrompt = event.target.value;
@@ -1383,14 +1404,14 @@
       $("[data-ai-prompt]").value = presets[button.dataset.aiPreset] || "";
     }));
 
-    $("[data-profile-field]").forEach((input) => input.addEventListener("input", () => {
+    $$('[data-profile-field]').forEach((input) => input.addEventListener("input", () => {
       setPath(state.profile, input.dataset.profileField, input.value);
       syncScoringFromProfile();
       renderProfileFields();
       if (state.activeTab === "preview") renderPreview();
       saveDraft();
     }));
-    $("[data-profile-list]").forEach((input) => input.addEventListener("input", () => {
+    $$('[data-profile-list]').forEach((input) => input.addEventListener("input", () => {
       setPath(state.profile, input.dataset.profileList, input.value.split(/\r?\n/).map((item) => item.trim()).filter(Boolean));
       saveDraft();
     }));
