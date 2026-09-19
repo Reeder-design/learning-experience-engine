@@ -1,4 +1,5 @@
 const http = require("http");
+const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const { spawn } = require("child_process");
@@ -27,6 +28,8 @@ const docsRoot = path.resolve(__dirname, "..", "docs");
 const startPort = Number(process.env.PORT || 4173);
 const maxPort = startPort + 20;
 const loginAttempts = { count: 0, blockedUntil: 0 };
+const mediaSessions = new Map();
+const MEDIA_SESSION_MS = 30 * 60 * 1000;
 
 const mime = {
   ".html": "text/html; charset=utf-8",
@@ -44,6 +47,9 @@ const mime = {
   ".webm": "video/webm",
   ".mp3": "audio/mpeg",
   ".wav": "audio/wav",
+  ".m3u8": "application/vnd.apple.mpegurl",
+  ".ts": "video/mp2t",
+  ".m4a": "audio/mp4",
   ".pdf": "application/pdf"
 };
 
@@ -87,6 +93,64 @@ function sendJson(res, statusCode, payload, extraHeaders = {}) {
     ...extraHeaders
   });
   res.end(JSON.stringify(payload));
+}
+
+function safeMediaPath(value) {
+  const text = String(value || "").replace(/\\/g, "/");
+  if (!text || text.startsWith("/") || text.split("/").some((part) => !part || part === "." || part === "..")) return null;
+  return text;
+}
+
+function clearExpiredMediaSessions() {
+  const now = Date.now();
+  for (const [id, item] of mediaSessions) if (item.expiresAt <= now) mediaSessions.delete(id);
+}
+
+function registerMediaSession(session, imported) {
+  const streams = Array.isArray(imported.mediaStreams) ? imported.mediaStreams : [];
+  if (!streams.length || !imported.mediaArchive) return [];
+  clearExpiredMediaSessions();
+  const id = crypto.randomUUID();
+  mediaSessions.set(id, {
+    nonce:session.nonce,
+    expiresAt:Date.now() + MEDIA_SESSION_MS,
+    archive:imported.mediaArchive,
+    root:String(imported.mediaRoot || ""),
+    bundleRoots:new Set(streams.map((stream) => safeMediaPath(stream.bundleRoot)).filter(Boolean)),
+  });
+  return streams.map((stream) => ({ ...stream, url:`/api/workbench-media/${id}/${stream.path.split("/").map(encodeURIComponent).join("/")}` }));
+}
+
+function mediaEntry(mediaSession, relativePath) {
+  const roots = [...mediaSession.bundleRoots];
+  if (!roots.some((root) => relativePath === root || relativePath.startsWith(`${root}/`))) return null;
+  const candidates = [relativePath, mediaSession.root ? `${mediaSession.root}/${relativePath}` : null].filter(Boolean);
+  return mediaSession.archive.entries.find((entry) => !entry.isDirectory && candidates.includes(entry.fileName)) || null;
+}
+
+function sendMedia(req, res, pathname) {
+  const match = pathname.match(/^\/api\/workbench-media\/([0-9a-f-]{36})\/(.+)$/i);
+  const session = currentSession(req);
+  if (!match || req.method !== "GET" || !session) { sendJson(res, 404, { ok:false, error:"Media is not available." }); return true; }
+  clearExpiredMediaSessions();
+  const mediaSession = mediaSessions.get(match[1]);
+  const relativePath = safeMediaPath(decodeURIComponent(match[2]));
+  if (!mediaSession || mediaSession.nonce !== session.nonce || !relativePath) { sendJson(res, 404, { ok:false, error:"Media is not available." }); return true; }
+  const entry = mediaEntry(mediaSession, relativePath);
+  if (!entry) { sendJson(res, 404, { ok:false, error:"Media file is not available." }); return true; }
+  const bytes = mediaSession.archive.readEntry(entry);
+  const fileType = mime[path.extname(relativePath).toLowerCase()] || "application/octet-stream";
+  const range = String(req.headers.range || "").match(/^bytes=(\d*)-(\d*)$/);
+  let start = 0, end = bytes.length - 1, status = 200;
+  if (range) {
+    start = range[1] ? Number(range[1]) : 0;
+    end = range[2] ? Math.min(Number(range[2]), bytes.length - 1) : end;
+    if (!Number.isInteger(start) || !Number.isInteger(end) || start > end || start >= bytes.length) { res.writeHead(416, { "Content-Range":`bytes */${bytes.length}` }); res.end(); return true; }
+    status = 206;
+  }
+  res.writeHead(status, { "Content-Type":fileType, "Content-Length":end - start + 1, "Accept-Ranges":"bytes", "Cache-Control":"no-store", ...(status === 206 ? { "Content-Range":`bytes ${start}-${end}/${bytes.length}` } : {}) });
+  res.end(bytes.subarray(start, end + 1));
+  return true;
 }
 
 function sendHtml(res, statusCode, html, extraHeaders = {}) {
@@ -381,7 +445,7 @@ async function handleRiseImport(req, res) {
     const archive = decodeBase64File(payload?.base64);
     if (archive.length > MAX_ARCHIVE_BYTES) throw new Error("That ZIP is too large for the current private Workbench import limit.");
     const imported = importRiseArchive(archive, sourceName);
-    sendJson(res, 200, { ok:true, project:imported.project, previewAssets:imported.previewAssets });
+    sendJson(res, 200, { ok:true, project:imported.project, previewAssets:imported.previewAssets, mediaStreams:registerMediaSession(session, imported) });
   } catch (error) {
     sendJson(res, 400, { ok:false, error:error.message || "Rise import could not be completed." });
   }
@@ -404,7 +468,7 @@ async function handleStorylineImport(req, res) {
     const archive = decodeBase64File(payload?.base64);
     if (archive.length > MAX_STORYLINE_ARCHIVE_BYTES) throw new Error("That ZIP is too large for the current private Workbench import limit.");
     const imported = importStorylineArchive(archive, sourceName);
-    sendJson(res, 200, { ok:true, project:imported.project, previewAssets:imported.previewAssets });
+    sendJson(res, 200, { ok:true, project:imported.project, previewAssets:imported.previewAssets, mediaStreams:registerMediaSession(session, imported) });
   } catch (error) {
     sendJson(res, 400, { ok:false, error:error.message || "Storyline import could not be completed." });
   }
@@ -419,6 +483,11 @@ async function handler(req, res) {
 
   const requestUrl = new URL(req.url || "/", "http://localhost");
   const pathname = requestUrl.pathname;
+
+  if (pathname.startsWith("/api/workbench-media/")) {
+    sendMedia(req, res, pathname);
+    return;
+  }
 
   if (pathname === "/workbench-setup" || pathname === "/api/workbench-setup") {
     await handleSetup(req, res);

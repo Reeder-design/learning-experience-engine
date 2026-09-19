@@ -9,7 +9,7 @@
   <link rel="icon" type="image/x-icon" href="../favicon.ico?v=4">
   <link rel="shortcut icon" href="../favicon.ico?v=4">
   <link rel="mask-icon" href="../assets/experience-engine-favicon.svg?v=4" color="#508484">
-  <link rel="stylesheet" href="workbench.css?v=5">
+  <link rel="stylesheet" href="workbench.css?v=6">
 </head>
 <body>
   <header class="app-header">
@@ -105,6 +105,7 @@
             </div>
             <p class="privacy-note"><strong>Private by default.</strong> Selecting files does not send them anywhere. They are sent only when you explicitly run an AI action in secure local mode.</p>
             <div class="source-file-list" data-source-file-list><div class="empty-state">No source files added yet.</div></div>
+            <section class="media-library" data-media-library hidden></section>
             <div class="reference-content" data-reference-content hidden>
               <h3>Readable reference content</h3>
               <div data-reference-list></div>
@@ -278,7 +279,7 @@
   <input type="file" data-source-folder webkitdirectory multiple hidden>
   <div class="toast" data-toast hidden></div>
   <script src="../assets/app-registry.js"></script>
-  <script src="workbench.js?v=9"></script>
+  <script src="workbench.js?v=10"></script>
   <script src="workbench-package.js?v=2"></script>
   <script src="ai-client.js?v=5"></script>
 </body>

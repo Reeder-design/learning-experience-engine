@@ -89,6 +89,7 @@ function run() {
   assert.strictEqual(project.metadata.importSummary.parsedSlides, 1);
   assert.strictEqual(project.metadata.import.sourceFormat, "storyline-published-web");
   assert.strictEqual(imported.previewAssets.length, 2);
+  assert.deepStrictEqual(imported.mediaStreams, [{ assetId:"storyline-asset-002", kind:"hls", path:"story_content/video.m3u8", bundleRoot:"story_content" }]);
   assert.throws(() => importStorylineArchive(Buffer.from("not a zip"), "source.story"), /published Storyline .zip export/);
   console.log("Storyline Workbench import draft tests passed.");
 }

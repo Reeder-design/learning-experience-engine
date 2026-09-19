@@ -56,6 +56,7 @@ function assetKind(asset = {}) {
   const url = String(asset.url || "").toLowerCase().split("?")[0];
   const extension = path.extname(url);
   if ([".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".bmp"].includes(extension) || asset.imageType) return "image";
+  if (extension === ".m3u8" || asset.videoType === "hls") return "hls";
   if ([".mp4", ".webm", ".mov", ".m4v"].includes(extension) || asset.videoType) return "video";
   if ([".mp3", ".wav", ".m4a", ".aac", ".ogg"].includes(extension) || asset.audioType) return "audio";
   if ([".vtt", ".srt"].includes(extension)) return "caption";
@@ -254,6 +255,15 @@ function previewAssets(archive, root, assets, courseCover = null) {
   return included;
 }
 
+function mediaStreams(assets) {
+  return assets.filter((asset) => asset.kind === "hls" && asset.path).map((asset) => ({
+    assetId:asset.id,
+    kind:"hls",
+    path:asset.path,
+    bundleRoot:path.posix.dirname(asset.path),
+  }));
+}
+
 function importStorylineArchive(buffer, sourceName = "storyline-web.zip") {
   if (!Buffer.isBuffer(buffer) || !buffer.length) throw new Error("Choose a Storyline published-web ZIP export to import.");
   if (buffer.length > MAX_ARCHIVE_BYTES) throw new Error("That ZIP is too large for the current private Workbench import limit.");
@@ -271,7 +281,7 @@ function importStorylineArchive(buffer, sourceName = "storyline-web.zip") {
   const project = buildStorylineProject(data, archive, path.basename(sourceName), root, courseCover);
   const assets = previewAssets(archive, root, project.metadata.assetManifest || [], courseCover);
   project.metadata.importSummary.previewAssets = assets.length;
-  return { project, previewAssets:assets };
+  return { project, previewAssets:assets, mediaStreams:mediaStreams(project.metadata.assetManifest || []), mediaArchive:archive, mediaRoot:root };
 }
 
 module.exports = { importStorylineArchive, buildStorylineProject, MAX_ARCHIVE_BYTES };

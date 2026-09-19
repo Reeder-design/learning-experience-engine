@@ -273,6 +273,7 @@
     reference: [],
     objectUrls: new Map(),
     inlineAssets: new Map(),
+    mediaStreams: new Map(),
     activeTab: "source",
     activeTool: null,
     profile: defaultProfile(),
@@ -310,6 +311,7 @@
     state.sourceFiles = [];
     state.reference = [];
     state.inlineAssets.clear();
+    state.mediaStreams.clear();
   }
 
   function filePath(file, fromFolder = false) {
@@ -366,6 +368,10 @@
 
   function assetUrl(path) { return state.objectUrls.get(path) || state.inlineAssets.get(path) || null; }
 
+  function mediaUrl(asset = {}) {
+    return assetUrl(`asset:${asset.id}`) || assetUrl(asset.path) || state.mediaStreams.get(asset.id) || null;
+  }
+
   function registerPreviewAssets(assets = []) {
     state.inlineAssets.clear();
     assets.forEach((asset) => {
@@ -375,16 +381,57 @@
     });
   }
 
+  function registerMediaStreams(streams = []) {
+    state.mediaStreams.clear();
+    streams.forEach((stream) => {
+      if (stream?.assetId && stream.url) state.mediaStreams.set(stream.assetId, stream.url);
+    });
+  }
+
+  function mediaPlayerMarkup(asset, compact = false) {
+    const url = mediaUrl(asset);
+    const label = escapeHtml(asset.fileName || String(asset.path || asset.id || "Media asset").split("/").pop());
+    const kind = asset.kind || "other";
+    if (!url) return `<article class="media-card media-card--missing"><strong>NEEDS MEDIA</strong><span>${label}</span><small>This media reference was found, but its file is not available in this preview.</small></article>`;
+    if (kind === "image") return `<article class="media-card${compact ? " media-card--compact" : ""}"><img src="${escapeAttr(url)}" alt="${label}"><strong>${label}</strong><small>Image asset</small></article>`;
+    if (kind === "audio") return `<article class="media-card${compact ? " media-card--compact" : ""}"><strong>${label}</strong><audio controls preload="metadata" src="${escapeAttr(url)}"></audio><small>Audio asset</small></article>`;
+    if (kind === "video" || kind === "hls") return `<article class="media-card${compact ? " media-card--compact" : ""}"><strong>${label}</strong><video controls playsinline preload="metadata" src="${escapeAttr(url)}"></video><small>${kind === "hls" ? "HLS stream · Safari plays this directly; other browsers may need the original published player." : "Video asset"}</small></article>`;
+    if (kind === "caption") return `<article class="media-card${compact ? " media-card--compact" : ""}"><strong>${label}</strong><a href="${escapeAttr(url)}" target="_blank" rel="noopener">Open caption file</a><small>Caption / transcript asset</small></article>`;
+    return `<article class="media-card${compact ? " media-card--compact" : ""}"><strong>${label}</strong><a href="${escapeAttr(url)}" target="_blank" rel="noopener">Open source file</a><small>${escapeHtml(kind)} asset</small></article>`;
+  }
+
+  function mediaInventory() {
+    const imported = (state.model?.metadata?.assetManifest || []).map((asset) => ({ ...asset, source:"published export" }));
+    const source = state.sourceFiles.filter((file) => ["image", "audio", "video", "caption"].includes(file.kind)).map((file, index) => ({ id:`source-${index}-${file.path}`, path:file.path, fileName:file.name, kind:file.kind, source:"added source" }));
+    const seen = new Set();
+    return [...imported, ...source].filter((asset) => {
+      const key = `${asset.source}:${asset.id || asset.path}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return ["image", "audio", "video", "hls", "caption"].includes(asset.kind);
+    });
+  }
+
+  function renderMediaLibrary() {
+    const root = $("[data-media-library]");
+    if (!root) return;
+    const assets = mediaInventory();
+    root.hidden = !assets.length;
+    if (!assets.length) return;
+    const available = assets.filter((asset) => mediaUrl(asset)).length;
+    root.innerHTML = `<details><summary><strong>Media library</strong><span>${assets.length} media asset${assets.length === 1 ? "" : "s"} · ${available} ready to preview</span></summary><p>Each file is a <strong>media asset</strong>. A slide or lesson points to it through a <strong>media reference</strong>. HLS video is a <strong>media bundle</strong>: a playlist plus its video segments.</p><div class="media-grid">${assets.map((asset) => mediaPlayerMarkup(asset)).join("")}</div></details>`;
+  }
+
   function importedMediaMarkup() {
     const assets = state.model?.metadata?.assetManifest || [];
-    const previewable = assets.filter((asset) => assetUrl(`asset:${asset.id}`) || assetUrl(asset.path));
+    const previewable = assets.filter((asset) => mediaUrl(asset));
     if (!previewable.length) return "";
     const cards = previewable.map((asset) => {
-      const url = assetUrl(`asset:${asset.id}`) || assetUrl(asset.path);
+      const url = mediaUrl(asset);
       const label = escapeHtml(String(asset.path || asset.id || "Imported asset").split("/").pop());
       if (asset.kind === "image") return `<figure class="learner-feedback"><img class="learner-image" src="${escapeAttr(url)}" alt="${label}"><figcaption>${label}</figcaption></figure>`;
       if (asset.kind === "audio") return `<div class="learner-feedback"><strong>${label}</strong><audio controls src="${escapeAttr(url)}"></audio></div>`;
-      if (asset.kind === "video") return `<div class="learner-feedback"><strong>${label}</strong><video controls src="${escapeAttr(url)}"></video></div>`;
+      if (asset.kind === "video" || asset.kind === "hls") return `<div class="learner-feedback"><strong>${label}</strong><video controls playsinline preload="metadata" src="${escapeAttr(url)}"></video></div>`;
       return "";
     }).join("");
     return cards ? `<div class="learner-prompt">Imported media available in this browser session</div>${cards}` : "";
@@ -398,7 +445,7 @@
       const asset = manifest.get(id);
       if (asset && !references.some((item) => item.asset.id === asset.id && item.object.id === object.id)) references.push({ asset, object });
     }));
-    const assetUrlFor = (asset) => assetUrl(`asset:${asset.id}`) || assetUrl(asset.path);
+    const assetUrlFor = (asset) => mediaUrl(asset);
     const canvasArea = Math.max(1, Number(slide.canvas?.width || 0) * Number(slide.canvas?.height || 0));
     const visualCandidates = references.filter(({ asset }) => asset.kind === "image" && assetUrlFor(asset));
     visualCandidates.sort((a, b) => {
@@ -412,6 +459,7 @@
     }) || null;
     return {
       background,
+      references,
       inlineImages:visualCandidates.filter((item) => item !== background),
       missing:references.filter(({ asset }) => !assetUrlFor(asset)),
       assetUrlFor,
@@ -421,7 +469,8 @@
   function storylineMediaMarkup(media) {
     const images = media.inlineImages.slice(0, 2).map(({ asset }) => `<img class="storyline-inline-image" src="${escapeAttr(media.assetUrlFor(asset))}" alt="">`).join("");
     const missing = media.missing.length ? '<div class="storyline-needs-media">NEEDS MEDIA</div>' : "";
-    return images || missing ? `<div class="storyline-media-strip">${images}${missing}</div>` : "";
+    const players = media.references.filter(({ asset }) => asset.kind !== "image" && media.assetUrlFor(asset)).map(({ asset }) => mediaPlayerMarkup(asset, true)).join("");
+    return images || missing || players ? `<div class="storyline-media-strip">${images}${players}${missing}</div>` : "";
   }
 
   function startProject(model, prompt = "") {
@@ -538,6 +587,7 @@
       list.appendChild(details);
     }
     wrap.hidden = !state.reference.length;
+    renderMediaLibrary();
   }
 
   function renderEditor() {
@@ -1019,7 +1069,7 @@
       const path = entry.path || filePath(file, false);
       const kind = entry.kind || classify(file);
       state.sourceFiles.push({ file, path, kind, name: entry.name || file.name });
-      if (kind === "image") state.objectUrls.set(path, URL.createObjectURL(file));
+      if (["image", "audio", "video", "caption"].includes(kind)) state.objectUrls.set(path, URL.createObjectURL(file));
       if (kind === "reference") {
         try { state.reference.push({ path, text: typeof entry.referenceText === "string" ? entry.referenceText : await file.text() }); } catch (_) {}
       }
@@ -1322,6 +1372,7 @@
       if (!response.ok || !result.ok || !validRiseCourse(result.project)) throw new Error(result.error || "Rise import could not create an editable course draft.");
       startProject(result.project, `Imported from published Rise web export: ${file.name}`);
       registerPreviewAssets(result.previewAssets || []);
+      registerMediaStreams(result.mediaStreams || []);
       state.profile.source.origin = "rise-published-web";
       state.profile.source.structureModel = "course-lessons-blocks";
       state.profile.source.notes = "Normalized from a private published Rise web export. Review every imported block before reuse or export.";
@@ -1354,6 +1405,7 @@
       if (!response.ok || !result.ok || !validStorylineExperience(result.project)) throw new Error(result.error || "Storyline import could not create an editable experience draft.");
       startProject(result.project, `Imported from published Storyline web export: ${file.name}`);
       registerPreviewAssets(result.previewAssets || []);
+      registerMediaStreams(result.mediaStreams || []);
       state.profile.source.origin = "storyline-published-web";
       state.profile.source.structureModel = "scenes-slides-layers";
       state.profile.source.notes = "Normalized from a private published Storyline web export. Review every scene, layer, object, variable, and runtime behavior before reuse or export.";

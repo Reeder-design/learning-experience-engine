@@ -23,6 +23,7 @@ function isMacMetadata(fileName) {
 function assetKind(fileName) {
   const extension = path.extname(fileName).toLowerCase();
   if ([".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".avif"].includes(extension)) return "image";
+  if (extension === ".m3u8") return "hls";
   if ([".mp4", ".webm", ".mov", ".m4v"].includes(extension)) return "video";
   if ([".mp3", ".wav", ".m4a", ".aac", ".ogg"].includes(extension)) return "audio";
   if ([".vtt", ".srt"].includes(extension)) return "caption";
@@ -134,6 +135,15 @@ function previewAssets(archive, assets) {
   return included;
 }
 
+function mediaStreams(assets) {
+  return assets.filter((asset) => asset.kind === "hls" && asset.path).map((asset) => ({
+    assetId:asset.id,
+    kind:"hls",
+    path:asset.path,
+    bundleRoot:path.posix.dirname(asset.path),
+  }));
+}
+
 function importRiseArchive(buffer, sourceName = "rise-export.zip") {
   if (!Buffer.isBuffer(buffer) || !buffer.length) throw new Error("Choose a Rise published-web ZIP export to import.");
   if (buffer.length > MAX_ARCHIVE_BYTES) throw new Error("That ZIP is too large for an in-browser Workbench import. Keep the archive under 30 MB for now.");
@@ -152,7 +162,7 @@ function importRiseArchive(buffer, sourceName = "rise-export.zip") {
   const project = buildRiseCourse(runtimeData, archive, path.basename(sourceName));
   const assets = previewAssets(archive, project.metadata.assetManifest || []);
   project.metadata.importSummary.previewAssets = assets.length;
-  return { project, previewAssets:assets };
+  return { project, previewAssets:assets, mediaStreams:mediaStreams(project.metadata.assetManifest || []), mediaArchive:archive, mediaRoot:"" };
 }
 
 module.exports = { importRiseArchive, buildRiseCourse, MAX_ARCHIVE_BYTES };

@@ -17,5 +17,7 @@ assert.match(workbench, /rise-player/, "Rise imports need a course-style learner
 assert.match(workbench, /storyline-player/, "Storyline imports need a player-style learner preview.");
 assert.match(workbench, /storyline-course-cover/, "Storyline imports with a published cover need a launch preview.");
 assert.match(workbench, /NEEDS MEDIA/, "Unavailable linked Storyline media must be clearly flagged.");
+assert.match(workbench, /Media library/, "Imported projects need a plain-language media inventory.");
+assert.match(workbench, /HLS stream/, "The Workbench must distinguish streaming-video bundles from ordinary video files.");
 
 console.log("Workbench UI binding regression checks passed.");

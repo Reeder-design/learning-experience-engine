@@ -6,6 +6,7 @@ const archive = {
   entries: [
     { fileName: "assets/cover.png", isDirectory: false, uncompressedSize: 1200 },
     { fileName: "assets/intro.mp4", isDirectory: false, uncompressedSize: 4200 },
+    { fileName: "assets/intro.m3u8", isDirectory: false, uncompressedSize: 4200 },
     { fileName: "content/runtime-data.js", isDirectory: false, uncompressedSize: 800 },
   ],
 };
@@ -76,9 +77,10 @@ function run() {
   assert.strictEqual(project.content.lessons[1].kind, "assessment");
   assert.strictEqual(project.content.lessons[1].questions[0].prompt, "What should you ask first?");
   assert.strictEqual(project.metadata.import.sourceFormat, "rise-published-web");
-  assert.strictEqual(project.metadata.importSummary.assets, 2);
+  assert.strictEqual(project.metadata.importSummary.assets, 3);
   assert.strictEqual(project.metadata.importSummary.blocks, 1);
   assert.strictEqual(project.metadata.import.reviewRequired, true);
+  assert.strictEqual(project.metadata.assetManifest.find((asset) => asset.path === "intro.m3u8").kind, "hls");
 
   const runtimeSource = `__jsonp("runtime-data.js","${Buffer.from(JSON.stringify(runtimeData)).toString("base64")}");`;
   const importedResult = importRiseArchive(storedZip([
