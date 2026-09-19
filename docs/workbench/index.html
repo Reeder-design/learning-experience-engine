@@ -9,7 +9,7 @@
   <link rel="icon" type="image/x-icon" href="../favicon.ico?v=4">
   <link rel="shortcut icon" href="../favicon.ico?v=4">
   <link rel="mask-icon" href="../assets/experience-engine-favicon.svg?v=4" color="#508484">
-  <link rel="stylesheet" href="workbench.css">
+  <link rel="stylesheet" href="workbench.css?v=4">
 </head>
 <body>
   <header class="app-header">
@@ -78,10 +78,10 @@
 
     <section class="workspace" data-workspace hidden>
       <nav class="workflow-nav" aria-label="Project workflow">
-        <button type="button" class="active" data-tab="source"><span>1</span><strong>Source</strong><small>Brief + files</small></button>
-        <button type="button" data-tab="edit"><span>2</span><strong>Build & edit</strong><small>Learning experience</small></button>
-        <button type="button" data-tab="preview"><span>3</span><strong>Preview</strong><small>Test as learner</small></button>
-        <button type="button" data-tab="save"><span>4</span><strong>Export</strong><small>Save + reuse</small></button>
+        <button type="button" class="active" data-tab="source"><span>1</span><strong>Review</strong><small>Source + structure</small></button>
+        <button type="button" data-tab="edit"><span>2</span><strong>Edit</strong><small>Content + interactions</small></button>
+        <button type="button" data-tab="adapt"><span>3</span><strong>Adapt</strong><small>Design + reuse</small></button>
+        <button type="button" data-tab="preview"><span>4</span><strong>Preview & package</strong><small>Test + handoff</small></button>
       </nav>
 
       <div class="workspace-layout">
@@ -91,15 +91,8 @@
           <p data-project-summary>Branching scenario</p>
           <div class="project-health" data-project-health>Ready to edit</div>
 
-          <div class="tool-section">
-            <span>Project tools</span>
-            <button type="button" class="tool-button ai-tool" data-open-tool="ai"><b>✦</b><span><strong>Ask AI</strong><small>Generate or transform</small></span></button>
-            <button type="button" class="tool-button" data-open-tool="theme"><b>◫</b><span><strong>Theme</strong><small>Brand + presentation</small></span></button>
-            <button type="button" class="tool-button" data-open-tool="history"><b>↺</b><span><strong>History</strong><small data-history-count>No AI changes yet</small></span></button>
-            <button type="button" class="tool-button" data-open-tool="settings"><b>⚙</b><span><strong>Project settings</strong><small>Audience + behavior</small></span></button>
-          </div>
-
-          <div class="rail-note"><strong>Published-web model</strong><span>The Workbench edits the learning experience that gets rendered/exported. Rise and Storyline authoring interfaces are not the target.</span></div>
+          <div class="rail-note"><strong>Current job</strong><span data-current-job>Review the imported structure, then edit only the learner-facing content you want to change.</span></div>
+          <div class="rail-note"><strong>What stays protected</strong><span>Source mapping and published-runtime notes remain available for review; this is not a replacement for a native .rise or .story file.</span></div>
         </aside>
 
         <section class="workspace-main">
@@ -120,7 +113,7 @@
           </section>
 
           <section class="workspace-panel" data-panel="edit">
-            <div class="panel-head"><div><span class="eyebrow">Workflow · Build & edit</span><h2>Edit the published learning experience</h2><p>Work with learner-facing content and behavior. Internal IDs are maintained automatically and never need manual editing.</p></div><span class="stage-chip">Current stage</span></div>
+            <div class="panel-head"><div><span class="eyebrow">Workflow · Edit</span><h2>Edit the learner-facing experience</h2><p>Work with titles, text, alt text, and the interaction details that are safe to change in this normalized draft.</p></div><span class="stage-chip">Current stage</span></div>
             <div class="scenario-basics card-panel">
               <label class="field"><span>Experience title</span><input type="text" data-project-field="title"></label>
               <label class="field"><span>Purpose / context</span><textarea rows="3" data-project-field="description"></textarea></label>
@@ -132,16 +125,25 @@
             <div class="editor-stack" data-decision-list></div>
             <div class="section-label"><span>Outcomes</span><small>Where the learner can finish the experience.</small></div>
             <div class="editor-stack" data-outcome-list></div>
+            <div class="next-action"><div><strong>Content ready for its next pass?</strong><span>Set the visual direction and reuse intent before testing it as a learner.</span></div><button type="button" data-go-adapt>Adapt design →</button></div>
+          </section>
+
+          <section class="workspace-panel" data-panel="adapt">
+            <div class="panel-head"><div><span class="eyebrow">Workflow · Adapt</span><h2>Make the draft fit its next use</h2><p>Apply a visual direction and capture the few project details that matter for reuse. Sanitization and templates will live here when they are ready—not in a permanent tool drawer.</p></div><span class="stage-chip">Current stage</span></div>
+            <div class="adapt-grid">
+              <section class="adapt-card"><span class="eyebrow">Presentation</span><h3>Choose a starting look</h3><p>These presets change the learner preview only. They do not claim to change proprietary Rise or Storyline themes.</p><label class="field"><span>Preview direction</span><select data-theme-preset><option value="portfolio">Calm studio</option><option value="editorial">Editorial learning</option><option value="technical-dark">Workshop dark</option><option value="minimal">Minimal course</option></select></label></section>
+              <section class="adapt-card"><span class="eyebrow">Reuse notes</span><h3>Capture the handoff context</h3><label class="field"><span>Audience</span><input data-profile-field="learning.audience" placeholder="Who is this next version for?"></label><label class="field"><span>Learning purpose</span><textarea rows="3" data-profile-field="learning.purpose" placeholder="What should learners be able to do?"></textarea></label></section>
+            </div>
+            <div class="adapt-note"><strong>Coming next in this stage:</strong><span>guided sanitization and saving selected lessons, slide sequences, or interactions as reusable patterns.</span></div>
+            <div class="next-action"><div><strong>Ready to test it?</strong><span>Open the course in a learner-style player, then package the editable draft for reuse.</span></div><button type="button" class="primary" data-go-preview>Preview as learner →</button></div>
           </section>
 
           <section class="workspace-panel" data-panel="preview">
-            <div class="panel-head"><div><span class="eyebrow">Workflow · Preview</span><h2>Test the rendered learner experience</h2><p>Try alternate paths and presentation settings without leaving the project.</p></div><button type="button" class="primary" data-restart-preview>Restart preview</button></div>
+            <div class="panel-head"><div><span class="eyebrow">Workflow · Preview & package</span><h2 data-preview-heading>Test the learner experience</h2><p data-preview-description>Try alternate paths and presentation settings without leaving the project.</p></div><button type="button" class="primary" data-restart-preview>Restart preview</button></div>
             <div class="preview-meta" data-preview-meta></div>
             <div class="learner-preview" data-preview-root></div>
-          </section>
-
-          <section class="workspace-panel" data-panel="save">
-            <div class="panel-head"><div><span class="eyebrow">Workflow · Export</span><h2>Save the experience in the form you need</h2><p>Download portable Engine JSON, or keep your editable project and small preview assets together in a private project package. The Project Profile also records intended web/Rise/Storyline/LMS destinations for future exporters.</p></div><span class="stage-chip">Final stage</span></div>
+            <section class="package-section">
+              <div><span class="eyebrow">Handoff</span><h3>Keep the editable draft moving</h3><p>Download portable Engine JSON, or save the project and its available small preview assets together for your next pass.</p></div>
             <div class="export-intent card-panel export-profile">
               <label class="field"><span>Primary export target</span><select data-profile-field="export.target">
                 <option value="web">Standalone web experience</option>
@@ -158,6 +160,7 @@
               <article><span class="save-icon">⧉</span><div><strong>Developer data</strong><p>Inspect the Engine JSON only for troubleshooting or development.</p></div><button type="button" data-toggle-json>View project JSON</button></article>
             </div>
             <details class="json-panel" data-json-panel><summary>Developer project data</summary><pre data-json-output></pre></details>
+            </section>
           </section>
         </section>
       </div>
@@ -275,7 +278,7 @@
   <input type="file" data-source-folder webkitdirectory multiple hidden>
   <div class="toast" data-toast hidden></div>
   <script src="../assets/app-registry.js"></script>
-  <script src="workbench.js?v=7"></script>
+  <script src="workbench.js?v=8"></script>
   <script src="workbench-package.js?v=2"></script>
   <script src="ai-client.js?v=5"></script>
 </body>

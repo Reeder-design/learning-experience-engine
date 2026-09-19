@@ -411,11 +411,34 @@
     $$("[data-tab]").forEach((button) => button.classList.toggle("active", button.dataset.tab === name));
     $$("[data-panel]").forEach((panel) => panel.classList.toggle("active", panel.dataset.panel === name));
     if (name === "preview") renderPreview();
-    if (name === "save") {
-      renderProfileFields();
-      renderJson();
-    }
+    if (name === "adapt" || name === "preview") renderProfileFields();
+    const job = {
+      source: "Review the imported structure and flag what needs attention before changing content.",
+      edit: "Edit only the learner-facing content you want to change; source mapping stays available in project data.",
+      adapt: "Set the intended visual direction and capture the small amount of reuse context that matters.",
+      preview: "Test the learner view, then package the editable draft for its next handoff."
+    }[name] || "Keep the learning experience moving with one clear next step.";
+    setText("[data-current-job]", job);
     window.scrollTo({ top: Math.max(0, $("[data-workspace]").offsetTop - 72), behavior: "smooth" });
+  }
+
+  function applyThemePreset(value) {
+    const presets = {
+      portfolio: { name:"Calm studio", layout:"clean-cards", colors:{ primary:"#508484", secondary:"#79C99E", accent:"#97DB4F", background:"#ffffff", text:"#24302D" }, typography:{ heading:"Montserrat", body:"Open Sans" } },
+      editorial: { name:"Editorial learning", layout:"editorial", colors:{ primary:"#5B4B8A", secondary:"#CFC1E8", accent:"#E4A46D", background:"#FFFDF9", text:"#2E2938" }, typography:{ heading:"Georgia", body:"Open Sans" } },
+      "technical-dark": { name:"Workshop dark", layout:"technical-dark", colors:{ primary:"#9DE2CB", secondary:"#5E9E93", accent:"#F5C47B", background:"#16221F", text:"#F0F6F1" }, typography:{ heading:"Montserrat", body:"Open Sans" } },
+      minimal: { name:"Minimal course", layout:"minimal", colors:{ primary:"#2E5266", secondary:"#BBD5E5", accent:"#EAB464", background:"#FFFFFF", text:"#1D2730" }, typography:{ heading:"Arial", body:"Arial" } }
+    };
+    const preset = presets[value] || presets.portfolio;
+    state.profile.presentation.theme = {
+      ...state.profile.presentation.theme,
+      ...clone(preset),
+      targetNotes: { ...(state.profile.presentation.theme.targetNotes || {}) }
+    };
+    renderProfileFields();
+    renderPreview();
+    saveDraft();
+    toast(`${preset.name} preview applied`);
   }
 
   function renderProjectMeta() {
@@ -814,6 +837,12 @@
 
   function renderPreview() {
     const root = $("[data-preview-root]");
+    setText("[data-preview-heading]", isRiseCourse() ? "Preview the responsive course" : isStorylineExperience() ? "Preview the Storyline-style player" : "Test the learner experience");
+    setText("[data-preview-description]", isRiseCourse()
+      ? "This responsive course-style preview shows lesson navigation, normalized content, and available media in a learner context."
+      : isStorylineExperience()
+        ? "This Storyline-style player preview preserves the published scene and slide structure. Complex triggers and timeline behavior remain review items."
+        : "Try alternate paths and presentation settings without leaving the project.");
     const { issues } = validate();
     if (issues.length) {
       root.innerHTML = `<div class="empty-state">Fix the project flow before previewing: ${escapeHtml(issues[0])}</div>`;
@@ -904,12 +933,12 @@
         root.innerHTML = '<div class="empty-state">This imported course has no previewable lessons.</div>';
         return;
       }
-      const options = lessons.map((lesson) => `<option value="${escapeAttr(lesson.id)}"${lesson.id === current.id ? " selected" : ""}>${escapeHtml(lesson.kind === "assessment" ? "Assessment · " : "Lesson · ")}${escapeHtml(lesson.title || "Untitled")}</option>`).join("");
       const content = current.kind === "assessment"
-        ? (current.questions || []).map((question, index) => `<div class="learner-feedback"><strong>Question ${index + 1}</strong><p>${escapeHtml(question.prompt || "Untitled question")}</p>${(question.answers || []).map((answer) => `<div class="learner-choice" aria-disabled="true"><strong>${escapeHtml(answer.text || "Untitled answer")}</strong></div>`).join("")}</div>`).join("") || '<p>No questions were found in this assessment.</p>'
-        : (current.blocks || []).map((block, index) => `<div class="learner-feedback"><strong>${escapeHtml(block.title || `Block ${index + 1}`)}</strong><p>${escapeHtml(blockText(block))}</p></div>`).join("") || '<p>No normalized blocks were found in this lesson.</p>';
-      root.innerHTML = `<article class="learner-card"><span class="eyebrow">Imported Rise course preview</span><label class="field"><span>Preview lesson</span><select data-rise-preview-select>${options}</select></label><h3>${escapeHtml(current.title || "Untitled lesson")}</h3>${current.description ? `<p>${escapeHtml(current.description)}</p>` : ""}<div class="learner-prompt">Normalized preview</div>${content}${importedMediaMarkup()}</article>`;
-      $("[data-rise-preview-select]", root).addEventListener("change", (event) => { current = lessons.find((lesson) => lesson.id === event.target.value) || current; draw(); });
+        ? (current.questions || []).map((question, index) => `<section class="rise-question"><span>Question ${index + 1}</span><h4>${escapeHtml(question.prompt || "Untitled question")}</h4>${(question.answers || []).map((answer) => `<button type="button" class="rise-answer">${escapeHtml(answer.text || "Untitled answer")}</button>`).join("")}</section>`).join("") || '<p>No questions were found in this assessment.</p>'
+        : (current.blocks || []).map((block, index) => `<section class="rise-block"><span>${escapeHtml(block.title || `Block ${index + 1}`)}</span><p>${escapeHtml(blockText(block))}</p></section>`).join("") || '<p>No normalized blocks were found in this lesson.</p>';
+      const navigation = lessons.map((lesson, index) => `<button type="button" class="rise-lesson${lesson.id === current.id ? " active" : ""}" data-rise-lesson="${escapeAttr(lesson.id)}"><small>${String(index + 1).padStart(2, "0")}</small><span>${escapeHtml(lesson.title || "Untitled lesson")}</span></button>`).join("");
+      root.innerHTML = `<article class="rise-player"><header><div class="rise-logo">rise</div><div><strong>${escapeHtml(state.model.title || "Course")}</strong><small>Responsive course preview</small></div><button type="button" class="rise-menu" aria-label="Course menu">☰</button></header><div class="rise-body"><nav class="rise-course-nav" aria-label="Course lessons"><span>Course outline</span>${navigation}</nav><main class="rise-content"><div class="rise-progress"><span>${Math.round(((lessons.findIndex((lesson) => lesson.id === current.id) + 1) / Math.max(lessons.length, 1)) * 100)}% complete</span><i><b style="width:${((lessons.findIndex((lesson) => lesson.id === current.id) + 1) / Math.max(lessons.length, 1)) * 100}%"></b></i></div><span class="eyebrow">${current.kind === "assessment" ? "Knowledge check" : "Lesson"}</span><h3>${escapeHtml(current.title || "Untitled lesson")}</h3>${current.description ? `<p class="rise-intro">${escapeHtml(current.description)}</p>` : ""}<div class="rise-content-stack">${content}</div>${importedMediaMarkup()}</main></div></article>`;
+      $$('[data-rise-lesson]', root).forEach((button) => button.addEventListener("click", () => { current = lessons.find((lesson) => lesson.id === button.dataset.riseLesson) || current; draw(); }));
     }
     draw();
   }
@@ -925,10 +954,14 @@
       }
       const sceneOptions = scenes.map((item) => `<option value="${escapeAttr(item.id)}"${item.id === scene.id ? " selected" : ""}>${escapeHtml(item.title || "Untitled scene")}</option>`).join("");
       const slideOptions = (scene.slides || []).map((item) => `<option value="${escapeAttr(item.id)}"${item.id === slide.id ? " selected" : ""}>${escapeHtml(item.title || "Untitled slide")}</option>`).join("");
-      const layers = (slide.layers || []).map((layer, index) => `<div class="learner-feedback"><strong>${escapeHtml(layer.title || (layer.kind === "base" ? "Base layer" : `Layer ${index + 1}`))}</strong>${(layer.objects || []).map((object) => `<p>${escapeHtml(object.title || object.accessibility?.altText || `${object.kind || "Object"} (no exposed text)`)}</p>`).join("") || "<p>No exposed learner-facing text on this layer.</p>"}</div>`).join("") || '<div class="learner-feedback"><strong>Source review needed</strong><p>This published slide could not be fully decoded into editable layers.</p></div>';
-      root.innerHTML = `<article class="learner-card"><span class="eyebrow">Imported Storyline experience preview</span><div class="field-grid"><label><span>Scene</span><select data-storyline-preview-scene>${sceneOptions}</select></label><label><span>Slide</span><select data-storyline-preview-slide>${slideOptions}</select></label></div><h3>${escapeHtml(slide.title || "Untitled slide")}</h3><p>${escapeHtml(`${slide.layers?.length || 0} layer(s) · ${slide.metadata?.objectCount || 0} object(s) · ${slide.metadata?.actionCount || 0} detected action(s)`)}</p><div class="learner-prompt">Normalized layer preview</div>${layers}${importedMediaMarkup()}</article>`;
+      const flatSlides = scenes.flatMap((item) => (item.slides || []).map((candidate) => ({ scene:item, slide:candidate })));
+      const position = flatSlides.findIndex((item) => item.slide.id === slide.id);
+      const layers = (slide.layers || []).map((layer, index) => `<section class="story-layer"><span>${escapeHtml(layer.title || (layer.kind === "base" ? "Base layer" : `Layer ${index + 1}`))}</span>${(layer.objects || []).map((object) => `<p>${escapeHtml(object.title || object.accessibility?.altText || `${object.kind || "Object"} (no exposed text)`)}</p>`).join("") || "<p>No exposed learner-facing text on this layer.</p>"}</section>`).join("") || '<section class="story-layer"><span>Source review needed</span><p>This published slide could not be fully decoded into editable layers.</p></section>';
+      root.innerHTML = `<article class="storyline-player"><header><div class="storyline-mark">SL</div><strong>${escapeHtml(state.model.title || "Storyline course")}</strong><span>Menu</span><span>Resources</span><button type="button" aria-label="Close preview">×</button></header><div class="storyline-stage"><div class="storyline-canvas"><span class="eyebrow">${escapeHtml(scene.title || "Scene")}</span><h3>${escapeHtml(slide.title || "Untitled slide")}</h3><p>${escapeHtml(`${slide.layers?.length || 0} layer(s) · ${slide.metadata?.objectCount || 0} object(s) · ${slide.metadata?.actionCount || 0} detected action(s)`)}</p><div class="story-layer-stack">${layers}</div>${importedMediaMarkup()}</div></div><footer><div class="storyline-location"><label>Scene<select data-storyline-preview-scene>${sceneOptions}</select></label><label>Slide<select data-storyline-preview-slide>${slideOptions}</select></label></div><div class="storyline-controls"><button type="button" data-storyline-back ${position <= 0 ? "disabled" : ""}>‹ Previous</button><span>${position + 1} / ${flatSlides.length}</span><button type="button" class="primary" data-storyline-next ${position >= flatSlides.length - 1 ? "disabled" : ""}>Next ›</button></div></footer></article>`;
       $("[data-storyline-preview-scene]", root).addEventListener("change", (event) => { scene = scenes.find((item) => item.id === event.target.value) || scene; slide = scene.slides?.[0]; draw(); });
       $("[data-storyline-preview-slide]", root).addEventListener("change", (event) => { slide = scene.slides.find((item) => item.id === event.target.value) || slide; draw(); });
+      $("[data-storyline-back]", root)?.addEventListener("click", () => { const target = flatSlides[position - 1]; if (target) { scene = target.scene; slide = target.slide; draw(); } });
+      $("[data-storyline-next]", root)?.addEventListener("click", () => { const target = flatSlides[position + 1]; if (target) { scene = target.scene; slide = target.slide; draw(); } });
     }
     draw();
   }
@@ -1356,6 +1389,8 @@
 
     $$('[data-tab]').forEach((button) => button.addEventListener("click", () => switchTab(button.dataset.tab)));
     $("[data-go-edit]").addEventListener("click", () => switchTab("edit"));
+    $("[data-go-adapt]").addEventListener("click", () => switchTab("adapt"));
+    $("[data-go-preview]").addEventListener("click", () => switchTab("preview"));
     $$('[data-open-tool]').forEach((button) => button.addEventListener("click", () => openTool(button.dataset.openTool)));
     $$('[data-close-tool]').forEach((button) => button.addEventListener("click", closeTool));
 
@@ -1415,6 +1450,7 @@
       setPath(state.profile, input.dataset.profileList, input.value.split(/\r?\n/).map((item) => item.trim()).filter(Boolean));
       saveDraft();
     }));
+    $("[data-theme-preset]")?.addEventListener("change", (event) => applyThemePreset(event.target.value));
     $("[data-theme-with-ai]")?.addEventListener("click", () => {
       $("[data-ai-prompt]").value = "Apply and refine the current Project Theme. Make the rendered learning experience follow the saved brand direction, colors, typography, layout, identity treatment, accessibility rules, and target-specific export notes without changing the learning objective or branch logic.";
       openTool("ai");

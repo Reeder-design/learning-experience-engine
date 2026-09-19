@@ -10,5 +10,10 @@ assert.match(workbench, /\$\$\('\[data-tab\]'\)\.forEach\(\(button\) => button\.
 assert.match(workbench, /\$\$\('\[data-open-tool\]'\)\.forEach\(\(button\) => button\.addEventListener/, "Project tools must be interactive.");
 assert.match(page, /data-source-heading/, "Imported projects need a clear source-stage explanation.");
 assert.match(page, /data-source-next-title/, "Imported projects need a clear next action.");
+assert.match(page, /<strong>Review<\/strong>/, "The workflow must begin with a review stage.");
+assert.match(page, /data-tab="adapt"/, "The workflow must include a focused adaptation stage.");
+assert.match(workbench, /function applyThemePreset/, "Preview directions must work without opening a tool drawer.");
+assert.match(workbench, /rise-player/, "Rise imports need a course-style learner preview.");
+assert.match(workbench, /storyline-player/, "Storyline imports need a player-style learner preview.");
 
 console.log("Workbench UI binding regression checks passed.");
