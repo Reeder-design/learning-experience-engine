@@ -20,7 +20,7 @@ save / reuse / export / template
 
 The technical engine remains underneath for schema validation, rendering, asset handling, branch integrity, themes, and future publishing targets.
 
-## Learning Project Workbench v0.1
+## Learning Project Workbench v0.4 candidate
 
 Public path:
 
@@ -28,41 +28,76 @@ Public path:
 docs/workbench/
 ```
 
-The Workbench is now the primary product surface. The first supported project type is `branching-scenario` so the source → project → edit → preview workflow can be proven with a complete interaction model before expanding to other formats.
+The Workbench is the primary product surface. Its target is the **published learning web experience**, not a clone of the Rise or Storyline authoring interfaces. The first supported project type is `branching-scenario`; future Rise-like and Storyline-like project structures will share the same source, Project Profile, theme, history, preview, and export systems.
 
 Current workflow:
 
 ```text
-Start from template / Start simple / Open existing JSON
+Start from template / Start simple / Open saved project
         ↓
 Source
         ↓
-Edit populated fields
+Build & edit
         ↓
-Preview as learner
+Preview
         ↓
-AI actions
-        ↓
-Save & reuse
+Export
 ```
 
-Implemented in v0.1:
+Persistent project tools sit outside that numbered workflow:
+
+```text
+Ask AI · Theme · History · Project settings
+```
+
+Implemented in the current v0.4 candidate:
 
 - three built-in source template projects: customer discovery, decision practice, and objection handling
 - existing Engine `branching-scenario` JSON → editable project reconstruction
+- guided private import of a published Rise web ZIP → editable normalized course draft
+- guided private import of a published Storyline web ZIP → editable normalized scene/slide/layer draft
+- portable Workbench project ZIP: editable project, Project Profile, brief, history, uploaded source files, and available small imported-media previews together
+- small imported images, audio, and video can be retained in that private project package; larger original media remain alongside the package
 - local source-file and source-folder intake
 - readable TXT/MD/CSV/JSON reference content
 - local image assets available inside scenario image selectors and learner preview
 - one-canvas editable decision points, responses, coaching feedback, destinations, and outcomes
-- hidden Advanced internal IDs
+- internal IDs maintained automatically and removed from normal Workbench UI
 - continuous flow validation
 - interactive learner preview
 - local autosave
 - scenario JSON download
-- visible AI transformation workspace with presets for sanitize, rebrand, audience adaptation, and create-similar workflows
-- secure AI execution intentionally disabled until the server-side API layer is connected
+- AI generation from source outline/reference material in private local mode
+- AI transformation presets for sanitize, design theme, audience adaptation, and create-similar workflows
+- freeform AI project transformation
+- strict structured-output contract for branching-scenario projects plus the Workbench Project Profile
+- branch/reference validation before AI output is applied
+- one-pass repair attempt when generated branch references fail validation
+- persistent AI transformation history with restore-before, restore-version, and edit/rerun workflows
+- password-protected private local Workbench with signed 8-hour sessions, HttpOnly/SameSite cookies, CSRF protection, and login throttling
+- first-run secure setup for Workbench password + optional OpenAI API key
+- Private settings for API-key rotation, model choice, and password changes
 
-The AI UI is deliberately present now so the project architecture is designed around transformation rather than adding AI as an afterthought.
+The public GitHub Pages site remains a public-safe demo/manual authoring surface. Private source material and AI actions belong in the local password-protected Workbench.
+
+### Workbench Project Profile
+
+The learning interaction remains a runtime-friendly Engine component. A separate Project Profile stores the broader published-web context:
+
+- source origin and intended structure model
+- audience, purpose, objectives, duration, and prerequisites
+- navigation, progress, feedback, and scoring behavior
+- presentation theme, colors, typography, layout, identity treatment, motion, and accessibility notes
+- target-specific presentation guidance for standalone web, Rise embed, Storyline Web Object, and LMS packaging
+- export intent
+
+Canonical schema:
+
+```text
+schemas/workbench-project-profile.schema.json
+```
+
+The profile is embedded into exported interaction JSON under `metadata.workbenchProfile` so reopening the file reconstructs both content and presentation intent.
 
 ## Specialized editors
 
@@ -137,7 +172,7 @@ tools/rise-normalizer/
 builders/web/
 ```
 
-The technical pipeline can inspect, extract, normalize, and render published Rise Web exports. A human-facing Workbench import flow is planned after the source/template/AI transformation model is proven.
+The technical pipeline can inspect, extract, normalize, and render published Rise Web exports. The private Workbench now offers a first guided import: select a published Rise web ZIP, then review and edit the normalized course, lesson, block, and quiz content before exporting portable Engine JSON or a private Workbench project package. Small available images, audio, and video can travel in the package for preview; larger original media remain outside it. The original authoring file is not edited, and blocks without a clear single text field remain preserved for review in Developer project data.
 
 ### Storyline
 
@@ -152,6 +187,8 @@ builders/stateful-web/
 ```
 
 The prototype stateful runtime supports useful subsets of scenes, slides, layers, objects, variables, conditions, actions, navigation, media, and timelines. Storyline-derived adapters include carousel, hotspot reveal, assessment shell, and media presentation.
+
+The private Workbench now offers a first guided Storyline import: select a published Storyline web ZIP, then review and edit normalized scene names, slide titles, layer labels, and exposed object text/alt text. Small available images, audio, and video can travel in a private Workbench project package for preview; larger original media remain outside it. Trigger sequencing, conditions, variable behavior, media timelines, and custom JavaScript remain source-derived review items rather than claims of full authoring-file reconstruction.
 
 Do not claim pixel-perfect Storyline reconstruction or full Storyline parity.
 
@@ -194,17 +231,21 @@ docs/assets/id-workbench.css
 docs/assets/id-workbench.js
 ```
 
-Preferred language:
+Preferred Workbench language:
 
 ```text
-Source files & media
-Editable fields
-Preview / Preview as learner
-Coaching feedback
-What happens next?
-Save & reuse
-Advanced project data
+Source
+Build & edit
+Preview
+Export
+Ask AI
+Theme
+History
+Project settings
+Developer project data
 ```
+
+Internal project/node/response IDs are implementation details and should not appear in normal Workbench editing.
 
 ## Favicon / browser identity rule
 
@@ -212,43 +253,55 @@ Every public HTML page under `docs/` must explicitly include the Engine SVG favi
 
 The docs regression test discovers `docs/**/*.html` automatically, so new pages fail CI if favicon metadata is omitted.
 
-## AI architecture — next implementation layer
+## Private AI architecture
 
 Do **not** place an OpenAI API key in GitHub Pages JavaScript.
 
-Target architecture:
+Current architecture:
 
 ```text
-Browser Workbench
+npm run workbench
         ↓
-secure backend / serverless API route
+password-protected localhost server (127.0.0.1)
         ↓
-OpenAI API
+source/current project
         ↓
-structured project response
+local authenticated API route + CSRF check
         ↓
-schema + flow validation
+OpenAI Responses API (store: false)
         ↓
-editable Workbench project + preview
+strict structured interaction + Project Profile
+        ↓
+branch/reference validation
+        ↓
+editable Workbench project + themed preview
 ```
 
-Initial AI actions:
+On first local launch, the browser creates the Workbench password and optionally accepts the separate OpenAI API key. Secrets are written only to Git-ignored `.env.workbench`; the plaintext password is never stored.
+
+Run locally with:
+
+```bash
+npm run workbench
+```
+
+Current AI actions:
 
 - source materials → populated branching scenario
 - sanitize internal/confidential content for public-safe reuse
-- rebrand using a saved theme
+- **set/refine design theme** using the Project Profile
 - adapt for another learner audience
 - create a similar project using a source project as the structural template
-- rewrite coaching feedback / distractors / examples while preserving interaction logic
+- freeform project rewriting while preserving interaction logic
+
+Theme changes currently affect the Workbench learner preview and travel as portable project data. Production export adapters that translate those rules into Rise embeds, Storyline Web Objects, or LMS packages are still future work.
 
 ## Next product milestones
 
-1. **Secure AI generation/transformation layer** for Workbench scenarios.
-2. **Source Template Library** with complete reusable project structures rather than only block-level templates.
-3. **Theme Library** separated from project content/interaction structure.
-4. **Editable project packaging** that preserves source instructions, assets, project JSON, and template metadata together.
-5. Guided Workbench reuse flows for existing Rise and Storyline exports.
-6. Expand the Workbench beyond branching scenarios to other interaction/course project types.
+1. **Source Template Library** with complete reusable project structures rather than only block-level templates.
+2. **Saved Theme Library** built on the new Project Profile theme contract.
+3. Deepen Rise/Storyline import with richer block/object editing, complete source-asset handling, and guided behavior review.
+4. Expand the Workbench beyond branching scenarios to other interaction/course project types.
 
 ## Public/private boundary
 
@@ -260,6 +313,6 @@ Reusable code, schemas, generic templates, themes, demos, and documentation are 
 
 Active prototype / early product development.
 
-Workbench v0.1, Scenario Builder, Interaction Builder, Course Builder, Rise/Storyline import foundations, engine-native component rendering, local asset workflows, and automated syntax/navigation/naming/favicon/smoke regression checks are functioning.
+Workbench v0.4 candidate, Project Profile/theme/history tooling, portable private project packages, password-protected local AI generation/transformation, Scenario Builder, Interaction Builder, Course Builder, Rise/Storyline import foundations, engine-native component rendering, local asset workflows, and automated syntax/navigation/security/mock-AI/smoke regression checks are functioning on the feature branch.
 
-Still future work includes the secure AI API connection, reusable source-template library, theme library, guided Rise/Storyline Workbench import, richer scenario state, persistent cloud projects, LMS/SCORM/xAPI packaging, Rise Code Block output, Storyline Web Object output, and direct deployment integrations.
+Still future work includes the reusable source-template library, theme library, complete Rise/Storyline source-asset handling, richer scenario state, persistent cloud projects, LMS/SCORM/xAPI packaging, Rise Code Block output, Storyline Web Object output, and direct deployment integrations.

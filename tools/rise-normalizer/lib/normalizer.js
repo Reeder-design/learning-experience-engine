@@ -409,7 +409,7 @@ function normalizeAssets(assetDocument) {
   const assets = Array.isArray(assetDocument?.assets) ? assetDocument.assets : [];
   return assets.map((asset, index) => ({
     id: `${String(index + 1).padStart(3, '0')}-${slug(asset.relativePath || asset.sourcePath, 'asset')}`,
-    kind: ['image', 'audio', 'video', 'caption', 'document', 'font'].includes(asset.kind) ? asset.kind : 'other',
+    kind: ['image', 'audio', 'video', 'hls', 'caption', 'document', 'font'].includes(asset.kind) ? asset.kind : 'other',
     path: asset.relativePath || asset.sourcePath || `asset-${index + 1}`,
     fileName: path.basename(asset.relativePath || asset.sourcePath || '') || null,
     mimeType: mimeFromExtension(asset.relativePath || asset.sourcePath),

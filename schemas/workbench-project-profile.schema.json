@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://reeder-design.github.io/learning-experience-engine/schemas/workbench-project-profile.schema.json",
+  "title": "Learning Project Workbench Project Profile",
+  "description": "Published-learning-web metadata that travels alongside an Engine interaction without exposing authoring-tool implementation details.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "experienceModel", "source", "learning", "presentation", "behavior", "export"],
+  "properties": {
+    "schemaVersion": { "const": "0.1" },
+    "experienceModel": { "const": "published-learning-web" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["origin", "structureModel", "templateId", "notes"],
+      "properties": {
+        "origin": { "enum": ["engine-native", "rise-published-web", "storyline-published-web", "other-published-web"] },
+        "structureModel": { "enum": ["interaction", "course-lessons-blocks", "scenes-slides-layers"] },
+        "templateId": { "type": "string" },
+        "notes": { "type": "string" }
+      }
+    },
+    "learning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["audience", "purpose", "objectives", "duration", "prerequisites"],
+      "properties": {
+        "audience": { "type": "string" },
+        "purpose": { "type": "string" },
+        "objectives": { "type": "array", "items": { "type": "string" }, "maxItems": 12 },
+        "duration": { "type": "string" },
+        "prerequisites": { "type": "string" }
+      }
+    },
+    "presentation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accessibility", "theme"],
+      "properties": {
+        "accessibility": { "type": "string" },
+        "theme": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "layout", "brandNotes", "colors", "typography", "logoTreatment", "motion", "targetNotes"],
+          "properties": {
+            "name": { "type": "string" },
+            "layout": { "enum": ["clean-cards", "editorial", "technical-dark", "minimal"] },
+            "brandNotes": { "type": "string" },
+            "colors": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["primary", "secondary", "accent", "background", "text"],
+              "properties": {
+                "primary": { "type": "string" },
+                "secondary": { "type": "string" },
+                "accent": { "type": "string" },
+                "background": { "type": "string" },
+                "text": { "type": "string" }
+              }
+            },
+            "typography": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["heading", "body"],
+              "properties": {
+                "heading": { "type": "string" },
+                "body": { "type": "string" }
+              }
+            },
+            "logoTreatment": { "type": "string" },
+            "motion": { "type": "string" },
+            "targetNotes": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["web", "rise", "storyline", "lms"],
+              "properties": {
+                "web": { "type": "string" },
+                "rise": { "type": "string" },
+                "storyline": { "type": "string" },
+                "lms": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "behavior": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["navigation", "progress", "scoring", "feedback"],
+      "properties": {
+        "navigation": { "enum": ["guided", "free", "branching"] },
+        "progress": { "enum": ["hidden", "steps", "percent"] },
+        "scoring": { "enum": ["none", "internal", "visible"] },
+        "feedback": { "enum": ["coaching", "concise", "explanatory"] }
+      }
+    },
+    "export": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "notes"],
+      "properties": {
+        "target": { "enum": ["web", "rise-embed", "storyline-web-object", "lms-package"] },
+        "notes": { "type": "string" }
+      }
+    }
+  }
+}

@@ -1,5 +1,10 @@
 (() => {
-  const STORAGE_KEY = "lx-learning-project-workbench:v0.1";
+  if (window.location.protocol === "file:") {
+    document.body.innerHTML = `<main class="local-workbench-notice"><span class="eyebrow">Private local Workbench</span><h1>Open the running Workbench, not this source file.</h1><p>This file can display the interface, but it cannot sign in, import a course, or play protected media bundles. Those features run only through the local Workbench server.</p><a class="primary" href="http://127.0.0.1:4192/workbench/">Open the local Workbench →</a><small>Bookmark this address for future use: http://127.0.0.1:4192/workbench/</small></main>`;
+    return;
+  }
+  const STORAGE_KEY = "lx-learning-project-workbench:v0.3";
+  const LEGACY_STORAGE_KEYS = ["lx-learning-project-workbench:v0.1"];
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -18,7 +23,7 @@
       completion: { strategy: "reach-outcome", required: true },
       content: {
         startNodeId: "opening",
-        score: { enabled: true, label: "Decision quality", startingValue: 50, minimum: 0, maximum: 100, showToLearner: true },
+        score: { enabled: false, label: "Decision quality", startingValue: 0, minimum: 0, maximum: 100, showToLearner: false },
         nodes: [
           {
             id: "opening",
@@ -96,7 +101,7 @@
       completion: { strategy: "reach-outcome", required: true },
       content: {
         startNodeId: "objection",
-        score: { enabled: true, label: "Conversation quality", startingValue: 50, minimum: 0, maximum: 100, showToLearner: false },
+        score: { enabled: false, label: "Conversation quality", startingValue: 0, minimum: 0, maximum: 100, showToLearner: false },
         nodes: [
           {
             id: "objection",
@@ -131,6 +136,105 @@
       metadata: { templateId: "objection-handling", workbenchVersion: "0.1" }
     }
   };
+
+  function defaultProfile() {
+    return {
+      schemaVersion: "0.1",
+      experienceModel: "published-learning-web",
+      source: {
+        origin: "engine-native",
+        structureModel: "interaction",
+        templateId: "",
+        notes: ""
+      },
+      learning: {
+        audience: "",
+        purpose: "",
+        objectives: [],
+        duration: "",
+        prerequisites: ""
+      },
+      presentation: {
+        accessibility: "Use meaningful alt text, captions/transcripts where needed, keyboard-friendly focus behavior, sufficient contrast, responsive layout, and reduced-motion support.",
+        theme: {
+          presetId: "portfolio",
+          name: "Portfolio",
+          layout: "clean-cards",
+          brandNotes: "Clean, modern, instructional-design portfolio treatment.",
+          colors: {
+            primary: "#508484",
+            secondary: "#79C99E",
+            accent: "#97DB4F",
+            background: "#ffffff",
+            text: "#24302D"
+          },
+          typography: { heading: "Montserrat", body: "Open Sans" },
+          logoTreatment: "",
+          motion: "Subtle transitions; respect reduced-motion preferences.",
+          targetNotes: { web: "", rise: "", storyline: "", lms: "" }
+        }
+      },
+      behavior: {
+        navigation: "branching",
+        progress: "hidden",
+        scoring: "none",
+        feedback: "coaching"
+      },
+      export: {
+        target: "web",
+        notes: ""
+      }
+    };
+  }
+
+  function profileFromModel(model) {
+    const saved = model?.metadata?.workbenchProfile;
+    const base = defaultProfile();
+    if (!saved || typeof saved !== "object") return base;
+    return {
+      ...base,
+      ...clone(saved),
+      source: { ...base.source, ...(saved.source || {}) },
+      learning: { ...base.learning, ...(saved.learning || {}) },
+      presentation: {
+        ...base.presentation,
+        ...(saved.presentation || {}),
+        theme: {
+          ...base.presentation.theme,
+          ...(saved.presentation?.theme || {}),
+          colors: { ...base.presentation.theme.colors, ...(saved.presentation?.theme?.colors || {}) },
+          typography: { ...base.presentation.theme.typography, ...(saved.presentation?.theme?.typography || {}) },
+          targetNotes: { ...base.presentation.theme.targetNotes, ...(saved.presentation?.theme?.targetNotes || {}) }
+        }
+      },
+      behavior: { ...base.behavior, ...(saved.behavior || {}) },
+      export: { ...base.export, ...(saved.export || {}) }
+    };
+  }
+
+  function getPath(object, path) {
+    return String(path).split(".").reduce((value, key) => value?.[key], object);
+  }
+
+  function setPath(object, path, value) {
+    const keys = String(path).split(".");
+    let cursor = object;
+    keys.slice(0, -1).forEach((key) => {
+      if (!cursor[key] || typeof cursor[key] !== "object") cursor[key] = {};
+      cursor = cursor[key];
+    });
+    cursor[keys[keys.length - 1]] = value;
+  }
+
+  function syncScoringFromProfile() {
+    if (state.model?.type === "rise-course" || state.model?.type === "storyline-experience") return;
+    if (!state.model?.content?.score) return;
+    const mode = state.profile?.behavior?.scoring || "none";
+    state.model.content.score.enabled = mode !== "none";
+    state.model.content.score.showToLearner = mode === "visible";
+    document.body.dataset.scoring = mode;
+    if (!state.model.content.score.label) state.model.content.score.label = "Decision quality";
+  }
 
   function blankScenario() {
     return {
@@ -173,7 +277,16 @@
     sourceFiles: [],
     reference: [],
     objectUrls: new Map(),
+    inlineAssets: new Map(),
+    mediaStreams: new Map(),
+    importArchive: null,
+    publishedPreviewUrl: null,
+    publishedPreviewMode: "published",
+    transformFocusId: null,
     activeTab: "source",
+    activeTool: null,
+    profile: defaultProfile(),
+    history: [],
     saveTimer: null
   };
 
@@ -202,6 +315,18 @@
     state.objectUrls.clear();
   }
 
+  function clearProjectResources() {
+    revokeUrls();
+    state.sourceFiles = [];
+    state.reference = [];
+    state.inlineAssets.clear();
+    state.mediaStreams.clear();
+    state.importArchive = null;
+    state.publishedPreviewUrl = null;
+    state.publishedPreviewMode = "published";
+    state.transformFocusId = null;
+  }
+
   function filePath(file, fromFolder = false) {
     if (fromFolder && file.webkitRelativePath) return file.webkitRelativePath.split("/").slice(1).join("/") || file.name;
     const folder = {
@@ -220,12 +345,26 @@
     return !!(model && model.type === "branching-scenario" && model.schemaVersion === "0.1" && Array.isArray(model.content?.nodes) && model.content.nodes.length && Array.isArray(model.content?.outcomes) && model.content.outcomes.length);
   }
 
+  function validRiseCourse(model) {
+    return !!(model && model.type === "rise-course" && model.schemaVersion === "0.1" && Array.isArray(model.content?.lessons) && model.content.lessons.length);
+  }
+
+  function validStorylineExperience(model) {
+    return !!(model && model.type === "storyline-experience" && model.schemaVersion === "0.1" && Array.isArray(model.content?.scenes) && model.content.scenes.length);
+  }
+
+  function validProject(model) { return validScenario(model) || validRiseCourse(model) || validStorylineExperience(model); }
+  function isRiseCourse() { return state.model?.type === "rise-course"; }
+  function isStorylineExperience() { return state.model?.type === "storyline-experience"; }
+  function isImportedProject() { return isRiseCourse() || isStorylineExperience(); }
+
   function setText(selector, text) {
     const element = $(selector);
     if (element) element.textContent = text;
   }
 
   function destinationItems() {
+    if (!validScenario(state.model)) return [];
     return [
       ...state.model.content.nodes.map((item) => ({ id: item.id, label: `Next decision · ${item.title || item.id}` })),
       ...state.model.content.outcomes.map((item) => ({ id: item.id, label: `Outcome · ${item.title || item.id}` }))
@@ -240,12 +379,217 @@
     return html;
   }
 
-  function assetUrl(path) { return state.objectUrls.get(path) || null; }
+  function assetUrl(path) { return state.objectUrls.get(path) || state.inlineAssets.get(path) || null; }
+
+  function mediaUrl(asset = {}) {
+    return assetUrl(`asset:${asset.id}`) || assetUrl(asset.path) || state.mediaStreams.get(asset.id) || null;
+  }
+
+  function registerPreviewAssets(assets = []) {
+    state.inlineAssets.clear();
+    assets.forEach((asset) => {
+      if (!asset?.dataUrl) return;
+      if (asset.id) state.inlineAssets.set(`asset:${asset.id}`, asset.dataUrl);
+      if (asset.path) state.inlineAssets.set(asset.path, asset.dataUrl);
+    });
+  }
+
+  function registerMediaStreams(streams = []) {
+    state.mediaStreams.clear();
+    streams.forEach((stream) => {
+      if (stream?.assetId && stream.url) state.mediaStreams.set(stream.assetId, stream.url);
+    });
+  }
+
+  function registerPublishedPreview(url = null) {
+    state.publishedPreviewUrl = typeof url === "string" && url ? url : null;
+    state.publishedPreviewMode = "published";
+  }
+
+  function mediaPlayerMarkup(asset, compact = false) {
+    const url = mediaUrl(asset);
+    const label = escapeHtml(asset.fileName || String(asset.path || asset.id || "Media asset").split("/").pop());
+    const kind = asset.kind || "other";
+    if (!url) {
+      const imported = isImportedProject();
+      return `<article class="media-card media-card--missing"><strong>${imported ? "SOURCE MEDIA NOT LOADED" : "NEEDS MEDIA"}</strong><span>${label}</span><small>${imported ? "The published export contains the media reference. Re-open its saved source package or re-import the published ZIP to restore the file for this browser session." : "This media reference was found, but its file is not available in this preview."}</small></article>`;
+    }
+    if (kind === "image") return `<article class="media-card${compact ? " media-card--compact" : ""}"><img src="${escapeAttr(url)}" alt="${label}"><strong>${label}</strong><small>Image asset</small></article>`;
+    if (kind === "audio") return `<article class="media-card${compact ? " media-card--compact" : ""}"><strong>${label}</strong><audio controls preload="metadata" src="${escapeAttr(url)}"></audio><small>Audio asset</small></article>`;
+    if (kind === "video" || kind === "hls") return `<article class="media-card${compact ? " media-card--compact" : ""}"><strong>${label}</strong><video controls playsinline preload="metadata" src="${escapeAttr(url)}"></video><small>${kind === "hls" ? "HLS stream · Safari plays this directly; other browsers may need the original published player." : "Video asset"}</small></article>`;
+    if (kind === "caption") return `<article class="media-card${compact ? " media-card--compact" : ""}"><strong>${label}</strong><a href="${escapeAttr(url)}" target="_blank" rel="noopener">Open caption file</a><small>Caption / transcript asset</small></article>`;
+    return `<article class="media-card${compact ? " media-card--compact" : ""}"><strong>${label}</strong><a href="${escapeAttr(url)}" target="_blank" rel="noopener">Open source file</a><small>${escapeHtml(kind)} asset</small></article>`;
+  }
+
+  function mediaInventory() {
+    const imported = (state.model?.metadata?.assetManifest || []).map((asset) => ({ ...asset, source:"published export" }));
+    const source = state.sourceFiles.filter((file) => ["image", "audio", "video", "caption"].includes(file.kind)).map((file, index) => ({ id:`source-${index}-${file.path}`, path:file.path, fileName:file.name, kind:file.kind, source:"added source" }));
+    const seen = new Set();
+    return [...imported, ...source].filter((asset) => {
+      const key = `${asset.source}:${asset.id || asset.path}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return ["image", "audio", "video", "hls", "caption"].includes(asset.kind);
+    });
+  }
+
+  function renderMediaLibrary() {
+    const root = $("[data-media-library]");
+    if (!root) return;
+    const assets = mediaInventory();
+    root.hidden = !assets.length;
+    if (!assets.length) return;
+    const available = assets.filter((asset) => mediaUrl(asset)).length;
+    const attach = isImportedProject() && !state.importArchive?.file ? '<button type="button" class="primary-soft" data-attach-import>Attach original export to restore media</button>' : "";
+    root.innerHTML = `<details open><summary><strong>Media library</strong><span>${assets.length} media asset${assets.length === 1 ? "" : "s"} · ${available} ready to preview</span></summary><p>Each file is a <strong>media asset</strong>. A slide or lesson points to it through a <strong>media reference</strong>. HLS video is a <strong>media bundle</strong>: a playlist plus its video segments.</p>${attach}<div class="media-grid">${assets.map((asset) => mediaPlayerMarkup(asset)).join("")}</div></details>`;
+    $("[data-attach-import]", root)?.addEventListener("click", () => $("[data-attach-import-input]").click());
+  }
+
+  function importedMediaMarkup() {
+    const assets = state.model?.metadata?.assetManifest || [];
+    const previewable = assets.filter((asset) => mediaUrl(asset));
+    if (!previewable.length) return "";
+    const cards = previewable.map((asset) => {
+      const url = mediaUrl(asset);
+      const label = escapeHtml(String(asset.path || asset.id || "Imported asset").split("/").pop());
+      if (asset.kind === "image") return `<figure class="learner-feedback"><img class="learner-image" src="${escapeAttr(url)}" alt="${label}"><figcaption>${label}</figcaption></figure>`;
+      if (asset.kind === "audio") return `<div class="learner-feedback"><strong>${label}</strong><audio controls src="${escapeAttr(url)}"></audio></div>`;
+      if (asset.kind === "video" || asset.kind === "hls") return `<div class="learner-feedback"><strong>${label}</strong><video controls playsinline preload="metadata" src="${escapeAttr(url)}"></video></div>`;
+      return "";
+    }).join("");
+    return cards ? `<div class="learner-prompt">Imported media available in this browser session</div>${cards}` : "";
+  }
+
+  function storylineSlideMedia(slide) {
+    const manifest = new Map((state.model?.metadata?.assetManifest || []).map((asset) => [asset.id, asset]));
+    const objects = (slide.layers || []).flatMap((layer) => layer.objects || []);
+    const references = [];
+    objects.forEach((object) => (object.assets || []).forEach((id) => {
+      const asset = manifest.get(id);
+      if (asset && !references.some((item) => item.asset.id === asset.id && item.object.id === object.id)) references.push({ asset, object });
+    }));
+    const assetUrlFor = (asset) => mediaUrl(asset);
+    const canvasArea = Math.max(1, Number(slide.canvas?.width || 0) * Number(slide.canvas?.height || 0));
+    const visualCandidates = references.filter(({ asset }) => asset.kind === "image" && assetUrlFor(asset));
+    visualCandidates.sort((a, b) => {
+      const aArea = Number(a.object.bounds?.width || 0) * Number(a.object.bounds?.height || 0);
+      const bArea = Number(b.object.bounds?.width || 0) * Number(b.object.bounds?.height || 0);
+      return bArea - aArea;
+    });
+    const background = visualCandidates.find(({ object }) => {
+      const area = Number(object.bounds?.width || 0) * Number(object.bounds?.height || 0);
+      return area / canvasArea >= 0.5;
+    }) || null;
+    return {
+      background,
+      references,
+      inlineImages:visualCandidates.filter((item) => item !== background),
+      missing:references.filter(({ asset }) => !assetUrlFor(asset)),
+      assetUrlFor,
+    };
+  }
+
+  function storylineMediaMarkup(media) {
+    const images = media.inlineImages.slice(0, 2).map(({ asset }) => `<img class="storyline-inline-image" src="${escapeAttr(media.assetUrlFor(asset))}" alt="">`).join("");
+    const missing = media.missing.length ? '<div class="storyline-needs-media">NEEDS MEDIA</div>' : "";
+    const players = media.references.filter(({ asset }) => asset.kind !== "image" && media.assetUrlFor(asset)).map(({ asset }) => mediaPlayerMarkup(asset, true)).join("");
+    return images || missing || players ? `<div class="storyline-media-strip">${images}${players}${missing}</div>` : "";
+  }
+
+  function storylineNavigation(object) {
+    for (const interaction of object?.interactions || []) {
+      for (const action of interaction.actions || []) {
+        if (action.kind === "gotoplay" && action.targetSlideId) return action.targetSlideId;
+      }
+    }
+    return null;
+  }
+
+  function genericControlLabel(value) {
+    return /^(button|rectangle|shape)\s*\d*$/i.test(String(value || "").trim());
+  }
+
+  function transformColor(value, fallback) {
+    return /^#[0-9a-f]{6}$/i.test(String(value || "")) ? value : fallback;
+  }
+
+  function transformFocusItems() {
+    if (isStorylineExperience()) return (state.model.content.scenes || []).flatMap((scene) => (scene.slides || []).map((slide, index) => ({ id:slide.id, label:`${scene.title || "Scene"} · ${index + 1}. ${slide.title || "Untitled slide"}` })));
+    if (isRiseCourse()) return (state.model.content.lessons || []).map((lesson, index) => ({ id:lesson.id, label:`${index + 1}. ${lesson.title || "Untitled lesson"}` }));
+    return (state.model.content.nodes || []).map((node, index) => ({ id:node.id, label:`${index + 1}. ${node.title || "Untitled decision"}` }));
+  }
+
+  function transformSnapshot() {
+    if (isStorylineExperience()) {
+      const candidates = (state.model.content.scenes || []).flatMap((scene) => (scene.slides || []).map((slide) => ({ scene, slide })));
+      const current = candidates.find((item) => item.slide.id === state.transformFocusId) || candidates[0] || {};
+      const scene = current.scene || {};
+      const slide = current.slide || {};
+      const objects = (slide.layers || []).flatMap((layer) => layer.objects || []);
+      const text = objects.map((object) => String(object.title || object.accessibility?.altText || "").trim())
+        .filter((value) => value && !genericControlLabel(value) && !/^(vectorshape|scrollarea|video|image)\b/i.test(value) && !/\.(png|jpe?g|gif|webp|svg|mp4|webm|m3u8)$/i.test(value) && value !== slide.title)
+        .slice(0, 3);
+      const controls = objects.filter((object) => storylineNavigation(object) || /start|continue|submit|next|previous|learn more/i.test(String(object.title || object.accessibility?.altText || "")))
+        .map((object) => String(object.title || object.accessibility?.altText || "").trim())
+        .filter((value) => value && !genericControlLabel(value))
+        .filter((value, index, values) => values.indexOf(value) === index);
+      const media = storylineSlideMedia(slide);
+      return {
+        eyebrow:scene.title || "Imported scene",
+        title:slide.title || state.model.title || "Untitled slide",
+        body:text.length ? text : [state.model.description || "Add learner-facing content in Edit to see it here."],
+        action:controls[0] || "Continue",
+        image:media.background ? media.assetUrlFor(media.background.asset) : media.inlineImages[0] ? media.assetUrlFor(media.inlineImages[0].asset) : null
+      };
+    }
+    if (isRiseCourse()) {
+      const lesson = (state.model.content.lessons || []).find((item) => item.id === state.transformFocusId) || (state.model.content.lessons || []).find((item) => item.kind !== "assessment") || (state.model.content.lessons || [])[0] || {};
+      const blocks = (lesson.blocks || []).map((block) => riseTextField(block).value || block.title).filter(Boolean).slice(0, 3);
+      return { eyebrow:"Editable lesson", title:lesson.title || state.model.title || "Untitled lesson", body:[lesson.description, ...blocks].filter(Boolean), action:"Continue", image:null };
+    }
+    const node = (state.model.content.nodes || []).find((item) => item.id === state.transformFocusId) || (state.model.content.nodes || [])[0] || {};
+    return { eyebrow:node.speaker || "Scenario", title:node.title || state.model.title || "Untitled experience", body:[node.body || state.model.description || "Add content in Edit to see it here."], action:node.choices?.[0]?.text || "Continue", image:assetUrl(node.image) || null };
+  }
+
+  function renderTransformStudio() {
+    const root = $("[data-transform-studio]");
+    if (!root || !state.model) return;
+    const theme = state.profile.presentation?.theme || {};
+    const colors = theme.colors || {};
+    const snapshot = transformSnapshot();
+    const focusItems = transformFocusItems();
+    const focusedId = focusItems.some((item) => item.id === state.transformFocusId) ? state.transformFocusId : focusItems[0]?.id || "";
+    if (focusedId && !state.transformFocusId) state.transformFocusId = focusedId;
+    const style = `--transform-primary:${escapeAttr(transformColor(colors.primary, "#508484"))};--transform-secondary:${escapeAttr(transformColor(colors.secondary, "#79C99E"))};--transform-accent:${escapeAttr(transformColor(colors.accent, "#97DB4F"))};--transform-background:${escapeAttr(transformColor(colors.background, "#ffffff"))};--transform-text:${escapeAttr(transformColor(colors.text, "#24302D"))}`;
+    const source = state.publishedPreviewUrl
+      ? `<div class="transform-player-frame"><iframe title="Original published source reference" src="${escapeAttr(state.publishedPreviewUrl)}" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads"></iframe></div><p class="transform-caption">Source reference · unchanged published player</p>`
+      : `<div class="transform-empty"><strong>Attach the original published export to compare it here.</strong><span>The editable model can still be designed without it.</span></div>`;
+    const image = snapshot.image ? `<img src="${escapeAttr(snapshot.image)}" alt="">` : "";
+    const body = snapshot.body.filter(Boolean).map((item) => `<p>${escapeHtml(item)}</p>`).join("");
+    const presetButtons = [
+      ["portfolio", "Calm studio"], ["warm-studio", "Warm"], ["editorial", "Editorial"], ["technical-dark", "Dark"], ["high-contrast", "Contrast"]
+    ].map(([value, label]) => `<button type="button" data-transform-preset="${value}">${label}</button>`).join("");
+    const focusControl = focusItems.length > 1 ? `<label class="transform-focus"><span>Compare this editable ${isStorylineExperience() ? "slide" : isRiseCourse() ? "lesson" : "decision"}</span><select data-transform-focus>${focusItems.map((item) => `<option value="${escapeAttr(item.id)}"${item.id === focusedId ? " selected" : ""}>${escapeHtml(item.label)}</option>`).join("")}</select></label>` : "";
+    root.innerHTML = `<div class="transform-head"><div><span class="eyebrow">Transformation studio</span><h3>Compare the source with your new version</h3><p>Edits and theme choices update the new-version card. The original course remains your untouched visual and behavior reference.</p></div><div class="transform-actions"><button type="button" data-transform-edit>Review editable content</button><button type="button" class="primary-soft" data-transform-theme>Fine-tune theme</button></div></div>${focusControl}<div class="transform-compare"><article class="transform-source"><div class="transform-label"><span>01</span><div><strong>Original published player</strong><small>Exact source experience</small></div></div>${source}</article><article class="transform-target" style="${style}"><div class="transform-label"><span>02</span><div><strong>New model preview</strong><small>${escapeHtml(theme.name || "Custom theme")} · changes live</small></div></div><div class="transform-model-card">${image}<div class="transform-model-copy"><span>${escapeHtml(snapshot.eyebrow)}</span><h4>${escapeHtml(snapshot.title)}</h4>${body}<button type="button">${escapeHtml(snapshot.action)} <b>→</b></button></div></div><p class="transform-caption">New version · generic web rendering from editable content</p></article></div><div class="transform-looks"><div><strong>Try a starting look</strong><span>Original theme leaves the current new-version styling alone. The other choices change only this card.</span></div><div>${presetButtons}</div></div>`;
+    $$('[data-transform-preset]', root).forEach((button) => button.addEventListener("click", () => {
+      const select = $("[data-theme-preset]");
+      if (select) select.value = button.dataset.transformPreset;
+      applyThemePreset(button.dataset.transformPreset);
+    }));
+    $("[data-transform-edit]", root)?.addEventListener("click", () => switchTab("edit"));
+    $("[data-transform-theme]", root)?.addEventListener("click", () => openTool("theme"));
+    $("[data-transform-focus]", root)?.addEventListener("change", (event) => { state.transformFocusId = event.target.value; renderTransformStudio(); });
+  }
 
   function startProject(model, prompt = "") {
+    clearProjectResources();
     state.model = clone(model);
+    state.profile = profileFromModel(model);
+    state.profile.source.templateId = model?.metadata?.templateId || state.profile.source.templateId || "";
+    state.history = [];
     state.sourcePrompt = prompt;
     state.activeTab = "source";
+    syncScoringFromProfile();
     $("[data-start-panel]").hidden = true;
     $("[data-workspace]").hidden = false;
     renderAll();
@@ -258,24 +602,93 @@
     $$("[data-tab]").forEach((button) => button.classList.toggle("active", button.dataset.tab === name));
     $$("[data-panel]").forEach((panel) => panel.classList.toggle("active", panel.dataset.panel === name));
     if (name === "preview") renderPreview();
-    if (name === "save") renderJson();
+    if (name === "adapt" || name === "preview") renderProfileFields();
+    if (name === "adapt") renderTransformStudio();
+    const job = {
+      source: "Review the imported structure and flag what needs attention before changing content.",
+      edit: "Edit only the learner-facing content you want to change; source mapping stays available in project data.",
+      adapt: "Set the intended visual direction and capture the small amount of reuse context that matters.",
+      preview: "Test the learner view, then package the editable draft for its next handoff."
+    }[name] || "Keep the learning experience moving with one clear next step.";
+    setText("[data-current-job]", job);
     window.scrollTo({ top: Math.max(0, $("[data-workspace]").offsetTop - 72), behavior: "smooth" });
+  }
+
+  function applyThemePreset(value) {
+    if (value === "original") {
+      renderTransformStudio();
+      toast("Original theme stays unchanged in the source reference");
+      return;
+    }
+    const presets = {
+      portfolio: { name:"Calm studio", layout:"clean-cards", colors:{ primary:"#508484", secondary:"#79C99E", accent:"#97DB4F", background:"#ffffff", text:"#24302D" }, typography:{ heading:"Montserrat", body:"Open Sans" } },
+      "warm-studio": { name:"Warm studio", layout:"editorial", colors:{ primary:"#7B503C", secondary:"#E8D7C4", accent:"#D8874E", background:"#FFF9F2", text:"#30231D" }, typography:{ heading:"Georgia", body:"Open Sans" } },
+      editorial: { name:"Editorial learning", layout:"editorial", colors:{ primary:"#5B4B8A", secondary:"#CFC1E8", accent:"#E4A46D", background:"#FFFDF9", text:"#2E2938" }, typography:{ heading:"Georgia", body:"Open Sans" } },
+      "technical-dark": { name:"Workshop dark", layout:"technical-dark", colors:{ primary:"#9DE2CB", secondary:"#5E9E93", accent:"#F5C47B", background:"#16221F", text:"#F0F6F1" }, typography:{ heading:"Montserrat", body:"Open Sans" } },
+      "high-contrast": { name:"High-contrast accessible", layout:"minimal", colors:{ primary:"#003E8A", secondary:"#D7E8FF", accent:"#E05A00", background:"#FFFFFF", text:"#111111" }, typography:{ heading:"Arial", body:"Arial" } },
+      minimal: { name:"Minimal course", layout:"minimal", colors:{ primary:"#2E5266", secondary:"#BBD5E5", accent:"#EAB464", background:"#FFFFFF", text:"#1D2730" }, typography:{ heading:"Arial", body:"Arial" } }
+    };
+    const preset = presets[value] || presets.portfolio;
+    state.profile.presentation.theme = {
+      ...state.profile.presentation.theme,
+      ...clone(preset),
+      presetId:value,
+      targetNotes: { ...(state.profile.presentation.theme.targetNotes || {}) }
+    };
+    renderProfileFields();
+    renderTransformStudio();
+    renderPreview();
+    saveDraft();
+    toast(`${preset.name} preview applied`);
   }
 
   function renderProjectMeta() {
     setText("[data-project-title]", state.model.title || "Untitled scenario");
-    setText("[data-project-summary]", `${state.model.content.nodes.length} decision${state.model.content.nodes.length === 1 ? "" : "s"} · ${state.model.content.outcomes.length} outcome${state.model.content.outcomes.length === 1 ? "" : "s"}`);
+    if (isRiseCourse()) {
+      const lessons = state.model.content.lessons || [];
+      const blocks = lessons.reduce((total, lesson) => total + (Array.isArray(lesson.blocks) ? lesson.blocks.length : 0), 0);
+      setText("[data-project-summary]", `${lessons.length} lesson${lessons.length === 1 ? "" : "s"} · ${blocks} normalized block${blocks === 1 ? "" : "s"}`);
+    } else if (isStorylineExperience()) {
+      const scenes = state.model.content.scenes || [];
+      const slides = scenes.reduce((total, scene) => total + (scene.slides || []).length, 0);
+      setText("[data-project-summary]", `${scenes.length} scene${scenes.length === 1 ? "" : "s"} · ${slides} slide${slides === 1 ? "" : "s"}`);
+    } else {
+      setText("[data-project-summary]", `${state.model.content.nodes.length} decision${state.model.content.nodes.length === 1 ? "" : "s"} · ${state.model.content.outcomes.length} outcome${state.model.content.outcomes.length === 1 ? "" : "s"}`);
+    }
     $("[data-source-prompt]").value = state.sourcePrompt || "";
     $("[data-project-field=\"title\"]").value = state.model.title || "";
     $("[data-project-field=\"description\"]").value = state.model.description || "";
     $("[data-project-field=\"instruction\"]").value = state.model.instruction || "";
-    $("[data-project-field=\"id\"]").value = state.model.id || "";
+    const aiButton = $("[data-open-tool=\"ai\"]");
+    if (aiButton) {
+      aiButton.disabled = isImportedProject();
+      $("small", aiButton).textContent = isImportedProject() ? "Manual review for imported drafts" : "Generate or transform";
+    }
+    const imported = isImportedProject();
+    setText("[data-source-heading]", imported ? "Your imported experience is ready to review" : "What should this experience become?");
+    setText("[data-source-description]", imported
+      ? "The published export is now an editable normalized draft. Continue to Build & edit to review learner-facing content, then test it in Preview."
+      : "Describe the learning need in normal language, then add the source materials and assets the experience should use.");
+    setText("[data-source-next-title]", imported ? "Ready to review the imported draft?" : "Ready to build?");
+    setText("[data-source-next-description]", imported
+      ? "Open the editor to review scenes, slides, layers, and learner-facing text."
+      : "Generate a complete experience from the brief/source or continue into the current project and edit manually.");
+    const generate = $("[data-generate-ai]");
+    if (generate) generate.hidden = imported;
+    const edit = $("[data-go-edit]");
+    if (edit) {
+      edit.classList.toggle("primary", imported);
+      edit.textContent = imported ? "Review imported content →" : "Build & edit →";
+    }
+    renderProfileFields();
   }
 
   function renderSourceFiles() {
     const root = $("[data-source-file-list]");
     root.innerHTML = "";
-    if (!state.sourceFiles.length) root.innerHTML = '<div class="empty-state">No source files added yet.</div>';
+    if (!state.sourceFiles.length) root.innerHTML = isImportedProject()
+      ? '<div class="empty-state">The published export is already connected as this project’s source. Add extra files only if you need supporting material.</div>'
+      : '<div class="empty-state">No source files added yet.</div>';
     for (const entry of state.sourceFiles) {
       const row = document.createElement("div");
       row.className = "source-file";
@@ -292,40 +705,162 @@
       list.appendChild(details);
     }
     wrap.hidden = !state.reference.length;
+    renderMediaLibrary();
   }
 
   function renderEditor() {
     renderProjectMeta();
     const nodes = $("[data-decision-list]");
+    const outcomes = $("[data-outcome-list]");
+    const toolbar = $(".edit-toolbar");
+    const sectionLabels = $$(".section-label", nodes.parentElement);
     nodes.innerHTML = "";
+    if (isStorylineExperience()) {
+      toolbar.hidden = true;
+      if (sectionLabels[0]) sectionLabels[0].innerHTML = "<span>Imported scenes and slides</span><small>Editable normalized learner-facing text and layer labels</small>";
+      if (sectionLabels[1]) sectionLabels[1].innerHTML = "<span>Imported runtime notes</span><small>Structure detected from the published Storyline web export</small>";
+      state.model.content.scenes.forEach((scene, index) => nodes.appendChild(storylineSceneCard(scene, index)));
+      outcomes.innerHTML = "";
+      outcomes.appendChild(storylineImportNotes());
+      renderFlowCheck();
+      renderJson();
+      return;
+    }
+    if (isRiseCourse()) {
+      toolbar.hidden = true;
+      if (sectionLabels[0]) sectionLabels[0].innerHTML = "<span>Imported lessons</span><small>Editable normalized learner-facing content</small>";
+      if (sectionLabels[1]) sectionLabels[1].innerHTML = "<span>Imported assessments</span><small>Questions preserved from the published Rise export</small>";
+      state.model.content.lessons.filter((lesson) => lesson.kind !== "assessment").forEach((lesson, index) => nodes.appendChild(riseLessonCard(lesson, index)));
+      outcomes.innerHTML = "";
+      state.model.content.lessons.filter((lesson) => lesson.kind === "assessment").forEach((lesson, index) => outcomes.appendChild(riseAssessmentCard(lesson, index)));
+      if (!outcomes.children.length) outcomes.innerHTML = '<div class="empty-state">No scored Rise assessment was found in this export.</div>';
+      renderFlowCheck();
+      renderJson();
+      return;
+    }
+    toolbar.hidden = false;
+    if (sectionLabels[0]) sectionLabels[0].innerHTML = "<span>Decision points</span><small>Situation → learner responses → coaching → destination</small>";
+    if (sectionLabels[1]) sectionLabels[1].innerHTML = "<span>Outcomes</span><small>Where the learner can finish the experience.</small>";
     state.model.content.nodes.forEach((node, index) => nodes.appendChild(decisionCard(node, index)));
 
-    const outcomes = $("[data-outcome-list]");
     outcomes.innerHTML = "";
     state.model.content.outcomes.forEach((outcome, index) => outcomes.appendChild(outcomeCard(outcome, index)));
     renderFlowCheck();
     renderJson();
   }
 
+  function storylineSceneCard(scene, index) {
+    const card = document.createElement("article");
+    card.className = "scenario-card";
+    const slides = Array.isArray(scene.slides) ? scene.slides : [];
+    card.innerHTML = `<div class="scenario-head"><div><span class="eyebrow">Scene ${index + 1}</span><strong>${escapeHtml(scene.title || "Untitled scene")}</strong></div><small>${slides.length} slide${slides.length === 1 ? "" : "s"}</small></div><div class="field-grid"><label class="wide"><span>Scene title</span><input data-storyline-scene-title value="${escapeAttr(scene.title || "")}"></label></div><div class="choices" data-storyline-slides></div>`;
+    $("[data-storyline-scene-title]", card).addEventListener("input", (event) => { scene.title = event.target.value; state.transformFocusId = slides[0]?.id || state.transformFocusId; touch(false); });
+    const root = $("[data-storyline-slides]", card);
+    if (!slides.length) root.innerHTML = '<div class="empty-state">No published slides were found in this scene.</div>';
+    slides.forEach((slide, slideIndex) => root.appendChild(storylineSlideCard(slide, slideIndex)));
+    return card;
+  }
+
+  function storylineSlideCard(slide, index) {
+    const card = document.createElement("div");
+    card.className = "choice-card";
+    const layers = Array.isArray(slide.layers) ? slide.layers : [];
+    const detail = `${layers.length} layer${layers.length === 1 ? "" : "s"} · ${slide.metadata?.objectCount || 0} object${slide.metadata?.objectCount === 1 ? "" : "s"} · ${slide.metadata?.actionCount || 0} action${slide.metadata?.actionCount === 1 ? "" : "s"}`;
+    card.innerHTML = `<div class="choices-head"><strong>Slide ${index + 1} · ${escapeHtml(slide.title || "Untitled slide")}</strong><small>${escapeHtml(detail)}</small></div><label class="wide"><span>Slide title</span><input data-storyline-slide-title value="${escapeAttr(slide.title || "")}"></label><div class="choices" data-storyline-layers></div>`;
+    $("[data-storyline-slide-title]", card).addEventListener("input", (event) => { slide.title = event.target.value; state.transformFocusId = slide.id; touch(false); });
+    const root = $("[data-storyline-layers]", card);
+    if (!layers.length) root.innerHTML = '<small>This published slide could not be fully decoded. Its slide title and source mapping are preserved for review.</small>';
+    layers.forEach((layer, layerIndex) => root.appendChild(storylineLayerCard(layer, layerIndex, slide)));
+    return card;
+  }
+
+  function storylineLayerCard(layer, index, slide) {
+    const card = document.createElement("div");
+    card.className = "choice-card";
+    const objects = Array.isArray(layer.objects) ? layer.objects : [];
+    card.innerHTML = `<div class="choices-head"><strong>${escapeHtml(layer.kind === "base" ? "Base layer" : `Layer ${index + 1}`)} · ${escapeHtml(layer.title || "Untitled layer")}</strong><small>${objects.length} object${objects.length === 1 ? "" : "s"}</small></div><label class="wide"><span>Layer title</span><input data-storyline-layer-title value="${escapeAttr(layer.title || "")}"></label><div class="field-grid">${objects.map((object, objectIndex) => `<label><span>${escapeHtml(object.kind || "Object")} ${objectIndex + 1}</span><input data-storyline-object="${objectIndex}" value="${escapeAttr(object.title || "")}" placeholder="No exposed text or alt text"></label>`).join("")}</div>`;
+    $("[data-storyline-layer-title]", card).addEventListener("input", (event) => { layer.title = event.target.value; state.transformFocusId = slide.id; touch(false); });
+    $$('[data-storyline-object]', card).forEach((input) => input.addEventListener("input", () => {
+      const object = objects[Number(input.dataset.storylineObject)];
+      object.title = input.value;
+      object.accessibility = { ...(object.accessibility || {}), altText: input.value };
+      state.transformFocusId = slide.id;
+      touch(false);
+    }));
+    return card;
+  }
+
+  function storylineImportNotes() {
+    const card = document.createElement("article");
+    card.className = "outcome-card";
+    const summary = state.model.metadata?.importSummary || {};
+    const variables = state.model.metadata?.variables || [];
+    card.innerHTML = `<div class="outcome-head"><div><span class="eyebrow">Published-web import</span><strong>Review runtime behavior before reuse</strong></div></div><p>This editable draft preserves scene, slide, layer, object-state, and action counts from the published Storyline web export. Trigger sequencing, conditions, variable behavior, media timelines, and custom JavaScript remain source-derived review items in this first pass.</p><div class="field-grid"><div><span>Parsed slides</span><strong>${Number(summary.parsedSlides || 0)} / ${Number(summary.slides || 0)}</strong></div><div><span>Layers</span><strong>${Number(summary.layers || 0)}</strong></div><div><span>Objects</span><strong>${Number(summary.objects || 0)}</strong></div><div><span>Detected actions</span><strong>${Number(summary.actions || 0)}</strong></div></div>${variables.length ? `<p><strong>Project variables:</strong> ${escapeHtml(variables.map((item) => item.name).filter(Boolean).join(", ") || "present in source data")}</p>` : ""}`;
+    return card;
+  }
+
+  function riseTextField(block) {
+    const content = block.content || {};
+    const keys = ["body", "text", "description", "caption", "heading", "subheading", "quote", "prompt"];
+    const key = keys.find((candidate) => typeof content[candidate] === "string") || "body";
+    return { content, key, value: content[key] || "" };
+  }
+
+  function riseLessonCard(lesson, index) {
+    const card = document.createElement("article");
+    card.className = "scenario-card";
+    const blocks = Array.isArray(lesson.blocks) ? lesson.blocks : [];
+    card.innerHTML = `<div class="scenario-head"><div><span class="eyebrow">Lesson ${index + 1}</span><strong>${escapeHtml(lesson.title || "Untitled lesson")}</strong></div><small>${blocks.length} block${blocks.length === 1 ? "" : "s"}</small></div><div class="field-grid"><label class="wide"><span>Lesson title</span><input data-rise-lesson-title value="${escapeAttr(lesson.title || "")}"></label><label class="wide"><span>Lesson description</span><textarea rows="2" data-rise-lesson-description>${escapeHtml(lesson.description || "")}</textarea></label></div><div class="choices" data-rise-blocks></div>`;
+    $("[data-rise-lesson-title]", card).addEventListener("input", (event) => { lesson.title = event.target.value; state.transformFocusId = lesson.id; touch(false); });
+    $("[data-rise-lesson-description]", card).addEventListener("input", (event) => { lesson.description = event.target.value; state.transformFocusId = lesson.id; touch(false); });
+    const root = $("[data-rise-blocks]", card);
+    if (!blocks.length) root.innerHTML = '<div class="empty-state">This lesson has no editable content blocks in the published export.</div>';
+    blocks.forEach((block, blockIndex) => root.appendChild(riseBlockCard(block, blockIndex, lesson)));
+    return card;
+  }
+
+  function riseBlockCard(block, index, lesson) {
+    const card = document.createElement("div");
+    card.className = "choice-card";
+    const field = riseTextField(block);
+    card.innerHTML = `<div class="choices-head"><strong>Block ${index + 1} · ${escapeHtml(block.kind || "custom")}</strong><small>${escapeHtml(block.variant || "Preserved normalized block")}</small></div><label class="wide"><span>Block title</span><input data-rise-block-title value="${escapeAttr(block.title || "")}"></label><label class="wide"><span>Editable content</span><textarea rows="3" data-rise-block-content>${escapeHtml(field.value)}</textarea></label>${field.value ? "" : '<small>There is no single text field to expose for this block. Its normalized source data remains available in Developer project data.</small>'}`;
+    $("[data-rise-block-title]", card).addEventListener("input", (event) => { block.title = event.target.value; state.transformFocusId = lesson.id; touch(false); });
+    $("[data-rise-block-content]", card).addEventListener("input", (event) => { block.content = { ...field.content, [field.key]: event.target.value }; state.transformFocusId = lesson.id; touch(false); });
+    return card;
+  }
+
+  function riseAssessmentCard(assessment, index) {
+    const card = document.createElement("article");
+    card.className = "outcome-card";
+    const questions = Array.isArray(assessment.questions) ? assessment.questions : [];
+    card.innerHTML = `<div class="outcome-head"><div><span class="eyebrow">Assessment ${index + 1}</span><strong>${escapeHtml(assessment.title || "Untitled assessment")}</strong></div><small>${questions.length} question${questions.length === 1 ? "" : "s"}</small></div><div class="field-grid"><label class="wide"><span>Assessment title</span><input data-rise-assessment-title value="${escapeAttr(assessment.title || "")}"></label></div><div class="choices" data-rise-questions></div>`;
+    $("[data-rise-assessment-title]", card).addEventListener("input", (event) => { assessment.title = event.target.value; touch(false); });
+    const root = $("[data-rise-questions]", card);
+    questions.forEach((question, questionIndex) => {
+      const questionCard = document.createElement("div");
+      questionCard.className = "choice-card";
+      questionCard.innerHTML = `<div class="choices-head"><strong>Question ${questionIndex + 1} · ${escapeHtml(question.type || "custom")}</strong></div><label class="wide"><span>Question prompt</span><textarea rows="2" data-rise-question-prompt>${escapeHtml(question.prompt || "")}</textarea></label><div class="field-grid">${(question.answers || []).map((answer, answerIndex) => `<label><span>Answer ${answerIndex + 1}${answer.correct ? " · correct" : ""}</span><input data-rise-answer="${answerIndex}" value="${escapeAttr(answer.text || "")}"></label>`).join("")}</div>`;
+      $("[data-rise-question-prompt]", questionCard).addEventListener("input", (event) => { question.prompt = event.target.value; touch(false); });
+      $$('[data-rise-answer]', questionCard).forEach((input) => input.addEventListener("input", () => { question.answers[Number(input.dataset.riseAnswer)].text = input.value; touch(false); }));
+      root.appendChild(questionCard);
+    });
+    if (!questions.length) root.innerHTML = '<div class="empty-state">No editable questions were found in this assessment.</div>';
+    return card;
+  }
+
   function decisionCard(node, index) {
     const card = document.createElement("article");
     card.className = "scenario-card";
-    card.innerHTML = `<div class="scenario-head"><div><span class="eyebrow">Decision ${index + 1}</span><strong>${escapeHtml(node.title || "Untitled decision")}</strong></div><div class="card-actions"><button type="button" data-up>↑</button><button type="button" data-down>↓</button><button type="button" data-copy>Duplicate</button><button type="button" data-delete>Delete</button></div></div><div class="field-grid"><label class="advanced-field"><span>Internal ID</span><input data-node-field="id" value="${escapeAttr(node.id)}"></label><label><span>Who is speaking?</span><input data-node-field="speaker" value="${escapeAttr(node.speaker || "")}"></label><label class="wide"><span>What's happening?</span><input data-node-field="title" value="${escapeAttr(node.title || "")}"></label><label class="wide"><span>What does the learner know?</span><textarea rows="3" data-node-field="body">${escapeHtml(node.body || "")}</textarea></label><label><span>Image</span><select data-node-field="image">${imageOptions(node.image || "")}</select></label><label><span>Alt text</span><input data-node-field="alt" value="${escapeAttr(node.alt || "")}"></label></div><div class="choices"><div class="choices-head"><strong>Learner responses</strong><button type="button" data-add-choice>+ Response</button></div><div class="choices-list" data-choices></div></div>`;
+    card.innerHTML = `<div class="scenario-head"><div><span class="eyebrow">Decision ${index + 1}</span><strong>${escapeHtml(node.title || "Untitled decision")}</strong></div><div class="card-actions"><button type="button" data-up>↑</button><button type="button" data-down>↓</button><button type="button" data-copy>Duplicate</button><button type="button" data-delete>Delete</button></div></div><div class="field-grid"><label><span>Who is speaking?</span><input data-node-field="speaker" value="${escapeAttr(node.speaker || "")}"></label><label class="wide"><span>What's happening?</span><input data-node-field="title" value="${escapeAttr(node.title || "")}"></label><label class="wide"><span>What does the learner know?</span><textarea rows="3" data-node-field="body">${escapeHtml(node.body || "")}</textarea></label><label><span>Image</span><select data-node-field="image">${imageOptions(node.image || "")}</select></label><label><span>Alt text</span><input data-node-field="alt" value="${escapeAttr(node.alt || "")}"></label></div><div class="choices"><div class="choices-head"><strong>Learner responses</strong><button type="button" data-add-choice>+ Response</button></div><div class="choices-list" data-choices></div></div>`;
 
     const choiceRoot = $("[data-choices]", card);
     node.choices.forEach((choice, choiceIndex) => choiceRoot.appendChild(choiceCard(node, choice, choiceIndex)));
 
-    $$("[data-node-field]", card).forEach((input) => input.addEventListener(input.dataset.nodeField === "id" ? "change" : "input", () => {
+    $("[data-node-field]", card).forEach((input) => input.addEventListener("input", () => {
       const key = input.dataset.nodeField;
-      if (key === "id") {
-        const oldId = node.id;
-        node.id = input.value.trim() || oldId;
-        renameTarget(oldId, node.id);
-      } else {
-        node[key] = input.value;
-      }
+      node[key] = input.value;
       if (key === "title") $(".scenario-head strong", card).textContent = node.title || "Untitled decision";
-      touch(key === "id");
+      touch(false);
     }));
 
     $("[data-add-choice]", card).addEventListener("click", () => {
@@ -343,7 +878,7 @@
     const card = document.createElement("div");
     card.className = "choice-card";
     const options = destinationItems().map((item) => `<option value="${escapeAttr(item.id)}"${item.id === choice.targetId ? " selected" : ""}>${escapeHtml(item.label)}</option>`).join("");
-    card.innerHTML = `<button type="button" class="choice-delete" data-delete aria-label="Delete response">×</button><label class="wide"><span>Learner response ${index + 1}</span><input data-choice-field="text" value="${escapeAttr(choice.text || "")}"></label><label><span>What happens next?</span><select data-choice-field="targetId"><option value="">Choose destination…</option>${options}</select></label><label><span>Impact on score</span><input type="number" data-choice-field="scoreDelta" value="${Number(choice.scoreDelta || 0)}"></label><label class="wide"><span>Coaching feedback</span><textarea rows="2" data-choice-field="feedback">${escapeHtml(choice.feedback || "")}</textarea></label><label class="advanced-field wide"><span>Internal response ID</span><input data-choice-field="id" value="${escapeAttr(choice.id || "")}"></label>`;
+    card.innerHTML = `<button type="button" class="choice-delete" data-delete aria-label="Delete response">×</button><label class="wide"><span>Learner response ${index + 1}</span><input data-choice-field="text" value="${escapeAttr(choice.text || "")}"></label><label><span>What happens next?</span><select data-choice-field="targetId"><option value="">Choose destination…</option>${options}</select></label><label class="score-field"><span>Impact on score</span><input type="number" data-choice-field="scoreDelta" value="${Number(choice.scoreDelta || 0)}"></label><label class="wide"><span>Coaching feedback</span><textarea rows="2" data-choice-field="feedback">${escapeHtml(choice.feedback || "")}</textarea></label>`;
 
     $$("[data-choice-field]", card).forEach((input) => input.addEventListener("input", () => {
       const key = input.dataset.choiceField;
@@ -360,19 +895,13 @@
   function outcomeCard(outcome, index) {
     const card = document.createElement("article");
     card.className = "outcome-card";
-    card.innerHTML = `<div class="outcome-head"><div><span class="eyebrow">Outcome ${index + 1}</span><strong>${escapeHtml(outcome.title || "Untitled outcome")}</strong></div><div class="card-actions"><button type="button" data-up>↑</button><button type="button" data-down>↓</button><button type="button" data-copy>Duplicate</button><button type="button" data-delete>Delete</button></div></div><div class="field-grid"><label class="advanced-field"><span>Internal ID</span><input data-outcome-field="id" value="${escapeAttr(outcome.id)}"></label><label><span>Outcome name</span><input data-outcome-field="title" value="${escapeAttr(outcome.title || "")}"></label><label class="wide"><span>What happened?</span><textarea rows="3" data-outcome-field="body">${escapeHtml(outcome.body || "")}</textarea></label><label class="wide"><span>Learner takeaway / next step</span><textarea rows="2" data-outcome-field="summary">${escapeHtml(outcome.summary || "")}</textarea></label><label><span>Image</span><select data-outcome-field="image">${imageOptions(outcome.image || "")}</select></label><label><span>Alt text</span><input data-outcome-field="alt" value="${escapeAttr(outcome.alt || "")}"></label></div>`;
+    card.innerHTML = `<div class="outcome-head"><div><span class="eyebrow">Outcome ${index + 1}</span><strong>${escapeHtml(outcome.title || "Untitled outcome")}</strong></div><div class="card-actions"><button type="button" data-up>↑</button><button type="button" data-down>↓</button><button type="button" data-copy>Duplicate</button><button type="button" data-delete>Delete</button></div></div><div class="field-grid"><label><span>Outcome name</span><input data-outcome-field="title" value="${escapeAttr(outcome.title || "")}"></label><label class="wide"><span>What happened?</span><textarea rows="3" data-outcome-field="body">${escapeHtml(outcome.body || "")}</textarea></label><label class="wide"><span>Learner takeaway / next step</span><textarea rows="2" data-outcome-field="summary">${escapeHtml(outcome.summary || "")}</textarea></label><label><span>Image</span><select data-outcome-field="image">${imageOptions(outcome.image || "")}</select></label><label><span>Alt text</span><input data-outcome-field="alt" value="${escapeAttr(outcome.alt || "")}"></label></div>`;
 
-    $$("[data-outcome-field]", card).forEach((input) => input.addEventListener(input.dataset.outcomeField === "id" ? "change" : "input", () => {
+    $("[data-outcome-field]", card).forEach((input) => input.addEventListener("input", () => {
       const key = input.dataset.outcomeField;
-      if (key === "id") {
-        const oldId = outcome.id;
-        outcome.id = input.value.trim() || oldId;
-        renameTarget(oldId, outcome.id);
-      } else {
-        outcome[key] = input.value;
-      }
+      outcome[key] = input.value;
       if (key === "title") $(".outcome-head strong", card).textContent = outcome.title || "Untitled outcome";
-      touch(key === "id");
+      touch(false);
     }));
     $("[data-up]", card).addEventListener("click", () => move(state.model.content.outcomes, index, -1));
     $("[data-down]", card).addEventListener("click", () => move(state.model.content.outcomes, index, 1));
@@ -436,12 +965,32 @@
   }
 
   function validate() {
+    if (isStorylineExperience()) {
+      const scenes = state.model.content.scenes || [];
+      const issues = scenes.length ? [] : ["The imported Storyline experience does not contain any scenes."];
+      const warnings = [];
+      scenes.forEach((scene, sceneIndex) => {
+        if (!String(scene.title || "").trim()) warnings.push(`Scene ${sceneIndex + 1} needs a title.`);
+        if (!(scene.slides || []).length) warnings.push(`${scene.title || `Scene ${sceneIndex + 1}`} has no published slides to review.`);
+      });
+      return { issues, warnings };
+    }
+    if (isRiseCourse()) {
+      const lessons = state.model.content.lessons || [];
+      const issues = lessons.length ? [] : ["The imported course does not contain any lessons."];
+      const warnings = [];
+      lessons.forEach((lesson, index) => {
+        if (!String(lesson.title || "").trim()) warnings.push(`Lesson ${index + 1} needs a title.`);
+        if (lesson.kind !== "assessment" && !Array.isArray(lesson.blocks)) warnings.push(`${lesson.title || `Lesson ${index + 1}`} has no normalized blocks to review.`);
+      });
+      return { issues, warnings };
+    }
     const issues = [];
     const warnings = [];
     const all = [...state.model.content.nodes, ...state.model.content.outcomes];
     const ids = all.map((item) => item.id).filter(Boolean);
     const idSet = new Set(ids);
-    if (ids.length !== all.length) issues.push("Some advanced internal IDs are missing.");
+    if (ids.length !== all.length) issues.push("Internal routing data is incomplete.");
     if (idSet.size !== ids.length) issues.push("Two project items share the same internal ID.");
     if (!state.model.content.nodes.some((node) => node.id === state.model.content.startNodeId)) issues.push("The first decision is missing.");
     state.model.content.nodes.forEach((node) => {
@@ -480,16 +1029,36 @@
       setText("[data-project-health]", "Ready with notes");
     } else {
       element.className = "flow-check";
-      element.textContent = "Ready to preview ✓ Every learner response leads somewhere and an outcome is reachable.";
+      element.textContent = isRiseCourse()
+        ? "Rise course draft ready to review ✓ Learner-facing normalized content is editable; source mapping is preserved in project data."
+        : isStorylineExperience()
+          ? "Storyline experience draft ready to review ✓ Scenes, slides, layers, and exposed learner-facing text are editable; runtime behavior remains a review item."
+          : "Ready to preview ✓ Every learner response leads somewhere and an outcome is reachable.";
       setText("[data-project-health]", "Ready to preview");
     }
   }
 
   function renderPreview() {
     const root = $("[data-preview-root]");
+    setText("[data-preview-heading]", isRiseCourse() ? "Preview the responsive course" : isStorylineExperience() ? "Preview the Storyline-style player" : "Test the learner experience");
+    const showingOriginal = state.publishedPreviewUrl && state.publishedPreviewMode !== "model";
+    setText("[data-preview-description]", isRiseCourse()
+      ? showingOriginal ? "This is the untouched original published Rise player, shown exactly as learners received it." : "This is the new web model preview. It reflects editable content and theme choices, not the original Rise runtime."
+      : isStorylineExperience()
+        ? showingOriginal ? "This is the untouched original published Storyline player, shown exactly as learners received it." : "This is the new web model preview. It reflects editable content and theme choices, not the original Storyline runtime."
+        : "Try alternate paths and presentation settings without leaving the project.");
     const { issues } = validate();
     if (issues.length) {
       root.innerHTML = `<div class="empty-state">Fix the project flow before previewing: ${escapeHtml(issues[0])}</div>`;
+      return;
+    }
+
+    if (isRiseCourse()) {
+      renderRisePreview(root);
+      return;
+    }
+    if (isStorylineExperience()) {
+      renderStorylinePreview(root);
       return;
     }
 
@@ -497,11 +1066,14 @@
     const nodes = new Map(model.content.nodes.map((node) => [node.id, node]));
     const outcomes = new Map(model.content.outcomes.map((outcome) => [outcome.id, outcome]));
     const config = model.content.score || {};
+    const scoreMode = state.profile?.behavior?.scoring || "none";
+    const scoringEnabled = scoreMode !== "none";
+    const showScore = scoreMode === "visible";
     let currentId = model.content.startNodeId;
     let score = Number(config.startingValue || 0);
     const history = [];
     const clamp = (value) => Math.max(Number(config.minimum ?? 0), Math.min(Number(config.maximum ?? 100), value));
-    const scoreHtml = () => config.enabled && config.showToLearner ? `<div class="learner-score"><span>${escapeHtml(config.label || "Score")}</span><strong>${score}</strong></div>` : "";
+    const scoreHtml = () => scoringEnabled && showScore ? `<div class="learner-score"><span>${escapeHtml(config.label || "Score")}</span><strong>${score}</strong></div>` : "";
     const imageHtml = (path, alt) => {
       const url = assetUrl(path);
       return url ? `<img class="learner-image" src="${escapeAttr(url)}" alt="${escapeAttr(alt || "")}">` : "";
@@ -533,7 +1105,7 @@
         button.className = "learner-choice";
         button.innerHTML = `<span>${index + 1}</span><strong>${escapeHtml(choice.text)}</strong>`;
         button.addEventListener("click", () => {
-          if (config.enabled) score = clamp(score + Number(choice.scoreDelta || 0));
+          if (scoringEnabled) score = clamp(score + Number(choice.scoreDelta || 0));
           history.push(choice.id);
           $$(".learner-choice", root).forEach((item) => { item.disabled = true; });
           const feedback = document.createElement("div");
@@ -551,34 +1123,259 @@
     draw();
   }
 
-  async function importSourceFiles(fileList, fromFolder = false) {
-    const files = [...fileList];
-    if (!files.length) return;
-    for (const file of files) {
-      const path = filePath(file, fromFolder);
-      const kind = classify(file);
-      state.sourceFiles.push({ file, path, kind, name: file.name });
-      if (kind === "image") state.objectUrls.set(path, URL.createObjectURL(file));
+  function renderPublishedPlayer(root, productName) {
+    root.innerHTML = `<article class="published-course-preview"><header class="published-preview-bar"><div><span class="eyebrow">Original published player</span><strong>${escapeHtml(productName)} learner view</strong><p>This is the real exported course—not a reconstruction. Its original interactions, styling, media, and feedback behavior remain intact.</p></div><button type="button" class="primary-soft" data-model-preview>View editable model</button></header><iframe class="published-course-frame" title="${escapeAttr(productName)} published learner preview" src="${escapeAttr(state.publishedPreviewUrl)}" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads"></iframe></article>`;
+    $("[data-model-preview]", root)?.addEventListener("click", () => {
+      state.publishedPreviewMode = "model";
+      renderPreview();
+    });
+  }
+
+  function renderRisePreview(root) {
+    if (state.publishedPreviewUrl && state.publishedPreviewMode !== "model") {
+      renderPublishedPlayer(root, "Rise");
+      return;
+    }
+    const lessons = state.model.content.lessons || [];
+    const normalLessons = lessons.filter((lesson) => lesson.kind !== "assessment");
+    const assessments = lessons.filter((lesson) => lesson.kind === "assessment");
+    let current = lessons.find((lesson) => lesson.id === state.transformFocusId) || normalLessons[0] || assessments[0];
+    const blockText = (block) => {
+      const field = riseTextField(block);
+      return field.value || block.title || "This normalized block has no standalone text field.";
+    };
+    function draw() {
+      if (!current) {
+        root.innerHTML = '<div class="empty-state">This imported course has no previewable lessons.</div>';
+        return;
+      }
+      const content = current.kind === "assessment"
+        ? (current.questions || []).map((question, index) => `<section class="rise-question"><span>Question ${index + 1}</span><h4>${escapeHtml(question.prompt || "Untitled question")}</h4>${(question.answers || []).map((answer) => `<button type="button" class="rise-answer">${escapeHtml(answer.text || "Untitled answer")}</button>`).join("")}</section>`).join("") || '<p>No questions were found in this assessment.</p>'
+        : (current.blocks || []).map((block, index) => `<section class="rise-block"><span>${escapeHtml(block.title || `Block ${index + 1}`)}</span><p>${escapeHtml(blockText(block))}</p></section>`).join("") || '<p>No normalized blocks were found in this lesson.</p>';
+      const navigation = lessons.map((lesson, index) => `<button type="button" class="rise-lesson${lesson.id === current.id ? " active" : ""}" data-rise-lesson="${escapeAttr(lesson.id)}"><small>${String(index + 1).padStart(2, "0")}</small><span>${escapeHtml(lesson.title || "Untitled lesson")}</span></button>`).join("");
+      root.innerHTML = `<article class="rise-player"><header><div class="rise-logo">rise</div><div><strong>${escapeHtml(state.model.title || "Course")}</strong><small>Responsive course preview</small></div><button type="button" class="rise-menu" aria-label="Course menu">☰</button></header><div class="rise-body"><nav class="rise-course-nav" aria-label="Course lessons"><span>Course outline</span>${navigation}</nav><main class="rise-content"><div class="rise-progress"><span>${Math.round(((lessons.findIndex((lesson) => lesson.id === current.id) + 1) / Math.max(lessons.length, 1)) * 100)}% complete</span><i><b style="width:${((lessons.findIndex((lesson) => lesson.id === current.id) + 1) / Math.max(lessons.length, 1)) * 100}%"></b></i></div><span class="eyebrow">${current.kind === "assessment" ? "Knowledge check" : "Lesson"}</span><h3>${escapeHtml(current.title || "Untitled lesson")}</h3>${current.description ? `<p class="rise-intro">${escapeHtml(current.description)}</p>` : ""}<div class="rise-content-stack">${content}</div>${importedMediaMarkup()}</main></div></article>`;
+      $$('[data-rise-lesson]', root).forEach((button) => button.addEventListener("click", () => { current = lessons.find((lesson) => lesson.id === button.dataset.riseLesson) || current; draw(); }));
+    }
+    draw();
+  }
+
+  function renderStorylinePreview(root) {
+    if (state.publishedPreviewUrl && state.publishedPreviewMode !== "model") {
+      renderPublishedPlayer(root, "Storyline");
+      return;
+    }
+    const scenes = state.model.content.scenes || [];
+    const initial = scenes.flatMap((item) => (item.slides || []).map((candidate) => ({ scene:item, slide:candidate }))).find((item) => item.slide.id === state.transformFocusId);
+    let scene = initial?.scene || scenes[0];
+    let slide = initial?.slide || scene?.slides?.[0];
+    const courseCover = state.model?.metadata?.courseCover || null;
+    const courseCoverUrl = courseCover ? (assetUrl(`asset:${courseCover.id}`) || assetUrl(courseCover.path)) : null;
+    let showingCourseCover = Boolean(courseCoverUrl) && state.publishedPreviewMode !== "model";
+    function draw() {
+      if (!scene || !slide) {
+        root.innerHTML = '<div class="empty-state">This imported Storyline experience has no previewable slides.</div>';
+        return;
+      }
+      if (showingCourseCover) {
+        const flatSlides = scenes.flatMap((item) => item.slides || []);
+        root.innerHTML = `<article class="storyline-player"><header><div class="storyline-mark">SL</div><strong>${escapeHtml(state.model.title || "Storyline course")}</strong><span>Menu</span><span>Resources</span><button type="button" aria-label="Close preview">×</button></header><div class="storyline-stage storyline-launch-stage"><div class="storyline-course-cover"><img src="${escapeAttr(courseCoverUrl)}" alt="${escapeAttr(`${state.model.title || "Course"} cover`)}"></div><div class="storyline-launch-actions"><span>${flatSlides.length} slide${flatSlides.length === 1 ? "" : "s"} extracted from the published course</span><button type="button" class="primary" data-storyline-launch>Start course preview →</button></div></div></article>`;
+        $("[data-storyline-launch]", root).addEventListener("click", () => { showingCourseCover = false; draw(); });
+        return;
+      }
+      const sceneOptions = scenes.map((item) => `<option value="${escapeAttr(item.id)}"${item.id === scene.id ? " selected" : ""}>${escapeHtml(item.title || "Untitled scene")}</option>`).join("");
+      const slideOptions = (scene.slides || []).map((item) => `<option value="${escapeAttr(item.id)}"${item.id === slide.id ? " selected" : ""}>${escapeHtml(item.title || "Untitled slide")}</option>`).join("");
+      const flatSlides = scenes.flatMap((item) => (item.slides || []).map((candidate) => ({ scene:item, slide:candidate })));
+      const position = flatSlides.findIndex((item) => item.slide.id === slide.id);
+      const media = storylineSlideMedia(slide);
+      const backgroundUrl = media.background ? media.assetUrlFor(media.background.asset) : null;
+      const layers = (slide.layers || []).map((layer, index) => {
+        const objects = layer.objects || [];
+        const controls = objects.map((object) => ({ object, targetId:storylineNavigation(object) })).filter((item) => item.targetId);
+        const meaningfulControls = controls.filter((item) => !genericControlLabel(item.object.title || item.object.accessibility?.altText) || !controls.some((other) => other.targetId === item.targetId && !genericControlLabel(other.object.title || other.object.accessibility?.altText)));
+        const controlIds = new Set(controls.map((item) => item.object.id));
+        const text = objects.filter((object) => !controlIds.has(object.id)).map((object) => object.title || object.accessibility?.altText).filter(Boolean).map((value) => `<p>${escapeHtml(value)}</p>`).join("");
+        const buttons = meaningfulControls.map(({ object, targetId }) => `<button type="button" class="storyline-slide-button" data-storyline-jump="${escapeAttr(targetId)}">${escapeHtml(object.title || object.accessibility?.altText || "Continue")} <span>→</span></button>`).join("");
+        return `<section class="story-layer"><span>${escapeHtml(layer.title || (layer.kind === "base" ? "Base layer" : `Layer ${index + 1}`))}</span>${text || (!buttons ? "<p>No exposed learner-facing text on this layer.</p>" : "")}${buttons ? `<div class="storyline-slide-controls">${buttons}</div>` : ""}</section>`;
+      }).join("") || '<section class="story-layer"><span>Source review needed</span><p>This published slide could not be fully decoded into editable layers.</p></section>';
+      const sourceToggle = state.publishedPreviewUrl ? '<button type="button" class="storyline-source-toggle" data-source-preview>Open original player</button>' : "";
+      root.innerHTML = `<article class="storyline-player"><header><div class="storyline-mark">SL</div><strong>${escapeHtml(state.model.title || "Storyline course")}</strong><span>Editable model view</span>${sourceToggle}</header><div class="storyline-stage"><div class="storyline-canvas${backgroundUrl ? " storyline-canvas--visual" : ""}"${backgroundUrl ? ` style="--storyline-slide-image:url('${escapeAttr(backgroundUrl)}')"` : ""}><div class="storyline-canvas-content"><span class="eyebrow">${escapeHtml(scene.title || "Scene")}</span><h3>${escapeHtml(slide.title || "Untitled slide")}</h3><p>${escapeHtml(`${slide.layers?.length || 0} layer(s) · ${slide.metadata?.objectCount || 0} object(s) · ${slide.metadata?.actionCount || 0} detected action(s)`)}</p><div class="story-layer-stack">${layers}</div>${storylineMediaMarkup(media)}</div></div></div><footer><div class="storyline-location"><label>Scene<select data-storyline-preview-scene>${sceneOptions}</select></label><label>Slide<select data-storyline-preview-slide>${slideOptions}</select></label></div><div class="storyline-controls"><button type="button" data-storyline-back ${position <= 0 ? "disabled" : ""}>‹ Previous</button><span>${position + 1} / ${flatSlides.length}</span><button type="button" class="primary" data-storyline-next ${position >= flatSlides.length - 1 ? "disabled" : ""}>Next ›</button></div></footer></article>`;
+      $("[data-source-preview]", root)?.addEventListener("click", () => { state.publishedPreviewMode = "published"; renderPreview(); });
+      $("[data-storyline-preview-scene]", root).addEventListener("change", (event) => { scene = scenes.find((item) => item.id === event.target.value) || scene; slide = scene.slides?.[0]; draw(); });
+      $("[data-storyline-preview-slide]", root).addEventListener("change", (event) => { slide = scene.slides.find((item) => item.id === event.target.value) || slide; draw(); });
+      $$('[data-storyline-jump]', root).forEach((button) => button.addEventListener("click", () => { const target = flatSlides.find((item) => item.slide.id === button.dataset.storylineJump); if (target) { scene = target.scene; slide = target.slide; draw(); } }));
+      $("[data-storyline-back]", root)?.addEventListener("click", () => { const target = flatSlides[position - 1]; if (target) { scene = target.scene; slide = target.slide; draw(); } });
+      $("[data-storyline-next]", root)?.addEventListener("click", () => { const target = flatSlides[position + 1]; if (target) { scene = target.scene; slide = target.slide; draw(); } });
+    }
+    draw();
+  }
+
+  async function installSourceFiles(entries, notify = true) {
+    if (!entries.length) return;
+    for (const entry of entries) {
+      const file = entry.file;
+      if (!(file instanceof File)) continue;
+      const path = entry.path || filePath(file, false);
+      const kind = entry.kind || classify(file);
+      state.sourceFiles.push({ file, path, kind, name: entry.name || file.name });
+      if (["image", "audio", "video", "caption"].includes(kind)) state.objectUrls.set(path, URL.createObjectURL(file));
       if (kind === "reference") {
-        try { state.reference.push({ path, text: await file.text() }); } catch (_) {}
+        try { state.reference.push({ path, text: typeof entry.referenceText === "string" ? entry.referenceText : await file.text() }); } catch (_) {}
       }
     }
     state.sourceFiles.sort((a, b) => a.path.localeCompare(b.path));
     renderSourceFiles();
     renderEditor();
+    renderProfileFields();
+    renderHistory();
+    renderTransformStudio();
     renderPreview();
     saveDraft();
-    toast(`${files.length} source file${files.length === 1 ? "" : "s"} added`);
+    if (notify) toast(`${entries.length} source file${entries.length === 1 ? "" : "s"} added`);
+  }
+
+  async function importSourceFiles(fileList, fromFolder = false) {
+    const files = [...fileList];
+    if (!files.length) return;
+    await installSourceFiles(files.map((file) => ({ file, path:filePath(file, fromFolder), kind:classify(file), name:file.name })));
+  }
+
+  function renderProfileFields() {
+    if (!state.profile) return;
+    $$('[data-profile-field]').forEach((input) => {
+      const value = getPath(state.profile, input.dataset.profileField);
+      if (document.activeElement !== input) input.value = value ?? "";
+    });
+    $$('[data-profile-list]').forEach((input) => {
+      const value = getPath(state.profile, input.dataset.profileList);
+      if (document.activeElement !== input) input.value = Array.isArray(value) ? value.join("\n") : "";
+    });
+    const meta = $("[data-preview-meta]");
+    if (meta) {
+      const theme = state.profile.presentation?.theme?.name || "Default";
+      const audience = state.profile.learning?.audience || "Audience not set";
+      const target = state.profile.export?.target || "web";
+      meta.innerHTML = `<span><strong>Theme</strong>${escapeHtml(theme)}</span><span><strong>Audience</strong>${escapeHtml(audience)}</span><span><strong>Export intent</strong>${escapeHtml(target)}</span>`;
+    }
+    const preset = $("[data-theme-preset]");
+    if (preset && document.activeElement !== preset) preset.value = state.profile.presentation?.theme?.presetId || "original";
+    applyThemeToPreview();
+  }
+
+  function applyThemeToPreview() {
+    const root = $("[data-preview-root]");
+    if (!root || !state.profile?.presentation?.theme) return;
+    const colors = state.profile.presentation.theme.colors || {};
+    root.style.setProperty("--experience-primary", colors.primary || "#508484");
+    root.style.setProperty("--experience-secondary", colors.secondary || "#79C99E");
+    root.style.setProperty("--experience-accent", colors.accent || "#97DB4F");
+    root.style.setProperty("--experience-background", colors.background || "#ffffff");
+    root.style.setProperty("--experience-text", colors.text || "#24302D");
+    root.style.setProperty("--experience-heading-font", state.profile.presentation.theme.typography?.heading || "Montserrat");
+    root.style.setProperty("--experience-body-font", state.profile.presentation.theme.typography?.body || "Open Sans");
+    root.dataset.layout = state.profile.presentation.theme.layout || "clean-cards";
+  }
+
+  function openTool(name) {
+    state.activeTool = name;
+    const drawer = $("[data-utility-drawer]");
+    const backdrop = $(".drawer-backdrop");
+    const titles = {
+      ai: ["Project tool", "Ask AI"],
+      theme: ["Presentation", "Theme"],
+      history: ["Versions", "Transformation history"],
+      settings: ["Project", "Project settings"]
+    };
+    $$('[data-tool-panel]').forEach((panel) => { panel.hidden = panel.dataset.toolPanel !== name; });
+    setText("[data-tool-eyebrow]", titles[name]?.[0] || "Project tool");
+    setText("[data-tool-title]", titles[name]?.[1] || "Project tool");
+    drawer.classList.add("open");
+    drawer.setAttribute("aria-hidden", "false");
+    backdrop.hidden = false;
+    document.body.classList.add("drawer-open");
+    if (name === "history") renderHistory();
+    if (name === "theme" || name === "settings") renderProfileFields();
+  }
+
+  function closeTool() {
+    state.activeTool = null;
+    const drawer = $("[data-utility-drawer]");
+    drawer.classList.remove("open");
+    drawer.setAttribute("aria-hidden", "true");
+    $(".drawer-backdrop").hidden = true;
+    document.body.classList.remove("drawer-open");
+  }
+
+  function addHistoryEntry(entry) {
+    const record = {
+      id: uid("history"),
+      createdAt: new Date().toISOString(),
+      prompt: entry.prompt || "",
+      action: entry.action || "AI transformation",
+      model: entry.model || "",
+      summary: Array.isArray(entry.summary) ? entry.summary : [],
+      reviewNotes: Array.isArray(entry.reviewNotes) ? entry.reviewNotes : [],
+      beforeProject: clone(entry.beforeProject),
+      afterProject: clone(entry.afterProject),
+      beforeProfile: clone(entry.beforeProfile || state.profile),
+      afterProfile: clone(entry.afterProfile || state.profile)
+    };
+    state.history.unshift(record);
+    state.history = state.history.slice(0, 30);
+    renderHistory();
+    saveDraft();
+    return record.id;
+  }
+
+  function restoreVersion(project, profile, message) {
+    if (!validProject(project)) return toast("That history version is no longer compatible.");
+    state.model = clone(project);
+    state.profile = profile ? clone(profile) : profileFromModel(project);
+    syncScoringFromProfile();
+    renderAll();
+    saveDraft();
+    toast(message || "Version restored");
+  }
+
+  function renderHistory() {
+    const root = $("[data-history-list]");
+    if (!root) return;
+    setText("[data-history-count]", state.history.length ? `${state.history.length} AI change${state.history.length === 1 ? "" : "s"}` : "No AI changes yet");
+    root.innerHTML = "";
+    if (!state.history.length) {
+      root.innerHTML = '<div class="empty-state">No AI transformations yet. Each successful AI action will appear here as a recoverable version.</div>';
+      return;
+    }
+    state.history.forEach((entry, index) => {
+      const article = document.createElement("article");
+      article.className = "history-entry";
+      const date = new Date(entry.createdAt);
+      article.innerHTML = `<div class="history-head"><div><span class="eyebrow">AI version ${state.history.length - index}</span><strong>${escapeHtml(entry.action || "AI transformation")}</strong><small>${escapeHtml(date.toLocaleString())}${entry.model ? ` · ${escapeHtml(entry.model)}` : ""}</small></div></div><p class="history-prompt">${escapeHtml(entry.prompt || "No prompt recorded.")}</p>${entry.summary?.length ? `<ul>${entry.summary.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>` : ""}<div class="history-actions"><button type="button" data-restore-after>Restore this version</button><button type="button" data-restore-before>Restore before change</button><button type="button" class="primary-soft" data-edit-rerun>Edit & rerun</button></div>`;
+      $("[data-restore-after]", article).addEventListener("click", () => restoreVersion(entry.afterProject, entry.afterProfile, "AI version restored"));
+      $("[data-restore-before]", article).addEventListener("click", () => restoreVersion(entry.beforeProject, entry.beforeProfile, "Pre-AI version restored"));
+      $("[data-edit-rerun]", article).addEventListener("click", () => {
+        restoreVersion(entry.beforeProject, entry.beforeProfile, "Starting point restored");
+        $("[data-ai-prompt]").value = entry.prompt || "";
+        openTool("ai");
+        toast("Edit the prompt, then apply AI changes.");
+      });
+      root.appendChild(article);
+    });
   }
 
   function renderJson() {
-    if (state.model) $("[data-json-output]").textContent = JSON.stringify(state.model, null, 2);
+    if (!state.model) return;
+    const portable = clone(state.model);
+    portable.metadata = { ...(portable.metadata || {}), workbenchProfile: clone(state.profile), workbenchVersion: "0.3" };
+    $("[data-json-output]").textContent = JSON.stringify(portable, null, 2);
   }
 
   function renderAll() {
     renderProjectMeta();
     renderSourceFiles();
     renderEditor();
+    renderProfileFields();
+    renderHistory();
+    renderTransformStudio();
     renderPreview();
   }
 
@@ -588,6 +1385,7 @@
     renderFlowCheck();
     renderJson();
     if (structural) renderEditor();
+    if (state.activeTab === "adapt") renderTransformStudio();
     if (state.activeTab === "preview") renderPreview();
     saveDraft();
   }
@@ -598,7 +1396,7 @@
     setText("[data-save-state]", "Saving…");
     state.saveTimer = setTimeout(() => {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ model: state.model, sourcePrompt: state.sourcePrompt, reference: state.reference.map((item) => ({ path: item.path, text: item.text })) }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ model: state.model, profile: state.profile, history: state.history, sourcePrompt: state.sourcePrompt, reference: state.reference.map((item) => ({ path: item.path, text: item.text })) }));
         setText("[data-save-state]", "Autosaved locally");
       } catch (_) {
         setText("[data-save-state]", "Local save unavailable");
@@ -608,15 +1406,28 @@
 
   function restoreDraft() {
     try {
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-      if (!saved || !validScenario(saved.model)) return false;
+      let raw = localStorage.getItem(STORAGE_KEY);
+      let migratedFrom = "";
+      if (!raw) {
+        migratedFrom = LEGACY_STORAGE_KEYS.find((key) => localStorage.getItem(key)) || "";
+        raw = migratedFrom ? localStorage.getItem(migratedFrom) : null;
+      }
+      const saved = JSON.parse(raw || "null");
+      if (!saved || !validProject(saved.model)) return false;
       state.model = saved.model;
+      state.profile = saved.profile ? clone(saved.profile) : profileFromModel(saved.model);
+      state.history = Array.isArray(saved.history) ? saved.history : [];
       state.sourcePrompt = saved.sourcePrompt || "";
       state.reference = Array.isArray(saved.reference) ? saved.reference : [];
+      syncScoringFromProfile();
       $("[data-start-panel]").hidden = true;
       $("[data-workspace]").hidden = false;
       renderAll();
       switchTab("source");
+      if (migratedFrom) {
+        saveDraft();
+        setTimeout(() => toast("Previous Workbench draft migrated to v0.3"), 250);
+      }
       return true;
     } catch (_) {
       return false;
@@ -626,7 +1437,7 @@
   async function openJson(file) {
     try {
       const model = JSON.parse(await file.text());
-      if (!validScenario(model)) throw new Error("This is not a valid branching-scenario JSON file.");
+      if (!validProject(model)) throw new Error("This is not a compatible Workbench project JSON file.");
       startProject(model, "");
       toast("Existing scenario opened");
     } catch (error) {
@@ -637,6 +1448,7 @@
   function downloadJson() {
     const model = clone(state.model);
     model.id = slug(model.title || model.id);
+    model.metadata = { ...(model.metadata || {}), workbenchProfile: clone(state.profile), workbenchVersion: "0.3" };
     const blob = new Blob([`${JSON.stringify(model, null, 2)}\n`], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
@@ -644,6 +1456,192 @@
     anchor.download = `${model.id}.json`;
     anchor.click();
     setTimeout(() => URL.revokeObjectURL(url), 500);
+  }
+
+  function portableProject() {
+    const project = clone(state.model);
+    project.metadata = { ...(project.metadata || {}), workbenchProfile: clone(state.profile), workbenchVersion: "0.4" };
+    return {
+      packageVersion: "0.1",
+      createdWith: "Learning Project Workbench v0.4",
+      exportedAt: new Date().toISOString(),
+      project,
+      sourcePrompt: state.sourcePrompt || "",
+      history: clone(state.history),
+      reference: clone(state.reference),
+    };
+  }
+
+  function previewAssetsForPackage() {
+    if (state.importArchive?.file) return [];
+    const assets = state.model?.metadata?.assetManifest || [];
+    const included = [];
+    const seen = new Set();
+    for (const asset of assets) {
+      const dataUrl = assetUrl(`asset:${asset.id}`) || assetUrl(asset.path);
+      const key = asset.id || asset.path;
+      if (!dataUrl || !key || seen.has(key)) continue;
+      seen.add(key);
+      included.push({ id:asset.id || null, path:asset.path || null, kind:asset.kind || "other", dataUrl });
+    }
+    return included;
+  }
+
+  async function restoreImportedMedia(file, sourceFormat) {
+    const endpoint = sourceFormat === "rise-published-web" ? "/api/workbench-rise-import" : sourceFormat === "storyline-published-web" ? "/api/workbench-storyline-import" : null;
+    if (!endpoint || !file) return false;
+    const sessionResponse = await fetch("/api/workbench-session", { credentials:"same-origin", cache:"no-store" });
+    const session = await sessionResponse.json();
+    if (!sessionResponse.ok || !session.authenticated || !session.csrf) throw new Error("Sign in to the private local Workbench before restoring source media.");
+    const response = await fetch(endpoint, {
+      method:"POST",
+      credentials:"same-origin",
+      headers:{ "Content-Type":"application/json", "X-CSRF-Token":session.csrf },
+      body:JSON.stringify({ name:file.name, base64:await fileToBase64(file) })
+    });
+    const result = await response.json();
+    if (!response.ok || !result.ok) throw new Error(result.error || "The source package could not restore its media.");
+    const currentImport = state.model?.metadata?.import || {};
+    const currentSourceId = currentImport.sourceProjectId || currentImport.sourceCourseId || null;
+    const restoredImport = result.project?.metadata?.import || {};
+    const restoredSourceId = restoredImport.sourceProjectId || restoredImport.sourceCourseId || null;
+    if (currentSourceId && restoredSourceId && currentSourceId !== restoredSourceId) throw new Error("That export belongs to a different published project. Choose the original source ZIP for this draft.");
+    registerPreviewAssets(result.previewAssets || []);
+    registerMediaStreams(result.mediaStreams || []);
+    registerPublishedPreview(result.publishedPreviewUrl);
+    return result;
+  }
+
+  function mergeImportedRuntime(importedProject) {
+    const importedSlides = new Map((importedProject?.content?.scenes || []).flatMap((scene) => (scene.slides || []).map((slide) => [slide.id, slide])));
+    for (const scene of state.model?.content?.scenes || []) for (const slide of scene.slides || []) {
+      const importedSlide = importedSlides.get(slide.id);
+      if (!importedSlide) continue;
+      const importedLayers = new Map((importedSlide.layers || []).map((layer) => [layer.id, layer]));
+      for (const layer of slide.layers || []) {
+        const importedLayer = importedLayers.get(layer.id);
+        if (!importedLayer) continue;
+        const importedObjects = new Map((importedLayer.objects || []).map((object) => [object.id, object]));
+        for (const object of layer.objects || []) {
+          const importedObject = importedObjects.get(object.id);
+          if (!importedObject) continue;
+          object.interactions = importedObject.interactions || [];
+          object.assets = importedObject.assets || object.assets || [];
+        }
+      }
+    }
+  }
+
+  async function attachImportedArchive(file) {
+    const sourceFormat = state.model?.metadata?.import?.sourceFormat;
+    if (!file || !sourceFormat) return;
+    if (file.size > 30 * 1024 * 1024) return toast("The current private import limit is 30 MB.");
+    toast("Restoring source media from the published export…");
+    try {
+      const restored = await restoreImportedMedia(file, sourceFormat);
+      mergeImportedRuntime(restored.project);
+      state.importArchive = { file, sourceFormat };
+      renderAll();
+      saveDraft();
+      toast("Source media restored and attached to this project");
+    } catch (error) {
+      toast(error.message || "Source media could not be restored.");
+    }
+  }
+
+  async function openPortableProject(packageData, sourceEntries = [], previewAssets = [], importArchive = null) {
+    if (!packageData || packageData.packageVersion !== "0.1" || !validProject(packageData.project)) throw new Error("This ZIP does not contain a compatible Workbench project.");
+    startProject(packageData.project, packageData.sourcePrompt || "");
+    state.history = Array.isArray(packageData.history) ? clone(packageData.history) : [];
+    await installSourceFiles(sourceEntries, false);
+    registerPreviewAssets(previewAssets);
+    if (importArchive?.file) {
+      state.importArchive = importArchive;
+      try { await restoreImportedMedia(importArchive.file, importArchive.sourceFormat); } catch (error) { toast(error.message || "The project opened, but its source media could not be restored."); }
+    }
+    renderAll();
+    saveDraft();
+    const bundled = sourceEntries.length + previewAssets.length + (importArchive?.file ? 1 : 0);
+    toast(`Project package opened${bundled ? ` · ${bundled} bundled file${bundled === 1 ? "" : "s"}` : ""}`);
+  }
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || "").split(",").pop() || "");
+      reader.onerror = () => reject(reader.error || new Error("The Rise export could not be read."));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function importRiseExport(file) {
+    const MAX_ARCHIVE_BYTES = 30 * 1024 * 1024;
+    if (!file) return;
+    if (file.size > MAX_ARCHIVE_BYTES) return toast("This first import pass supports Rise ZIP exports up to 30 MB.");
+    toast("Reading the Rise export locally…");
+    try {
+      const sessionResponse = await fetch("/api/workbench-session", { credentials:"same-origin", cache:"no-store" });
+      const session = await sessionResponse.json();
+      if (!sessionResponse.ok || !session.authenticated || !session.csrf) throw new Error("Open the password-protected local Workbench before importing a Rise export.");
+      const response = await fetch("/api/workbench-rise-import", {
+        method:"POST",
+        credentials:"same-origin",
+        headers: { "Content-Type":"application/json", "X-CSRF-Token":session.csrf },
+        body: JSON.stringify({ name:file.name, base64:await fileToBase64(file) })
+      });
+      const result = await response.json();
+      if (!response.ok || !result.ok || !validRiseCourse(result.project)) throw new Error(result.error || "Rise import could not create an editable course draft.");
+      startProject(result.project, `Imported from published Rise web export: ${file.name}`);
+      state.importArchive = { file, sourceFormat:"rise-published-web" };
+      registerPreviewAssets(result.previewAssets || []);
+      registerMediaStreams(result.mediaStreams || []);
+      registerPublishedPreview(result.publishedPreviewUrl);
+      state.profile.source.origin = "rise-published-web";
+      state.profile.source.structureModel = "course-lessons-blocks";
+      state.profile.source.notes = "Normalized from a private published Rise web export. Review every imported block before reuse or export.";
+      state.profile.behavior.navigation = "free";
+      state.profile.export.target = "web";
+      renderAll();
+      saveDraft();
+      toast("Rise course imported as an editable draft");
+    } catch (error) {
+      toast(error.message || "Rise import could not be completed.");
+    }
+  }
+
+  async function importStorylineExport(file) {
+    const MAX_ARCHIVE_BYTES = 30 * 1024 * 1024;
+    if (!file) return;
+    if (file.size > MAX_ARCHIVE_BYTES) return toast("This first import pass supports Storyline ZIP exports up to 30 MB.");
+    toast("Reading the Storyline export locally…");
+    try {
+      const sessionResponse = await fetch("/api/workbench-session", { credentials:"same-origin", cache:"no-store" });
+      const session = await sessionResponse.json();
+      if (!sessionResponse.ok || !session.authenticated || !session.csrf) throw new Error("Open the password-protected local Workbench before importing a Storyline export.");
+      const response = await fetch("/api/workbench-storyline-import", {
+        method:"POST",
+        credentials:"same-origin",
+        headers: { "Content-Type":"application/json", "X-CSRF-Token":session.csrf },
+        body: JSON.stringify({ name:file.name, base64:await fileToBase64(file) })
+      });
+      const result = await response.json();
+      if (!response.ok || !result.ok || !validStorylineExperience(result.project)) throw new Error(result.error || "Storyline import could not create an editable experience draft.");
+      startProject(result.project, `Imported from published Storyline web export: ${file.name}`);
+      state.importArchive = { file, sourceFormat:"storyline-published-web" };
+      registerPreviewAssets(result.previewAssets || []);
+      registerMediaStreams(result.mediaStreams || []);
+      registerPublishedPreview(result.publishedPreviewUrl);
+      state.profile.source.origin = "storyline-published-web";
+      state.profile.source.structureModel = "scenes-slides-layers";
+      state.profile.source.notes = "Normalized from a private published Storyline web export. Review every scene, layer, object, variable, and runtime behavior before reuse or export.";
+      state.profile.behavior.navigation = "guided";
+      state.profile.export.target = "web";
+      renderAll();
+      saveDraft();
+      toast("Storyline experience imported as an editable draft");
+    } catch (error) {
+      toast(error.message || "Storyline import could not be completed.");
+    }
   }
 
   function toast(message) {
@@ -660,6 +1658,8 @@
       const mode = button.dataset.startMode;
       $("[data-template-picker]").hidden = mode !== "template";
       $("[data-existing-picker]").hidden = mode !== "existing";
+      $("[data-rise-picker]").hidden = mode !== "rise";
+      $("[data-storyline-picker]").hidden = mode !== "storyline";
       if (mode === "blank") startProject(blankScenario(), "");
     }));
 
@@ -670,29 +1670,57 @@
       startProject(templates[id] || templates["customer-discovery"], `Use the ${label} structure as the starting point. Replace the placeholder content with my source material while preserving the interaction logic.`);
     });
 
-    $("[data-choose-json]").addEventListener("click", () => $("[data-json-input]").click());
-    $("[data-open-project]").addEventListener("click", () => $("[data-json-input]").click());
-    $("[data-json-input]").addEventListener("change", async (event) => {
+    $("[data-choose-project]").addEventListener("click", () => $("[data-project-input]").click());
+    $("[data-choose-rise]").addEventListener("click", () => $("[data-rise-input]").click());
+    $("[data-choose-storyline]").addEventListener("click", () => $("[data-storyline-input]").click());
+    $("[data-open-project]").addEventListener("click", () => $("[data-project-input]").click());
+    $("[data-project-input]").addEventListener("change", async (event) => {
       const file = event.target.files?.[0];
-      if (file) await openJson(file);
+      if (file?.name.toLowerCase().endsWith(".zip")) {
+        if (!window.LX_WORKBENCH_PACKAGE?.open) toast("Project packages are still loading. Please choose the ZIP again in a moment.");
+        else await window.LX_WORKBENCH_PACKAGE.open(file);
+      } else if (file) await openJson(file);
+      event.target.value = "";
+    });
+    $("[data-rise-input]").addEventListener("change", async (event) => {
+      const file = event.target.files?.[0];
+      if (file) await importRiseExport(file);
+      event.target.value = "";
+    });
+    $("[data-storyline-input]").addEventListener("change", async (event) => {
+      const file = event.target.files?.[0];
+      if (file) await importStorylineExport(file);
+      event.target.value = "";
+    });
+    $("[data-attach-import-input]").addEventListener("change", async (event) => {
+      const file = event.target.files?.[0];
+      if (file) await attachImportedArchive(file);
       event.target.value = "";
     });
 
     $("[data-new-project]").addEventListener("click", () => {
       localStorage.removeItem(STORAGE_KEY);
+      LEGACY_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
       revokeUrls();
       state.model = null;
       state.sourcePrompt = "";
       state.sourceFiles = [];
       state.reference = [];
+      state.profile = defaultProfile();
+      state.history = [];
+      closeTool();
       $("[data-workspace]").hidden = true;
       $("[data-start-panel]").hidden = false;
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
 
-    $$("[data-tab]").forEach((button) => button.addEventListener("click", () => switchTab(button.dataset.tab)));
-    $$("[data-jump]").forEach((button) => button.addEventListener("click", () => switchTab(button.dataset.jump)));
+    $$('[data-tab]').forEach((button) => button.addEventListener("click", () => switchTab(button.dataset.tab)));
     $("[data-go-edit]").addEventListener("click", () => switchTab("edit"));
+    $("[data-go-adapt]").addEventListener("click", () => switchTab("adapt"));
+    $("[data-go-model-preview]").addEventListener("click", () => { state.publishedPreviewMode = "model"; switchTab("preview"); });
+    $("[data-go-source-preview]").addEventListener("click", () => { state.publishedPreviewMode = "published"; switchTab("preview"); });
+    $$('[data-open-tool]').forEach((button) => button.addEventListener("click", () => openTool(button.dataset.openTool)));
+    $$('[data-close-tool]').forEach((button) => button.addEventListener("click", closeTool));
 
     $("[data-source-prompt]").addEventListener("input", (event) => {
       state.sourcePrompt = event.target.value;
@@ -708,18 +1736,15 @@
       touch(false);
     }));
 
-    $("[data-toggle-advanced]").addEventListener("click", (event) => {
-      const on = document.body.classList.toggle("show-advanced");
-      event.currentTarget.textContent = on ? "Hide advanced fields" : "Advanced fields";
-    });
-
     $("[data-add-decision]").addEventListener("click", () => {
+      if (isRiseCourse()) return;
       const number = state.model.content.nodes.length + 1;
       state.model.content.nodes.push({ id: uniqueId(`decision-${number}`), speaker: "", title: `Decision ${number}`, body: "Describe what the learner knows at this point.", image: "", alt: "", choices: [{ id: uid("choice"), text: "New learner response", targetId: state.model.content.outcomes[0]?.id || "", feedback: "Add coaching feedback.", scoreDelta: 0 }] });
       touch(true);
     });
 
     $("[data-add-outcome]").addEventListener("click", () => {
+      if (isRiseCourse()) return;
       const number = state.model.content.outcomes.length + 1;
       state.model.content.outcomes.push({ id: uniqueId(`outcome-${number}`), title: `Outcome ${number}`, body: "Describe what happened.", image: "", alt: "", summary: "Add the learner takeaway." });
       touch(true);
@@ -734,16 +1759,68 @@
 
     $$("[data-ai-preset]").forEach((button) => button.addEventListener("click", () => {
       const presets = {
-        sanitize: "Sanitize this project for a public portfolio. Replace confidential, internal-only, customer-specific, proprietary, or identifying information, files, and links with realistic generic alternatives while preserving the instructional structure and interaction logic.",
-        rebrand: "Apply a different saved brand theme to this project without changing the instructional structure or learner flow.",
-        audience: "Adapt this project for a different learner audience. Update terminology, examples, assumptions, coaching feedback, and context while preserving the core learning objective.",
-        similar: "Use this project as the source template. Keep the interaction structure and behavior, but rebuild the content using the source materials I uploaded."
+        sanitize: "Sanitize this project for a public portfolio. Replace confidential, internal-only, customer-specific, proprietary, or identifying information, files, and links with realistic generic alternatives while preserving the learning structure, interaction behavior, and design intent.",
+        theme: "Apply and refine the current Project Theme. Make the rendered learning experience follow the saved brand direction, colors, typography, layout, identity treatment, accessibility rules, and target-specific export notes without changing the learning objective or branch logic.",
+        audience: "Adapt this project for the audience defined in Project Settings. Update terminology, examples, assumptions, coaching feedback, and context while preserving the core learning objective and interaction mechanics.",
+        similar: "Use this project as the source template. Keep useful interaction structure and presentation behavior, but rebuild the learning content using the source materials I uploaded."
       };
       $("[data-ai-prompt]").value = presets[button.dataset.aiPreset] || "";
     }));
 
+    $$('[data-profile-field]').forEach((input) => input.addEventListener("input", () => {
+      setPath(state.profile, input.dataset.profileField, input.value);
+      syncScoringFromProfile();
+      renderProfileFields();
+      if (state.activeTab === "adapt") renderTransformStudio();
+      if (state.activeTab === "preview") renderPreview();
+      saveDraft();
+    }));
+    $$('[data-profile-list]').forEach((input) => input.addEventListener("input", () => {
+      setPath(state.profile, input.dataset.profileList, input.value.split(/\r?\n/).map((item) => item.trim()).filter(Boolean));
+      saveDraft();
+    }));
+    $("[data-theme-preset]")?.addEventListener("change", (event) => applyThemePreset(event.target.value));
+    $("[data-theme-with-ai]")?.addEventListener("click", () => {
+      $("[data-ai-prompt]").value = "Apply and refine the current Project Theme. Make the rendered learning experience follow the saved brand direction, colors, typography, layout, identity treatment, accessibility rules, and target-specific export notes without changing the learning objective or branch logic.";
+      openTool("ai");
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && state.activeTool) closeTool();
+    });
+
     window.addEventListener("beforeunload", revokeUrls);
   }
+
+  window.LX_WORKBENCH = {
+    getProject: () => state.model ? clone(state.model) : null,
+    getProfile: () => clone(state.profile),
+    getHistory: () => clone(state.history),
+    getSourcePrompt: () => state.sourcePrompt || "",
+    getReference: () => clone(state.reference),
+    getSourceFiles: () => state.sourceFiles.map((item) => ({ ...item })),
+    getImportedArchive: () => state.importArchive?.file ? { file:state.importArchive.file, sourceFormat:state.importArchive.sourceFormat } : null,
+    getPortableProject: portableProject,
+    getPreviewAssetsForPackage: previewAssetsForPackage,
+    openPortableProject,
+    validScenario,
+    validRiseCourse,
+    validStorylineExperience,
+    validProject,
+    validate,
+    toast,
+    switchTab,
+    openTool,
+    addHistoryEntry,
+    replaceProject: (model, profile = null) => {
+      if (!validProject(model)) throw new Error("AI returned an unsupported project.");
+      state.model = clone(model);
+      state.profile = profile ? clone(profile) : profileFromModel(model);
+      syncScoringFromProfile();
+      renderAll();
+      saveDraft();
+      switchTab("edit");
+    }
+  };
 
   bind();
   restoreDraft();
