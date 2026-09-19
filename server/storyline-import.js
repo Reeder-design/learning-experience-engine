@@ -87,7 +87,20 @@ function countActions(value) {
   return direct + Object.values(value).reduce((total, item) => total + (item === value.actions ? 0 : countActions(item)), 0);
 }
 
-function normalizeObject(object, index) {
+function collectAssetIds(value, found = new Set()) {
+  if (value == null) return found;
+  if (Array.isArray(value)) {
+    value.forEach((item) => collectAssetIds(item, found));
+    return found;
+  }
+  if (typeof value !== "object") return found;
+  if (Object.prototype.hasOwnProperty.call(value, "assetId") && Number.isFinite(Number(value.assetId))) found.add(Number(value.assetId));
+  Object.values(value).forEach((item) => collectAssetIds(item, found));
+  return found;
+}
+
+function normalizeObject(object, index, assetLookup) {
+  const sourceAssetIds = [...collectAssetIds(object)];
   return {
     id: object?.id || `object-${index + 1}`,
     kind: object?.kind || "object",
@@ -103,13 +116,14 @@ function normalizeObject(object, index) {
       tabEnabled: object?.tabEnabled ?? null,
     },
     states: (object?.states || []).map((state) => ({ id: state.id || state.name || null, name: state.name || state.id || null })),
+    assets: sourceAssetIds.map((id) => assetLookup.get(id)?.id).filter(Boolean),
     source: { platform:"storyline", sourceKind:object?.kind || null },
   };
 }
 
-function normalizeLayer(layer, index, sourceFile) {
+function normalizeLayer(layer, index, sourceFile, assetLookup) {
   const id = layer?.id || `layer-${index + 1}`;
-  const objects = (layer?.objects || []).map(normalizeObject);
+  const objects = (layer?.objects || []).map((object, objectIndex) => normalizeObject(object, objectIndex, assetLookup));
   return {
     id,
     title: cleanText(layer?.name || layer?.title) || (layer?.isBaseLayer ? "Base layer" : `Layer ${index + 1}`),
@@ -125,9 +139,9 @@ function normalizeLayer(layer, index, sourceFile) {
   };
 }
 
-function normalizeSlide(raw, ref, sceneIndex, slideIndex) {
+function normalizeSlide(raw, ref, sceneIndex, slideIndex, assetLookup) {
   const sourceFile = ref.html5url || null;
-  const layers = raw ? (raw.slideLayers || []).map((layer, index) => normalizeLayer(layer, index, sourceFile)) : [];
+  const layers = raw ? (raw.slideLayers || []).map((layer, index) => normalizeLayer(layer, index, sourceFile, assetLookup)) : [];
   const objectCount = layers.reduce((total, layer) => total + layer.objects.length, 0);
   const stateCount = layers.reduce((total, layer) => total + layer.objects.reduce((subtotal, object) => subtotal + object.states.length, 0), 0);
   return {
@@ -148,9 +162,17 @@ function normalizeSlide(raw, ref, sceneIndex, slideIndex) {
   };
 }
 
-function buildStorylineProject(data, archive, sourceName, root) {
+function buildStorylineProject(data, archive, sourceName, root, courseCover = null) {
   const userScenes = (data.scenes || []).filter((scene) => !scene.isMessageScene);
   const entryMap = new Map(archive.entries.map((entry) => [entry.fileName, entry]));
+  const assets = (data.assetLib || []).map((asset, index) => ({
+    id: `storyline-asset-${String(asset.id ?? index + 1).padStart(3, "0")}`,
+    sourceId:asset.id ?? index + 1,
+    kind: assetKind(asset),
+    path: asset.url || null,
+    bytes: asset.fileSize ?? null,
+  }));
+  const assetLookup = new Map(assets.map((asset) => [Number(asset.sourceId), asset]));
   let parsedSlides = 0;
   let layers = 0;
   let objects = 0;
@@ -164,7 +186,7 @@ function buildStorylineProject(data, archive, sourceName, root) {
           try { raw = extractGlobalProvideData(archive.readEntry(entry).toString("utf8"), "slide").value; } catch (_) { raw = null; }
         }
       }
-      const normalized = normalizeSlide(raw, ref, sceneIndex, slideIndex);
+      const normalized = normalizeSlide(raw, ref, sceneIndex, slideIndex, assetLookup);
       if (raw) parsedSlides += 1;
       layers += normalized.layers.length;
       objects += normalized.metadata.objectCount;
@@ -180,12 +202,6 @@ function buildStorylineProject(data, archive, sourceName, root) {
       source: { platform:"storyline", sourceId:scene.id || null, lmsId:scene.lmsId || null },
     };
   });
-  const assets = (data.assetLib || []).map((asset, index) => ({
-    id: `storyline-asset-${String(asset.id ?? index + 1).padStart(3, "0")}`,
-    kind: assetKind(asset),
-    path: asset.url || null,
-    bytes: asset.fileSize ?? null,
-  }));
   const projectTitle = cleanText(data.title) || path.basename(sourceName, path.extname(sourceName)) || "Imported Storyline experience";
   return {
     schemaVersion: "0.1",
@@ -206,17 +222,28 @@ function buildStorylineProject(data, archive, sourceName, root) {
         reviewRequired:true,
       },
       assetManifest:assets,
+      courseCover,
       variables:(data.variables || []).map((variable) => ({ name:variable.name || null, type:variable.type || null, initialValue:variable.value ?? null })),
       importSummary:{ scenes:scenes.length, slides:scenes.reduce((total, scene) => total + scene.slides.length, 0), parsedSlides, layers, objects, actions, assets:assets.length },
     },
   };
 }
 
-function previewAssets(archive, root, assets) {
+function findCourseCover(archive, root) {
+  const entryMap = new Map(archive.entries.map((entry) => [entry.fileName, entry]));
+  const candidates = ["story_content/thumbnail.jpg", "story_content/thumbnail.jpeg", "story_content/thumbnail.png"];
+  for (const candidate of candidates) {
+    const entry = relativeEntry(entryMap, root, candidate);
+    if (entry && assetMime(candidate)) return { id:"storyline-course-cover", kind:"image", path:candidate, bytes:entry.uncompressedSize || null };
+  }
+  return null;
+}
+
+function previewAssets(archive, root, assets, courseCover = null) {
   const entryMap = new Map(archive.entries.map((entry) => [entry.fileName, entry]));
   const included = [];
   let total = 0;
-  for (const asset of assets) {
+  for (const asset of [...(courseCover ? [courseCover] : []), ...assets]) {
     if (!["image", "audio", "video"].includes(asset.kind) || !asset.path || !assetMime(asset.path)) continue;
     const entry = relativeEntry(entryMap, root, asset.path) || archive.entries.find((item) => !item.isDirectory && item.fileName.endsWith(`/${asset.path}`));
     if (!entry || entry.uncompressedSize > MAX_PREVIEW_ASSET_BYTES || total + entry.uncompressedSize > MAX_PREVIEW_ASSET_TOTAL_BYTES) continue;
@@ -240,8 +267,9 @@ function importStorylineArchive(buffer, sourceName = "storyline-web.zip") {
   const dataEntry = relativeEntry(entryMap, root, "html5/data/js/data.js");
   if (!dataEntry) throw new Error("html5/data/js/data.js was not found. Choose a published Storyline web export, not a .story authoring file.");
   const data = extractGlobalProvideData(archive.readEntry(dataEntry).toString("utf8"), "data").value;
-  const project = buildStorylineProject(data, archive, path.basename(sourceName), root);
-  const assets = previewAssets(archive, root, project.metadata.assetManifest || []);
+  const courseCover = findCourseCover(archive, root);
+  const project = buildStorylineProject(data, archive, path.basename(sourceName), root, courseCover);
+  const assets = previewAssets(archive, root, project.metadata.assetManifest || [], courseCover);
   project.metadata.importSummary.previewAssets = assets.length;
   return { project, previewAssets:assets };
 }

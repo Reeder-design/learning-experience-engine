@@ -390,6 +390,40 @@
     return cards ? `<div class="learner-prompt">Imported media available in this browser session</div>${cards}` : "";
   }
 
+  function storylineSlideMedia(slide) {
+    const manifest = new Map((state.model?.metadata?.assetManifest || []).map((asset) => [asset.id, asset]));
+    const objects = (slide.layers || []).flatMap((layer) => layer.objects || []);
+    const references = [];
+    objects.forEach((object) => (object.assets || []).forEach((id) => {
+      const asset = manifest.get(id);
+      if (asset && !references.some((item) => item.asset.id === asset.id && item.object.id === object.id)) references.push({ asset, object });
+    }));
+    const assetUrlFor = (asset) => assetUrl(`asset:${asset.id}`) || assetUrl(asset.path);
+    const canvasArea = Math.max(1, Number(slide.canvas?.width || 0) * Number(slide.canvas?.height || 0));
+    const visualCandidates = references.filter(({ asset }) => asset.kind === "image" && assetUrlFor(asset));
+    visualCandidates.sort((a, b) => {
+      const aArea = Number(a.object.bounds?.width || 0) * Number(a.object.bounds?.height || 0);
+      const bArea = Number(b.object.bounds?.width || 0) * Number(b.object.bounds?.height || 0);
+      return bArea - aArea;
+    });
+    const background = visualCandidates.find(({ object }) => {
+      const area = Number(object.bounds?.width || 0) * Number(object.bounds?.height || 0);
+      return area / canvasArea >= 0.5;
+    }) || null;
+    return {
+      background,
+      inlineImages:visualCandidates.filter((item) => item !== background),
+      missing:references.filter(({ asset }) => !assetUrlFor(asset)),
+      assetUrlFor,
+    };
+  }
+
+  function storylineMediaMarkup(media) {
+    const images = media.inlineImages.slice(0, 2).map(({ asset }) => `<img class="storyline-inline-image" src="${escapeAttr(media.assetUrlFor(asset))}" alt="">`).join("");
+    const missing = media.missing.length ? '<div class="storyline-needs-media">NEEDS MEDIA</div>' : "";
+    return images || missing ? `<div class="storyline-media-strip">${images}${missing}</div>` : "";
+  }
+
   function startProject(model, prompt = "") {
     clearProjectResources();
     state.model = clone(model);
@@ -947,17 +981,28 @@
     const scenes = state.model.content.scenes || [];
     let scene = scenes[0];
     let slide = scene?.slides?.[0];
+    const courseCover = state.model?.metadata?.courseCover || null;
+    const courseCoverUrl = courseCover ? (assetUrl(`asset:${courseCover.id}`) || assetUrl(courseCover.path)) : null;
+    let showingCourseCover = Boolean(courseCoverUrl);
     function draw() {
       if (!scene || !slide) {
         root.innerHTML = '<div class="empty-state">This imported Storyline experience has no previewable slides.</div>';
+        return;
+      }
+      if (showingCourseCover) {
+        const flatSlides = scenes.flatMap((item) => item.slides || []);
+        root.innerHTML = `<article class="storyline-player"><header><div class="storyline-mark">SL</div><strong>${escapeHtml(state.model.title || "Storyline course")}</strong><span>Menu</span><span>Resources</span><button type="button" aria-label="Close preview">×</button></header><div class="storyline-stage storyline-launch-stage"><div class="storyline-course-cover"><img src="${escapeAttr(courseCoverUrl)}" alt="${escapeAttr(`${state.model.title || "Course"} cover`)}"></div><div class="storyline-launch-actions"><span>${flatSlides.length} slide${flatSlides.length === 1 ? "" : "s"} extracted from the published course</span><button type="button" class="primary" data-storyline-launch>Start course preview →</button></div></div></article>`;
+        $("[data-storyline-launch]", root).addEventListener("click", () => { showingCourseCover = false; draw(); });
         return;
       }
       const sceneOptions = scenes.map((item) => `<option value="${escapeAttr(item.id)}"${item.id === scene.id ? " selected" : ""}>${escapeHtml(item.title || "Untitled scene")}</option>`).join("");
       const slideOptions = (scene.slides || []).map((item) => `<option value="${escapeAttr(item.id)}"${item.id === slide.id ? " selected" : ""}>${escapeHtml(item.title || "Untitled slide")}</option>`).join("");
       const flatSlides = scenes.flatMap((item) => (item.slides || []).map((candidate) => ({ scene:item, slide:candidate })));
       const position = flatSlides.findIndex((item) => item.slide.id === slide.id);
+      const media = storylineSlideMedia(slide);
+      const backgroundUrl = media.background ? media.assetUrlFor(media.background.asset) : null;
       const layers = (slide.layers || []).map((layer, index) => `<section class="story-layer"><span>${escapeHtml(layer.title || (layer.kind === "base" ? "Base layer" : `Layer ${index + 1}`))}</span>${(layer.objects || []).map((object) => `<p>${escapeHtml(object.title || object.accessibility?.altText || `${object.kind || "Object"} (no exposed text)`)}</p>`).join("") || "<p>No exposed learner-facing text on this layer.</p>"}</section>`).join("") || '<section class="story-layer"><span>Source review needed</span><p>This published slide could not be fully decoded into editable layers.</p></section>';
-      root.innerHTML = `<article class="storyline-player"><header><div class="storyline-mark">SL</div><strong>${escapeHtml(state.model.title || "Storyline course")}</strong><span>Menu</span><span>Resources</span><button type="button" aria-label="Close preview">×</button></header><div class="storyline-stage"><div class="storyline-canvas"><span class="eyebrow">${escapeHtml(scene.title || "Scene")}</span><h3>${escapeHtml(slide.title || "Untitled slide")}</h3><p>${escapeHtml(`${slide.layers?.length || 0} layer(s) · ${slide.metadata?.objectCount || 0} object(s) · ${slide.metadata?.actionCount || 0} detected action(s)`)}</p><div class="story-layer-stack">${layers}</div>${importedMediaMarkup()}</div></div><footer><div class="storyline-location"><label>Scene<select data-storyline-preview-scene>${sceneOptions}</select></label><label>Slide<select data-storyline-preview-slide>${slideOptions}</select></label></div><div class="storyline-controls"><button type="button" data-storyline-back ${position <= 0 ? "disabled" : ""}>‹ Previous</button><span>${position + 1} / ${flatSlides.length}</span><button type="button" class="primary" data-storyline-next ${position >= flatSlides.length - 1 ? "disabled" : ""}>Next ›</button></div></footer></article>`;
+      root.innerHTML = `<article class="storyline-player"><header><div class="storyline-mark">SL</div><strong>${escapeHtml(state.model.title || "Storyline course")}</strong><span>Menu</span><span>Resources</span><button type="button" aria-label="Close preview">×</button></header><div class="storyline-stage"><div class="storyline-canvas${backgroundUrl ? " storyline-canvas--visual" : ""}"${backgroundUrl ? ` style="--storyline-slide-image:url('${escapeAttr(backgroundUrl)}')"` : ""}><div class="storyline-canvas-content"><span class="eyebrow">${escapeHtml(scene.title || "Scene")}</span><h3>${escapeHtml(slide.title || "Untitled slide")}</h3><p>${escapeHtml(`${slide.layers?.length || 0} layer(s) · ${slide.metadata?.objectCount || 0} object(s) · ${slide.metadata?.actionCount || 0} detected action(s)`)}</p><div class="story-layer-stack">${layers}</div>${storylineMediaMarkup(media)}</div></div></div><footer><div class="storyline-location"><label>Scene<select data-storyline-preview-scene>${sceneOptions}</select></label><label>Slide<select data-storyline-preview-slide>${slideOptions}</select></label></div><div class="storyline-controls"><button type="button" data-storyline-back ${position <= 0 ? "disabled" : ""}>‹ Previous</button><span>${position + 1} / ${flatSlides.length}</span><button type="button" class="primary" data-storyline-next ${position >= flatSlides.length - 1 ? "disabled" : ""}>Next ›</button></div></footer></article>`;
       $("[data-storyline-preview-scene]", root).addEventListener("change", (event) => { scene = scenes.find((item) => item.id === event.target.value) || scene; slide = scene.slides?.[0]; draw(); });
       $("[data-storyline-preview-slide]", root).addEventListener("change", (event) => { slide = scene.slides.find((item) => item.id === event.target.value) || slide; draw(); });
       $("[data-storyline-back]", root)?.addEventListener("click", () => { const target = flatSlides[position - 1]; if (target) { scene = target.scene; slide = target.slide; draw(); } });

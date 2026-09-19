@@ -47,7 +47,7 @@ function run() {
     projectId: "story-project-1",
     title: "Discovery practice",
     variables: [{ name:"CustomerName", type:"text", value:"Jordan" }],
-    assetLib: [{ id:1, url:"story_content/cover.png", imageType:"png", fileSize:2400 }],
+    assetLib: [{ id:1, url:"story_content/cover.png", imageType:"png", fileSize:2400 }, { id:2, url:"story_content/video.m3u8", videoType:"hls", fileSize:2400 }],
     scenes: [{
       id:"scene-1",
       lmsId:"Customer discovery",
@@ -65,7 +65,7 @@ function run() {
       id:"base",
       isBaseLayer:true,
       timeline:{ duration:5000 },
-      objects:[{ id:"title", kind:"shape", altText:"The customer describes repeated handoffs.", tabEnabled:true }],
+      objects:[{ id:"title", kind:"shape", altText:"The customer describes repeated handoffs.", tabEnabled:true, data:{ imageLib:[{ assetId:1 }] } }, { id:"movie", kind:"video", data:{ media:{ assetId:2 } } }],
       events:[{ actions:[{ kind:"adjustvar" }] }],
     }],
   };
@@ -73,6 +73,7 @@ function run() {
     { name:"html5/data/js/data.js", data:provide("data", projectData) },
     { name:"html5/data/js/slide-1.js", data:provide("slide", slideData) },
     { name:"story_content/cover.png", data:"image bytes" },
+    { name:"story_content/thumbnail.jpg", data:"thumbnail bytes" },
   ]);
   const imported = importStorylineArchive(archive, "discovery-practice.zip");
   const project = imported.project;
@@ -81,10 +82,13 @@ function run() {
   assert.strictEqual(project.content.scenes.length, 1);
   assert.strictEqual(project.content.scenes[0].slides[0].title, "Hear the signal");
   assert.strictEqual(project.content.scenes[0].slides[0].layers[0].objects[0].title, "The customer describes repeated handoffs.");
+  assert.deepStrictEqual(project.content.scenes[0].slides[0].layers[0].objects[0].assets, ["storyline-asset-001"]);
+  assert.deepStrictEqual(project.content.scenes[0].slides[0].layers[0].objects[1].assets, ["storyline-asset-002"]);
+  assert.strictEqual(project.metadata.courseCover.id, "storyline-course-cover");
   assert.strictEqual(project.metadata.importSummary.actions, 1);
   assert.strictEqual(project.metadata.importSummary.parsedSlides, 1);
   assert.strictEqual(project.metadata.import.sourceFormat, "storyline-published-web");
-  assert.strictEqual(imported.previewAssets.length, 1);
+  assert.strictEqual(imported.previewAssets.length, 2);
   assert.throws(() => importStorylineArchive(Buffer.from("not a zip"), "source.story"), /published Storyline .zip export/);
   console.log("Storyline Workbench import draft tests passed.");
 }

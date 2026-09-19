@@ -15,5 +15,7 @@ assert.match(page, /data-tab="adapt"/, "The workflow must include a focused adap
 assert.match(workbench, /function applyThemePreset/, "Preview directions must work without opening a tool drawer.");
 assert.match(workbench, /rise-player/, "Rise imports need a course-style learner preview.");
 assert.match(workbench, /storyline-player/, "Storyline imports need a player-style learner preview.");
+assert.match(workbench, /storyline-course-cover/, "Storyline imports with a published cover need a launch preview.");
+assert.match(workbench, /NEEDS MEDIA/, "Unavailable linked Storyline media must be clearly flagged.");
 
 console.log("Workbench UI binding regression checks passed.");
