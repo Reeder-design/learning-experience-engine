@@ -1040,7 +1040,7 @@
   }
 
   function renderPublishedPlayer(root, productName) {
-    root.innerHTML = `<article class="published-course-preview"><header class="published-preview-bar"><div><span class="eyebrow">Original published player</span><strong>${escapeHtml(productName)} learner view</strong><p>This is the real exported course—not a reconstruction. Its original interactions, styling, media, and feedback behavior remain intact.</p></div><button type="button" class="primary-soft" data-model-preview>View editable model</button></header><iframe class="published-course-frame" title="${escapeAttr(productName)} published learner preview" src="${escapeAttr(state.publishedPreviewUrl)}" sandbox="allow-scripts allow-forms allow-popups allow-downloads"></iframe></article>`;
+    root.innerHTML = `<article class="published-course-preview"><header class="published-preview-bar"><div><span class="eyebrow">Original published player</span><strong>${escapeHtml(productName)} learner view</strong><p>This is the real exported course—not a reconstruction. Its original interactions, styling, media, and feedback behavior remain intact.</p></div><button type="button" class="primary-soft" data-model-preview>View editable model</button></header><iframe class="published-course-frame" title="${escapeAttr(productName)} published learner preview" src="${escapeAttr(state.publishedPreviewUrl)}" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads"></iframe></article>`;
     $("[data-model-preview]", root)?.addEventListener("click", () => {
       state.publishedPreviewMode = "model";
       renderPreview();
