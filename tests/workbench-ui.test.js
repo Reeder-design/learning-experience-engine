@@ -4,6 +4,7 @@ const path = require("path");
 
 const workbench = fs.readFileSync(path.join(__dirname, "../docs/workbench/workbench.js"), "utf8");
 const page = fs.readFileSync(path.join(__dirname, "../docs/workbench/index.html"), "utf8");
+const previewServer = fs.readFileSync(path.join(__dirname, "../scripts/preview-docs.js"), "utf8");
 
 assert.ok(!/(^|[^$])\$\("\[data-[^"]+\]"\)\.forEach/m.test(workbench), "Collection event bindings must use the multi-element selector.");
 assert.match(workbench, /\$\$\('\[data-tab\]'\)\.forEach\(\(button\) => button\.addEventListener/, "Workflow steps must be interactive.");
@@ -24,5 +25,9 @@ assert.match(workbench, /restoreImportedMedia/, "A portable imported project mus
 assert.match(workbench, /SOURCE MEDIA NOT LOADED/, "An unloaded published source must not be mislabeled as truly missing media.");
 assert.match(workbench, /Attach original export to restore media/, "An existing imported draft must be able to attach its source export without replacement.");
 assert.match(workbench, /storyline-slide-button/, "Detected Storyline navigation controls must render as buttons rather than raw labels.");
+assert.match(workbench, /published-course-frame/, "Imported published courses must default to the original learner player when the source export is attached.");
+assert.match(workbench, /View editable model/, "The editable extraction must remain clearly separate from the original published preview.");
+assert.match(previewServer, /api\/workbench-published/, "The private preview server must serve the original published course archive to the learner preview.");
+assert.match(previewServer, /publishedPreviewUrl/, "Published import responses must include a source-player entry point.");
 
 console.log("Workbench UI binding regression checks passed.");

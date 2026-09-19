@@ -279,6 +279,8 @@
     inlineAssets: new Map(),
     mediaStreams: new Map(),
     importArchive: null,
+    publishedPreviewUrl: null,
+    publishedPreviewMode: "published",
     activeTab: "source",
     activeTool: null,
     profile: defaultProfile(),
@@ -318,6 +320,8 @@
     state.inlineAssets.clear();
     state.mediaStreams.clear();
     state.importArchive = null;
+    state.publishedPreviewUrl = null;
+    state.publishedPreviewMode = "published";
   }
 
   function filePath(file, fromFolder = false) {
@@ -392,6 +396,11 @@
     streams.forEach((stream) => {
       if (stream?.assetId && stream.url) state.mediaStreams.set(stream.assetId, stream.url);
     });
+  }
+
+  function registerPublishedPreview(url = null) {
+    state.publishedPreviewUrl = typeof url === "string" && url ? url : null;
+    state.publishedPreviewMode = "published";
   }
 
   function mediaPlayerMarkup(asset, compact = false) {
@@ -950,9 +959,9 @@
     const root = $("[data-preview-root]");
     setText("[data-preview-heading]", isRiseCourse() ? "Preview the responsive course" : isStorylineExperience() ? "Preview the Storyline-style player" : "Test the learner experience");
     setText("[data-preview-description]", isRiseCourse()
-      ? "This responsive course-style preview shows lesson navigation, normalized content, and available media in a learner context."
+      ? state.publishedPreviewUrl ? "This is the original published Rise player, shown exactly as learners receive it. Switch to the model view only when you want to review the editable extraction." : "This responsive course-style preview shows lesson navigation, normalized content, and available media in a learner context."
       : isStorylineExperience()
-        ? "This Storyline-style player preview preserves the published scene and slide structure. Complex triggers and timeline behavior remain review items."
+        ? state.publishedPreviewUrl ? "This is the original published Storyline player, shown exactly as learners receive it. Switch to the model view only when you want to review the editable extraction." : "This Storyline-style player preview preserves the published scene and slide structure. Complex triggers and timeline behavior remain review items."
         : "Try alternate paths and presentation settings without leaving the project.");
     const { issues } = validate();
     if (issues.length) {
@@ -1030,7 +1039,19 @@
     draw();
   }
 
+  function renderPublishedPlayer(root, productName) {
+    root.innerHTML = `<article class="published-course-preview"><header class="published-preview-bar"><div><span class="eyebrow">Original published player</span><strong>${escapeHtml(productName)} learner view</strong><p>This is the real exported course—not a reconstruction. Its original interactions, styling, media, and feedback behavior remain intact.</p></div><button type="button" class="primary-soft" data-model-preview>View editable model</button></header><iframe class="published-course-frame" title="${escapeAttr(productName)} published learner preview" src="${escapeAttr(state.publishedPreviewUrl)}" sandbox="allow-scripts allow-forms allow-popups allow-downloads"></iframe></article>`;
+    $("[data-model-preview]", root)?.addEventListener("click", () => {
+      state.publishedPreviewMode = "model";
+      renderPreview();
+    });
+  }
+
   function renderRisePreview(root) {
+    if (state.publishedPreviewUrl && state.publishedPreviewMode !== "model") {
+      renderPublishedPlayer(root, "Rise");
+      return;
+    }
     const lessons = state.model.content.lessons || [];
     const normalLessons = lessons.filter((lesson) => lesson.kind !== "assessment");
     const assessments = lessons.filter((lesson) => lesson.kind === "assessment");
@@ -1055,6 +1076,10 @@
   }
 
   function renderStorylinePreview(root) {
+    if (state.publishedPreviewUrl && state.publishedPreviewMode !== "model") {
+      renderPublishedPlayer(root, "Storyline");
+      return;
+    }
     const scenes = state.model.content.scenes || [];
     let scene = scenes[0];
     let slide = scene?.slides?.[0];
@@ -1087,7 +1112,9 @@
         const buttons = meaningfulControls.map(({ object, targetId }) => `<button type="button" class="storyline-slide-button" data-storyline-jump="${escapeAttr(targetId)}">${escapeHtml(object.title || object.accessibility?.altText || "Continue")} <span>→</span></button>`).join("");
         return `<section class="story-layer"><span>${escapeHtml(layer.title || (layer.kind === "base" ? "Base layer" : `Layer ${index + 1}`))}</span>${text || (!buttons ? "<p>No exposed learner-facing text on this layer.</p>" : "")}${buttons ? `<div class="storyline-slide-controls">${buttons}</div>` : ""}</section>`;
       }).join("") || '<section class="story-layer"><span>Source review needed</span><p>This published slide could not be fully decoded into editable layers.</p></section>';
-      root.innerHTML = `<article class="storyline-player"><header><div class="storyline-mark">SL</div><strong>${escapeHtml(state.model.title || "Storyline course")}</strong><span>Menu</span><span>Resources</span><button type="button" aria-label="Close preview">×</button></header><div class="storyline-stage"><div class="storyline-canvas${backgroundUrl ? " storyline-canvas--visual" : ""}"${backgroundUrl ? ` style="--storyline-slide-image:url('${escapeAttr(backgroundUrl)}')"` : ""}><div class="storyline-canvas-content"><span class="eyebrow">${escapeHtml(scene.title || "Scene")}</span><h3>${escapeHtml(slide.title || "Untitled slide")}</h3><p>${escapeHtml(`${slide.layers?.length || 0} layer(s) · ${slide.metadata?.objectCount || 0} object(s) · ${slide.metadata?.actionCount || 0} detected action(s)`)}</p><div class="story-layer-stack">${layers}</div>${storylineMediaMarkup(media)}</div></div></div><footer><div class="storyline-location"><label>Scene<select data-storyline-preview-scene>${sceneOptions}</select></label><label>Slide<select data-storyline-preview-slide>${slideOptions}</select></label></div><div class="storyline-controls"><button type="button" data-storyline-back ${position <= 0 ? "disabled" : ""}>‹ Previous</button><span>${position + 1} / ${flatSlides.length}</span><button type="button" class="primary" data-storyline-next ${position >= flatSlides.length - 1 ? "disabled" : ""}>Next ›</button></div></footer></article>`;
+      const sourceToggle = state.publishedPreviewUrl ? '<button type="button" class="storyline-source-toggle" data-source-preview>Open original player</button>' : "";
+      root.innerHTML = `<article class="storyline-player"><header><div class="storyline-mark">SL</div><strong>${escapeHtml(state.model.title || "Storyline course")}</strong><span>Editable model view</span>${sourceToggle}</header><div class="storyline-stage"><div class="storyline-canvas${backgroundUrl ? " storyline-canvas--visual" : ""}"${backgroundUrl ? ` style="--storyline-slide-image:url('${escapeAttr(backgroundUrl)}')"` : ""}><div class="storyline-canvas-content"><span class="eyebrow">${escapeHtml(scene.title || "Scene")}</span><h3>${escapeHtml(slide.title || "Untitled slide")}</h3><p>${escapeHtml(`${slide.layers?.length || 0} layer(s) · ${slide.metadata?.objectCount || 0} object(s) · ${slide.metadata?.actionCount || 0} detected action(s)`)}</p><div class="story-layer-stack">${layers}</div>${storylineMediaMarkup(media)}</div></div></div><footer><div class="storyline-location"><label>Scene<select data-storyline-preview-scene>${sceneOptions}</select></label><label>Slide<select data-storyline-preview-slide>${slideOptions}</select></label></div><div class="storyline-controls"><button type="button" data-storyline-back ${position <= 0 ? "disabled" : ""}>‹ Previous</button><span>${position + 1} / ${flatSlides.length}</span><button type="button" class="primary" data-storyline-next ${position >= flatSlides.length - 1 ? "disabled" : ""}>Next ›</button></div></footer></article>`;
+      $("[data-source-preview]", root)?.addEventListener("click", () => { state.publishedPreviewMode = "published"; renderPreview(); });
       $("[data-storyline-preview-scene]", root).addEventListener("change", (event) => { scene = scenes.find((item) => item.id === event.target.value) || scene; slide = scene.slides?.[0]; draw(); });
       $("[data-storyline-preview-slide]", root).addEventListener("change", (event) => { slide = scene.slides.find((item) => item.id === event.target.value) || slide; draw(); });
       $$('[data-storyline-jump]', root).forEach((button) => button.addEventListener("click", () => { const target = flatSlides.find((item) => item.slide.id === button.dataset.storylineJump); if (target) { scene = target.scene; slide = target.slide; draw(); } }));
@@ -1391,6 +1418,7 @@
     if (currentSourceId && restoredSourceId && currentSourceId !== restoredSourceId) throw new Error("That export belongs to a different published project. Choose the original source ZIP for this draft.");
     registerPreviewAssets(result.previewAssets || []);
     registerMediaStreams(result.mediaStreams || []);
+    registerPublishedPreview(result.publishedPreviewUrl);
     return result;
   }
 
@@ -1477,6 +1505,7 @@
       state.importArchive = { file, sourceFormat:"rise-published-web" };
       registerPreviewAssets(result.previewAssets || []);
       registerMediaStreams(result.mediaStreams || []);
+      registerPublishedPreview(result.publishedPreviewUrl);
       state.profile.source.origin = "rise-published-web";
       state.profile.source.structureModel = "course-lessons-blocks";
       state.profile.source.notes = "Normalized from a private published Rise web export. Review every imported block before reuse or export.";
@@ -1511,6 +1540,7 @@
       state.importArchive = { file, sourceFormat:"storyline-published-web" };
       registerPreviewAssets(result.previewAssets || []);
       registerMediaStreams(result.mediaStreams || []);
+      registerPublishedPreview(result.publishedPreviewUrl);
       state.profile.source.origin = "storyline-published-web";
       state.profile.source.structureModel = "scenes-slides-layers";
       state.profile.source.notes = "Normalized from a private published Storyline web export. Review every scene, layer, object, variable, and runtime behavior before reuse or export.";

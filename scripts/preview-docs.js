@@ -28,7 +28,7 @@ const docsRoot = path.resolve(__dirname, "..", "docs");
 const startPort = Number(process.env.PORT || 4173);
 const maxPort = startPort + 20;
 const loginAttempts = { count: 0, blockedUntil: 0 };
-const mediaSessions = new Map();
+const publishedSessions = new Map();
 const MEDIA_SESSION_MS = 30 * 60 * 1000;
 
 const mime = {
@@ -50,6 +50,19 @@ const mime = {
   ".m3u8": "application/vnd.apple.mpegurl",
   ".ts": "video/mp2t",
   ".m4a": "audio/mp4",
+  ".aac": "audio/aac",
+  ".ogg": "audio/ogg",
+  ".m4v": "video/x-m4v",
+  ".mov": "video/quicktime",
+  ".vtt": "text/vtt; charset=utf-8",
+  ".srt": "application/x-subrip; charset=utf-8",
+  ".woff": "font/woff",
+  ".woff2": "font/woff2",
+  ".ttf": "font/ttf",
+  ".otf": "font/otf",
+  ".wasm": "application/wasm",
+  ".xml": "application/xml; charset=utf-8",
+  ".txt": "text/plain; charset=utf-8",
   ".pdf": "application/pdf"
 };
 
@@ -101,55 +114,67 @@ function safeMediaPath(value) {
   return text;
 }
 
-function clearExpiredMediaSessions() {
+function clearExpiredPublishedSessions() {
   const now = Date.now();
-  for (const [id, item] of mediaSessions) if (item.expiresAt <= now) mediaSessions.delete(id);
+  for (const [id, item] of publishedSessions) if (item.expiresAt <= now) publishedSessions.delete(id);
 }
 
-function registerMediaSession(session, imported) {
-  const streams = Array.isArray(imported.mediaStreams) ? imported.mediaStreams : [];
-  if (!streams.length || !imported.mediaArchive) return [];
-  clearExpiredMediaSessions();
+function archiveEntry(archiveSession, relativePath) {
+  const candidates = [relativePath, archiveSession.root ? `${archiveSession.root}/${relativePath}` : null].filter(Boolean);
+  return archiveSession.archive.entries.find((entry) => !entry.isDirectory && candidates.includes(entry.fileName)) || null;
+}
+
+function publishedEntryPoint(imported) {
+  const sourceFormat = imported?.project?.metadata?.import?.sourceFormat;
+  const preferred = sourceFormat === "storyline-published-web" ? ["story.html", "index.html"] : ["index.html", "story.html"];
+  return preferred.find((candidate) => archiveEntry({ archive:imported.mediaArchive, root:String(imported.mediaRoot || "") }, candidate)) || null;
+}
+
+function registerPublishedSession(session, imported) {
+  if (!imported?.mediaArchive) return { mediaStreams:[], publishedPreviewUrl:null };
+  clearExpiredPublishedSessions();
   const id = crypto.randomUUID();
-  mediaSessions.set(id, {
+  const archiveSession = {
     nonce:session.nonce,
     expiresAt:Date.now() + MEDIA_SESSION_MS,
     archive:imported.mediaArchive,
-    root:String(imported.mediaRoot || ""),
-    bundleRoots:new Set(streams.map((stream) => safeMediaPath(stream.bundleRoot)).filter(Boolean)),
-  });
-  return streams.map((stream) => ({ ...stream, url:`/api/workbench-media/${id}/${stream.path.split("/").map(encodeURIComponent).join("/")}` }));
+    root:String(imported.mediaRoot || "")
+  };
+  publishedSessions.set(id, archiveSession);
+  const entryPoint = publishedEntryPoint(imported);
+  const streams = Array.isArray(imported.mediaStreams) ? imported.mediaStreams : [];
+  return {
+    mediaStreams:streams.map((stream) => ({ ...stream, url:`/api/workbench-published/${id}/${stream.path.split("/").map(encodeURIComponent).join("/")}` })),
+    publishedPreviewUrl:entryPoint ? `/api/workbench-published/${id}/${entryPoint.split("/").map(encodeURIComponent).join("/")}` : null
+  };
 }
 
-function mediaEntry(mediaSession, relativePath) {
-  const roots = [...mediaSession.bundleRoots];
-  if (!roots.some((root) => relativePath === root || relativePath.startsWith(`${root}/`))) return null;
-  const candidates = [relativePath, mediaSession.root ? `${mediaSession.root}/${relativePath}` : null].filter(Boolean);
-  return mediaSession.archive.entries.find((entry) => !entry.isDirectory && candidates.includes(entry.fileName)) || null;
-}
-
-function sendMedia(req, res, pathname) {
-  const match = pathname.match(/^\/api\/workbench-media\/([0-9a-f-]{36})\/(.+)$/i);
-  const session = currentSession(req);
-  if (!match || req.method !== "GET" || !session) { sendJson(res, 404, { ok:false, error:"Media is not available." }); return true; }
-  clearExpiredMediaSessions();
-  const mediaSession = mediaSessions.get(match[1]);
-  const relativePath = safeMediaPath(decodeURIComponent(match[2]));
-  if (!mediaSession || mediaSession.nonce !== session.nonce || !relativePath) { sendJson(res, 404, { ok:false, error:"Media is not available." }); return true; }
-  const entry = mediaEntry(mediaSession, relativePath);
-  if (!entry) { sendJson(res, 404, { ok:false, error:"Media file is not available." }); return true; }
-  const bytes = mediaSession.archive.readEntry(entry);
+function sendArchiveEntry(req, res, entry, relativePath) {
+  const bytes = entry.archive.readEntry(entry.file);
   const fileType = mime[path.extname(relativePath).toLowerCase()] || "application/octet-stream";
   const range = String(req.headers.range || "").match(/^bytes=(\d*)-(\d*)$/);
   let start = 0, end = bytes.length - 1, status = 200;
   if (range) {
     start = range[1] ? Number(range[1]) : 0;
     end = range[2] ? Math.min(Number(range[2]), bytes.length - 1) : end;
-    if (!Number.isInteger(start) || !Number.isInteger(end) || start > end || start >= bytes.length) { res.writeHead(416, { "Content-Range":`bytes */${bytes.length}` }); res.end(); return true; }
+    if (!Number.isInteger(start) || !Number.isInteger(end) || start > end || start >= bytes.length) { res.writeHead(416, { "Content-Range":`bytes */${bytes.length}` }); res.end(); return; }
     status = 206;
   }
   res.writeHead(status, { "Content-Type":fileType, "Content-Length":end - start + 1, "Accept-Ranges":"bytes", "Cache-Control":"no-store", ...(status === 206 ? { "Content-Range":`bytes ${start}-${end}/${bytes.length}` } : {}) });
   res.end(bytes.subarray(start, end + 1));
+}
+
+function sendPublishedCourse(req, res, pathname) {
+  const match = pathname.match(/^\/api\/workbench-published\/([0-9a-f-]{36})\/(.+)$/i);
+  const session = currentSession(req);
+  if (!match || req.method !== "GET" || !session) { sendJson(res, 404, { ok:false, error:"Published course is not available." }); return true; }
+  clearExpiredPublishedSessions();
+  const archiveSession = publishedSessions.get(match[1]);
+  const relativePath = safeMediaPath(decodeURIComponent(match[2]));
+  if (!archiveSession || archiveSession.nonce !== session.nonce || !relativePath) { sendJson(res, 404, { ok:false, error:"Published course is not available." }); return true; }
+  const file = archiveEntry(archiveSession, relativePath);
+  if (!file) { sendJson(res, 404, { ok:false, error:"Published course file is not available." }); return true; }
+  sendArchiveEntry(req, res, { archive:archiveSession.archive, file }, relativePath);
   return true;
 }
 
@@ -445,7 +470,8 @@ async function handleRiseImport(req, res) {
     const archive = decodeBase64File(payload?.base64);
     if (archive.length > MAX_ARCHIVE_BYTES) throw new Error("That ZIP is too large for the current private Workbench import limit.");
     const imported = importRiseArchive(archive, sourceName);
-    sendJson(res, 200, { ok:true, project:imported.project, previewAssets:imported.previewAssets, mediaStreams:registerMediaSession(session, imported) });
+    const published = registerPublishedSession(session, imported);
+    sendJson(res, 200, { ok:true, project:imported.project, previewAssets:imported.previewAssets, ...published });
   } catch (error) {
     sendJson(res, 400, { ok:false, error:error.message || "Rise import could not be completed." });
   }
@@ -468,7 +494,8 @@ async function handleStorylineImport(req, res) {
     const archive = decodeBase64File(payload?.base64);
     if (archive.length > MAX_STORYLINE_ARCHIVE_BYTES) throw new Error("That ZIP is too large for the current private Workbench import limit.");
     const imported = importStorylineArchive(archive, sourceName);
-    sendJson(res, 200, { ok:true, project:imported.project, previewAssets:imported.previewAssets, mediaStreams:registerMediaSession(session, imported) });
+    const published = registerPublishedSession(session, imported);
+    sendJson(res, 200, { ok:true, project:imported.project, previewAssets:imported.previewAssets, ...published });
   } catch (error) {
     sendJson(res, 400, { ok:false, error:error.message || "Storyline import could not be completed." });
   }
@@ -484,8 +511,8 @@ async function handler(req, res) {
   const requestUrl = new URL(req.url || "/", "http://localhost");
   const pathname = requestUrl.pathname;
 
-  if (pathname.startsWith("/api/workbench-media/")) {
-    sendMedia(req, res, pathname);
+  if (pathname.startsWith("/api/workbench-published/")) {
+    sendPublishedCourse(req, res, pathname);
     return;
   }
 
