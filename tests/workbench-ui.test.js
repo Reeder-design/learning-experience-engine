@@ -20,5 +20,7 @@ assert.match(workbench, /NEEDS MEDIA/, "Unavailable linked Storyline media must 
 assert.match(workbench, /Media library/, "Imported projects need a plain-language media inventory.");
 assert.match(workbench, /HLS stream/, "The Workbench must distinguish streaming-video bundles from ordinary video files.");
 assert.match(workbench, /Open the running Workbench/, "Opening the static file must explain that the private local server is required.");
+assert.match(workbench, /restoreImportedMedia/, "A portable imported project must rehydrate its source media without replacing its edits.");
+assert.match(workbench, /SOURCE MEDIA NOT LOADED/, "An unloaded published source must not be mislabeled as truly missing media.");
 
 console.log("Workbench UI binding regression checks passed.");

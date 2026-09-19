@@ -278,6 +278,7 @@
     objectUrls: new Map(),
     inlineAssets: new Map(),
     mediaStreams: new Map(),
+    importArchive: null,
     activeTab: "source",
     activeTool: null,
     profile: defaultProfile(),
@@ -316,6 +317,7 @@
     state.reference = [];
     state.inlineAssets.clear();
     state.mediaStreams.clear();
+    state.importArchive = null;
   }
 
   function filePath(file, fromFolder = false) {
@@ -396,7 +398,10 @@
     const url = mediaUrl(asset);
     const label = escapeHtml(asset.fileName || String(asset.path || asset.id || "Media asset").split("/").pop());
     const kind = asset.kind || "other";
-    if (!url) return `<article class="media-card media-card--missing"><strong>NEEDS MEDIA</strong><span>${label}</span><small>This media reference was found, but its file is not available in this preview.</small></article>`;
+    if (!url) {
+      const imported = isImportedProject();
+      return `<article class="media-card media-card--missing"><strong>${imported ? "SOURCE MEDIA NOT LOADED" : "NEEDS MEDIA"}</strong><span>${label}</span><small>${imported ? "The published export contains the media reference. Re-open its saved source package or re-import the published ZIP to restore the file for this browser session." : "This media reference was found, but its file is not available in this preview."}</small></article>`;
+    }
     if (kind === "image") return `<article class="media-card${compact ? " media-card--compact" : ""}"><img src="${escapeAttr(url)}" alt="${label}"><strong>${label}</strong><small>Image asset</small></article>`;
     if (kind === "audio") return `<article class="media-card${compact ? " media-card--compact" : ""}"><strong>${label}</strong><audio controls preload="metadata" src="${escapeAttr(url)}"></audio><small>Audio asset</small></article>`;
     if (kind === "video" || kind === "hls") return `<article class="media-card${compact ? " media-card--compact" : ""}"><strong>${label}</strong><video controls playsinline preload="metadata" src="${escapeAttr(url)}"></video><small>${kind === "hls" ? "HLS stream · Safari plays this directly; other browsers may need the original published player." : "Video asset"}</small></article>`;
@@ -1324,6 +1329,7 @@
   }
 
   function previewAssetsForPackage() {
+    if (state.importArchive?.file) return [];
     const assets = state.model?.metadata?.assetManifest || [];
     const included = [];
     const seen = new Set();
@@ -1337,15 +1343,39 @@
     return included;
   }
 
-  async function openPortableProject(packageData, sourceEntries = [], previewAssets = []) {
+  async function restoreImportedMedia(file, sourceFormat) {
+    const endpoint = sourceFormat === "rise-published-web" ? "/api/workbench-rise-import" : sourceFormat === "storyline-published-web" ? "/api/workbench-storyline-import" : null;
+    if (!endpoint || !file) return false;
+    const sessionResponse = await fetch("/api/workbench-session", { credentials:"same-origin", cache:"no-store" });
+    const session = await sessionResponse.json();
+    if (!sessionResponse.ok || !session.authenticated || !session.csrf) throw new Error("Sign in to the private local Workbench before restoring source media.");
+    const response = await fetch(endpoint, {
+      method:"POST",
+      credentials:"same-origin",
+      headers:{ "Content-Type":"application/json", "X-CSRF-Token":session.csrf },
+      body:JSON.stringify({ name:file.name, base64:await fileToBase64(file) })
+    });
+    const result = await response.json();
+    if (!response.ok || !result.ok) throw new Error(result.error || "The source package could not restore its media.");
+    registerPreviewAssets(result.previewAssets || []);
+    registerMediaStreams(result.mediaStreams || []);
+    return true;
+  }
+
+  async function openPortableProject(packageData, sourceEntries = [], previewAssets = [], importArchive = null) {
     if (!packageData || packageData.packageVersion !== "0.1" || !validProject(packageData.project)) throw new Error("This ZIP does not contain a compatible Workbench project.");
     startProject(packageData.project, packageData.sourcePrompt || "");
     state.history = Array.isArray(packageData.history) ? clone(packageData.history) : [];
     await installSourceFiles(sourceEntries, false);
     registerPreviewAssets(previewAssets);
+    if (importArchive?.file) {
+      state.importArchive = importArchive;
+      try { await restoreImportedMedia(importArchive.file, importArchive.sourceFormat); } catch (error) { toast(error.message || "The project opened, but its source media could not be restored."); }
+    }
     renderAll();
     saveDraft();
-    toast(`Project package opened${sourceEntries.length || previewAssets.length ? ` · ${sourceEntries.length + previewAssets.length} bundled file${sourceEntries.length + previewAssets.length === 1 ? "" : "s"}` : ""}`);
+    const bundled = sourceEntries.length + previewAssets.length + (importArchive?.file ? 1 : 0);
+    toast(`Project package opened${bundled ? ` · ${bundled} bundled file${bundled === 1 ? "" : "s"}` : ""}`);
   }
 
   function fileToBase64(file) {
@@ -1375,6 +1405,7 @@
       const result = await response.json();
       if (!response.ok || !result.ok || !validRiseCourse(result.project)) throw new Error(result.error || "Rise import could not create an editable course draft.");
       startProject(result.project, `Imported from published Rise web export: ${file.name}`);
+      state.importArchive = { file, sourceFormat:"rise-published-web" };
       registerPreviewAssets(result.previewAssets || []);
       registerMediaStreams(result.mediaStreams || []);
       state.profile.source.origin = "rise-published-web";
@@ -1408,6 +1439,7 @@
       const result = await response.json();
       if (!response.ok || !result.ok || !validStorylineExperience(result.project)) throw new Error(result.error || "Storyline import could not create an editable experience draft.");
       startProject(result.project, `Imported from published Storyline web export: ${file.name}`);
+      state.importArchive = { file, sourceFormat:"storyline-published-web" };
       registerPreviewAssets(result.previewAssets || []);
       registerMediaStreams(result.mediaStreams || []);
       state.profile.source.origin = "storyline-published-web";
@@ -1570,6 +1602,7 @@
     getSourcePrompt: () => state.sourcePrompt || "",
     getReference: () => clone(state.reference),
     getSourceFiles: () => state.sourceFiles.map((item) => ({ ...item })),
+    getImportedArchive: () => state.importArchive?.file ? { file:state.importArchive.file, sourceFormat:state.importArchive.sourceFormat } : null,
     getPortableProject: portableProject,
     getPreviewAssetsForPackage: previewAssetsForPackage,
     openPortableProject,

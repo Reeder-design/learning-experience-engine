@@ -124,15 +124,24 @@
       const manifest = workbench.getPortableProject();
       const entries = [];
       const sourceFiles = workbench.getSourceFiles();
-      const previewAssets = workbench.getPreviewAssetsForPackage();
+      const importArchive = workbench.getImportedArchive?.() || null;
+      const previewAssets = importArchive ? [] : workbench.getPreviewAssetsForPackage();
       manifest.sourceFiles = [];
       manifest.previewAssets = [];
+      manifest.importArchive = null;
       let total = 0;
       for (const item of sourceFiles) {
         const archivePath = `source/${safePath(item.path, item.name)}`;
         const bytes = new Uint8Array(await item.file.arrayBuffer());
         total += bytes.length;
         manifest.sourceFiles.push({ path:item.path, kind:item.kind, name:item.name, archivePath });
+        entries.push({ path:archivePath, bytes });
+      }
+      if (importArchive?.file) {
+        const archivePath = `published-source/${safePath(importArchive.file.name, "published-export.zip")}`;
+        const bytes = new Uint8Array(await importArchive.file.arrayBuffer());
+        total += bytes.length;
+        manifest.importArchive = { name:importArchive.file.name, sourceFormat:importArchive.sourceFormat, archivePath };
         entries.push({ path:archivePath, bytes });
       }
       for (const asset of previewAssets) {
@@ -144,7 +153,7 @@
       }
       const projectBytes = encoder.encode(`${JSON.stringify(manifest, null, 2)}\n`);
       total += projectBytes.length;
-      if (total > MAX_PACKAGE_BYTES) throw new Error("The selected files exceed the current 30 MB project-package limit. Keep larger original media alongside the package.");
+      if (total > MAX_PACKAGE_BYTES) throw new Error("This project plus its original published export exceeds the current 30 MB package limit. Keep the published ZIP beside the project package and re-import it when you reopen the project.");
       entries.unshift({ path:"workbench-project.json", bytes:projectBytes });
       download(await buildZip(entries), `${manifest.project.id || "learning-project"}-workbench-project.zip`);
       workbench.toast(`Project package downloaded · ${entries.length - 1} bundled file${entries.length === 2 ? "" : "s"}`);
@@ -167,7 +176,16 @@
         if (!entry) throw new Error(`A bundled preview asset is missing: ${asset.path || asset.id}.`);
         return { id:asset.id, path:asset.path, kind:asset.kind, dataUrl:await dataUrlFromBytes(entry.bytes, mime(asset.path)) };
       }));
-      await api().openPortableProject(manifest, sourceEntries, previewAssets);
+      let importArchive = null;
+      if (manifest.importArchive) {
+        const entry = byPath.get(safePath(manifest.importArchive.archivePath));
+        if (!entry) throw new Error(`The saved published source is missing: ${manifest.importArchive.name || "export ZIP"}.`);
+        importArchive = {
+          sourceFormat:manifest.importArchive.sourceFormat,
+          file:new File([entry.bytes], manifest.importArchive.name || "published-export.zip", { type:"application/zip" })
+        };
+      }
+      await api().openPortableProject(manifest, sourceEntries, previewAssets, importArchive);
     } catch (error) { api()?.toast(error.message || "Project package could not be opened."); }
   }
 
