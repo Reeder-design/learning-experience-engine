@@ -37,7 +37,7 @@
         <p>Bring source content, an existing project, or a reusable structure. Build or transform the published-style learning experience, preview it as a learner, then export it for reuse.</p>
       </div>
       <div class="status-card">
-        <span>Workbench v0.3 candidate</span>
+        <span>Workbench v0.4 candidate</span>
         <strong>Branching scenarios first</strong>
         <p>The project model now separates learning content, presentation/theme, behavior, source context, export intent, and transformation history.</p>
       </div>
@@ -50,7 +50,7 @@
       <div class="start-grid">
         <button type="button" class="start-card active" data-start-mode="template"><span class="start-icon">◇</span><strong>Use a source template</strong><small>Keep the interaction mechanics and replace the learning content.</small></button>
         <button type="button" class="start-card" data-start-mode="blank"><span class="start-icon">＋</span><strong>Start simple</strong><small>Begin with a minimal published-style interaction.</small></button>
-        <button type="button" class="start-card" data-start-mode="existing"><span class="start-icon">↥</span><strong>Open existing JSON</strong><small>Reconstruct editable fields, presentation settings, and preview.</small></button>
+        <button type="button" class="start-card" data-start-mode="existing"><span class="start-icon">↥</span><strong>Open a saved project</strong><small>Open Engine JSON or a portable project package with bundled source assets.</small></button>
         <button type="button" class="start-card" data-start-mode="rise"><span class="start-icon">R</span><strong>Import a Rise web export</strong><small>Bring a published Rise ZIP into an editable course draft.</small></button>
         <button type="button" class="start-card" data-start-mode="storyline"><span class="start-icon">S</span><strong>Import a Storyline web export</strong><small>Bring published scenes, slides, and layers into an editable draft.</small></button>
       </div>
@@ -63,8 +63,8 @@
         <button type="button" class="primary" data-use-template>Use this template →</button>
       </div>
       <div class="existing-picker" data-existing-picker hidden>
-        <button type="button" class="primary" data-choose-json>Choose scenario JSON</button>
-        <span>Open an Engine project JSON and continue editing its saved project data.</span>
+        <button type="button" class="primary" data-choose-project>Choose project file</button>
+        <span>Open an Engine JSON file or a portable Workbench project ZIP.</span>
       </div>
       <div class="existing-picker" data-rise-picker hidden>
         <button type="button" class="primary" data-choose-rise>Choose published Rise ZIP</button>
@@ -141,7 +141,7 @@
           </section>
 
           <section class="workspace-panel" data-panel="save">
-            <div class="panel-head"><div><span class="eyebrow">Workflow · Export</span><h2>Save the experience in the form you need</h2><p>The current export is Engine JSON. The Project Profile already records intended web/Rise/Storyline/LMS destinations so future exporters can apply the right packaging rules.</p></div><span class="stage-chip">Final stage</span></div>
+            <div class="panel-head"><div><span class="eyebrow">Workflow · Export</span><h2>Save the experience in the form you need</h2><p>Download portable Engine JSON, or keep your editable project and small preview assets together in a private project package. The Project Profile also records intended web/Rise/Storyline/LMS destinations for future exporters.</p></div><span class="stage-chip">Final stage</span></div>
             <div class="export-intent card-panel export-profile">
               <label class="field"><span>Primary export target</span><select data-profile-field="export.target">
                 <option value="web">Standalone web experience</option>
@@ -153,6 +153,7 @@
             </div>
             <div class="save-grid">
               <article><span class="save-icon">JSON</span><div><strong>Interaction JSON</strong><p>Download the learning interaction plus its Workbench Project Profile so it can be reopened and transformed later.</p></div><button type="button" class="primary-soft" data-download-json>Download interaction JSON</button></article>
+              <article><span class="save-icon">ZIP</span><div><strong>Editable project package</strong><p>Keep the project, brief, history, uploaded source files, and small imported-media previews together for private reuse.</p></div><button type="button" data-download-project-package>Download project package</button></article>
               <article><span class="save-icon">T</span><div><strong>Source template project</strong><p>Save structure + presentation + editable content roles as a reusable source project.</p></div><button type="button" data-save-template disabled>Template Library comes next</button></article>
               <article><span class="save-icon">⧉</span><div><strong>Developer data</strong><p>Inspect the Engine JSON only for troubleshooting or development.</p></div><button type="button" data-toggle-json>View project JSON</button></article>
             </div>
@@ -267,7 +268,7 @@
   </aside>
   <button type="button" class="drawer-backdrop" data-close-tool aria-label="Close project tool" hidden></button>
 
-  <input type="file" data-json-input accept="application/json,.json" hidden>
+  <input type="file" data-project-input accept="application/json,.json,.zip,application/zip,application/x-zip-compressed" hidden>
   <input type="file" data-rise-input accept=".zip,application/zip,application/x-zip-compressed" hidden>
   <input type="file" data-storyline-input accept=".zip,application/zip,application/x-zip-compressed" hidden>
   <input type="file" data-source-files multiple accept=".txt,.md,.markdown,.csv,.json,.pdf,.doc,.docx,.ppt,.pptx,.png,.jpg,.jpeg,.gif,.webp,.svg,.mp4,.webm,.mov,.m4v,.mp3,.wav,.m4a,.aac,.ogg,.vtt,.srt" hidden>
@@ -275,6 +276,7 @@
   <div class="toast" data-toast hidden></div>
   <script src="../assets/app-registry.js"></script>
   <script src="workbench.js"></script>
+  <script src="workbench-package.js"></script>
   <script src="ai-client.js"></script>
 </body>
 </html>

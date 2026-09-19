@@ -305,6 +305,13 @@
     state.objectUrls.clear();
   }
 
+  function clearProjectResources() {
+    revokeUrls();
+    state.sourceFiles = [];
+    state.reference = [];
+    state.inlineAssets.clear();
+  }
+
   function filePath(file, fromFolder = false) {
     if (fromFolder && file.webkitRelativePath) return file.webkitRelativePath.split("/").slice(1).join("/") || file.name;
     const folder = {
@@ -384,7 +391,7 @@
   }
 
   function startProject(model, prompt = "") {
-    state.inlineAssets.clear();
+    clearProjectResources();
     state.model = clone(model);
     state.profile = profileFromModel(model);
     state.profile.source.templateId = model?.metadata?.templateId || state.profile.source.templateId || "";
@@ -905,16 +912,17 @@
     draw();
   }
 
-  async function importSourceFiles(fileList, fromFolder = false) {
-    const files = [...fileList];
-    if (!files.length) return;
-    for (const file of files) {
-      const path = filePath(file, fromFolder);
-      const kind = classify(file);
-      state.sourceFiles.push({ file, path, kind, name: file.name });
+  async function installSourceFiles(entries, notify = true) {
+    if (!entries.length) return;
+    for (const entry of entries) {
+      const file = entry.file;
+      if (!(file instanceof File)) continue;
+      const path = entry.path || filePath(file, false);
+      const kind = entry.kind || classify(file);
+      state.sourceFiles.push({ file, path, kind, name: entry.name || file.name });
       if (kind === "image") state.objectUrls.set(path, URL.createObjectURL(file));
       if (kind === "reference") {
-        try { state.reference.push({ path, text: await file.text() }); } catch (_) {}
+        try { state.reference.push({ path, text: typeof entry.referenceText === "string" ? entry.referenceText : await file.text() }); } catch (_) {}
       }
     }
     state.sourceFiles.sort((a, b) => a.path.localeCompare(b.path));
@@ -924,7 +932,13 @@
     renderHistory();
     renderPreview();
     saveDraft();
-    toast(`${files.length} source file${files.length === 1 ? "" : "s"} added`);
+    if (notify) toast(`${entries.length} source file${entries.length === 1 ? "" : "s"} added`);
+  }
+
+  async function importSourceFiles(fileList, fromFolder = false) {
+    const files = [...fileList];
+    if (!files.length) return;
+    await installSourceFiles(files.map((file) => ({ file, path:filePath(file, fromFolder), kind:classify(file), name:file.name })));
   }
 
   function renderProfileFields() {
@@ -1142,6 +1156,45 @@
     setTimeout(() => URL.revokeObjectURL(url), 500);
   }
 
+  function portableProject() {
+    const project = clone(state.model);
+    project.metadata = { ...(project.metadata || {}), workbenchProfile: clone(state.profile), workbenchVersion: "0.4" };
+    return {
+      packageVersion: "0.1",
+      createdWith: "Learning Project Workbench v0.4",
+      exportedAt: new Date().toISOString(),
+      project,
+      sourcePrompt: state.sourcePrompt || "",
+      history: clone(state.history),
+      reference: clone(state.reference),
+    };
+  }
+
+  function previewAssetsForPackage() {
+    const assets = state.model?.metadata?.assetManifest || [];
+    const included = [];
+    const seen = new Set();
+    for (const asset of assets) {
+      const dataUrl = assetUrl(`asset:${asset.id}`) || assetUrl(asset.path);
+      const key = asset.id || asset.path;
+      if (!dataUrl || !key || seen.has(key)) continue;
+      seen.add(key);
+      included.push({ id:asset.id || null, path:asset.path || null, kind:asset.kind || "other", dataUrl });
+    }
+    return included;
+  }
+
+  async function openPortableProject(packageData, sourceEntries = [], previewAssets = []) {
+    if (!packageData || packageData.packageVersion !== "0.1" || !validProject(packageData.project)) throw new Error("This ZIP does not contain a compatible Workbench project.");
+    startProject(packageData.project, packageData.sourcePrompt || "");
+    state.history = Array.isArray(packageData.history) ? clone(packageData.history) : [];
+    await installSourceFiles(sourceEntries, false);
+    registerPreviewAssets(previewAssets);
+    renderAll();
+    saveDraft();
+    toast(`Project package opened${sourceEntries.length || previewAssets.length ? ` · ${sourceEntries.length + previewAssets.length} bundled file${sourceEntries.length + previewAssets.length === 1 ? "" : "s"}` : ""}`);
+  }
+
   function fileToBase64(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -1241,13 +1294,16 @@
       startProject(templates[id] || templates["customer-discovery"], `Use the ${label} structure as the starting point. Replace the placeholder content with my source material while preserving the interaction logic.`);
     });
 
-    $("[data-choose-json]").addEventListener("click", () => $("[data-json-input]").click());
+    $("[data-choose-project]").addEventListener("click", () => $("[data-project-input]").click());
     $("[data-choose-rise]").addEventListener("click", () => $("[data-rise-input]").click());
     $("[data-choose-storyline]").addEventListener("click", () => $("[data-storyline-input]").click());
-    $("[data-open-project]").addEventListener("click", () => $("[data-json-input]").click());
-    $("[data-json-input]").addEventListener("change", async (event) => {
+    $("[data-open-project]").addEventListener("click", () => $("[data-project-input]").click());
+    $("[data-project-input]").addEventListener("change", async (event) => {
       const file = event.target.files?.[0];
-      if (file) await openJson(file);
+      if (file?.name.toLowerCase().endsWith(".zip")) {
+        if (!window.LX_WORKBENCH_PACKAGE?.open) toast("Project packages are still loading. Please choose the ZIP again in a moment.");
+        else await window.LX_WORKBENCH_PACKAGE.open(file);
+      } else if (file) await openJson(file);
       event.target.value = "";
     });
     $("[data-rise-input]").addEventListener("change", async (event) => {
@@ -1356,6 +1412,9 @@
     getSourcePrompt: () => state.sourcePrompt || "",
     getReference: () => clone(state.reference),
     getSourceFiles: () => state.sourceFiles.map((item) => ({ ...item })),
+    getPortableProject: portableProject,
+    getPreviewAssetsForPackage: previewAssetsForPackage,
+    openPortableProject,
     validScenario,
     validRiseCourse,
     validStorylineExperience,
