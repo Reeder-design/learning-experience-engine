@@ -4,6 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const { spawn } = require("child_process");
 const aiHandler = require("../api/workbench-ai");
+const changeSetHandler = require("../api/workbench-change-set");
 const { importRiseArchive, MAX_ARCHIVE_BYTES } = require("../server/rise-import");
 const { importStorylineArchive, MAX_ARCHIVE_BYTES: MAX_STORYLINE_ARCHIVE_BYTES } = require("../server/storyline-import");
 const {
@@ -568,6 +569,21 @@ async function handler(req, res) {
     }
     req.workbenchAuthenticated = true;
     await aiHandler(req, res);
+    return;
+  }
+
+  if (pathname === "/api/workbench-change-set") {
+    const session = currentSession(req);
+    if (!session) {
+      sendJson(res, 401, { ok:false, error:"Sign in to the private Workbench first." });
+      return;
+    }
+    if (req.method === "POST" && !checkCsrf(req, session)) {
+      sendJson(res, 403, { ok:false, error:"Workbench session check failed. Refresh and sign in again." });
+      return;
+    }
+    req.workbenchAuthenticated = true;
+    await changeSetHandler(req, res);
     return;
   }
 

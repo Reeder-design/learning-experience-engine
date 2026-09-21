@@ -137,6 +137,13 @@
               <section class="adapt-card"><span class="eyebrow">Reuse notes</span><h3>Capture the handoff context</h3><label class="field"><span>Audience</span><input data-profile-field="learning.audience" placeholder="Who is this next version for?"></label><label class="field"><span>Learning purpose</span><textarea rows="3" data-profile-field="learning.purpose" placeholder="What should learners be able to do?"></textarea></label></section>
             </div>
             <section class="transformation-studio" data-transform-studio></section>
+            <section class="change-set-studio" data-change-set-studio>
+              <div class="change-set-head"><div><span class="eyebrow">AI change review</span><h3>Describe the change you need</h3><p>AI will propose small, reviewable updates to the editable project. Nothing changes until you approve it.</p></div><span class="stage-chip">Phase 1</span></div>
+              <div class="change-set-presets"><button type="button" data-change-preset="sanitize">Sanitize for a client</button><button type="button" data-change-preset="objectives">Rewrite objectives</button><button type="button" data-change-preset="media">Replace with uploaded media</button><button type="button" data-change-preset="theme">Change visual direction</button></div>
+              <label class="field"><span>What should change?</span><textarea rows="5" data-change-request placeholder="Example: Sanitize this course for Acme. Replace Dirty Bowl references, use the uploaded Acme images where appropriate, and flag anything that still needs media."></textarea></label>
+              <div class="change-set-actions"><button type="button" class="primary" data-propose-changes>Propose changes ✦</button><span>Only approved changes update the new learner version.</span></div>
+              <div class="change-set-proposal" data-change-set-proposal hidden></div>
+            </section>
             <div class="adapt-note"><strong>Coming next in this stage:</strong><span>guided sanitization and saving selected lessons, slide sequences, or interactions as reusable patterns.</span></div>
             <div class="next-action"><div><strong>Ready to test it?</strong><span>Preview the new web version, or return to the untouched original player as a reference.</span></div><div class="next-action-buttons"><button type="button" class="primary" data-go-model-preview>Preview new version →</button><button type="button" data-go-source-preview>Open original player</button></div></div>
           </section>
@@ -282,8 +289,9 @@
   <input type="file" data-source-folder webkitdirectory multiple hidden>
   <div class="toast" data-toast hidden></div>
   <script src="../assets/app-registry.js"></script>
-  <script src="workbench.js?v=19"></script>
+  <script src="workbench.js?v=20"></script>
   <script src="workbench-package.js?v=3"></script>
   <script src="ai-client.js?v=5"></script>
+  <script src="change-set-client.js?v=1"></script>
 </body>
 </html>

@@ -37,5 +37,8 @@ assert.match(workbench, /renderStorylineModelPlayer/, "The new Storyline model n
 assert.match(workbench, /Replace across editable content/, "Editing should support a focused batch replacement workflow.");
 assert.match(page, /Preview new version/, "The adaptation workflow must offer a direct path to preview the new model instead of only the original player.");
 assert.match(page, /Original theme · reference only/, "The original theme option must not imply an unsupported source-theme conversion.");
+assert.match(page, /data-change-set-studio/, "The adaptation stage must include a reviewable AI change-set workspace.");
+assert.match(page, /Propose changes/, "AI changes must be proposed before they are applied.");
+assert.match(previewServer, /api\/workbench-change-set/, "The private server must expose the reviewed change-set endpoint.");
 
 console.log("Workbench UI binding regression checks passed.");

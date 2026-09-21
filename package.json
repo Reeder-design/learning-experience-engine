@@ -31,5 +31,8 @@
     "scorm",
     "xapi"
   ],
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "dependencies": {
+    "fast-json-patch": "^3.1.1"
+  }
 }
