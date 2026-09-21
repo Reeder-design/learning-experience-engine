@@ -1,31 +1,352 @@
-# Learning Project Workbench v0.1 — Checkpoint
+# Learning Project Workbench v0.3 — Checkpoint
 
-**Date:** September 16, 2026  
-**Repository:** `Reeder-design/learning-experience-engine`
+**Date:** September 18, 2026  
+**Repository:** `Reeder-design/learning-experience-engine`  
+**Active feature branch:** `feature/workbench-ai`  
+**Draft PR:** #1
 
-## Product pivot
+## Product definition
 
-The primary product direction is now an **AI-assisted Learning Project Workbench**, not a replacement for Rise or Storyline.
+Learning Project Workbench is an **AI-assisted editor/transformer for published-style learning web experiences**.
+
+It is **not** intended to recreate the proprietary Rise or Storyline authoring interfaces.
 
 North star:
 
 ```text
-source content / files / existing project / saved template
+source content / existing published project / source template
         ↓
 Learning Project Workbench
         ↓
-editable populated project + learner preview
+generate or reconstruct
         ↓
-AI transformations + manual fine-tuning
+edit learner-facing experience
         ↓
-save / reuse / export / template
+apply theme / behavior / metadata
+        ↓
+preview rendered experience
+        ↓
+export / reuse / template
 ```
 
-The specialized Scenario Builder, Interaction Builder, and Course Builder remain underneath as fine-tuning editors.
+Future Rise-like projects can expose:
+
+```text
+course → lessons → blocks → interactions
+```
+
+Future Storyline-like projects can expose:
+
+```text
+scenes → slides → layers → objects / state
+```
+
+They should share source handling, Project Profile, themes, history, AI, preview, and export systems rather than being forced into one identical content structure.
+
+## User-facing workflow
+
+The numbered workflow is now only:
+
+```text
+1 Source
+2 Build & edit
+3 Preview
+4 Export
+```
+
+These are persistent **project tools**, not workflow steps:
+
+```text
+Ask AI
+Theme
+History
+Project settings
+```
+
+Do not reintroduce AI, Theme, History, or Settings as numbered workflow stages.
+
+## Workbench Project Profile
+
+The runtime interaction JSON remains optimized for the learning experience itself.
+
+A separate Project Profile carries broader published-web context and is embedded in exported JSON at:
+
+```text
+metadata.workbenchProfile
+```
+
+Canonical schema:
+
+```text
+schemas/workbench-project-profile.schema.json
+```
+
+Profile domains:
+
+- **source**
+  - origin: engine-native / Rise published web / Storyline published web / other
+  - structure model: interaction / course-lessons-blocks / scenes-slides-layers
+  - source-template ID and notes
+- **learning**
+  - audience
+  - purpose
+  - objectives
+  - duration
+  - prerequisites
+- **presentation**
+  - accessibility expectations
+  - theme name
+  - layout treatment
+  - brand direction
+  - colors
+  - typography
+  - logo treatment
+  - motion
+  - target-specific notes for web / Rise / Storyline / LMS
+- **behavior**
+  - navigation
+  - progress
+  - scoring
+  - feedback style
+- **export**
+  - target
+  - notes
+
+## Theme model
+
+Theme is now first-class project data rather than a prompt-only concept.
+
+Workbench Theme UI includes:
+
+- theme name
+- layout treatment
+- brand / visual direction
+- primary / secondary / accent / background / text colors
+- heading / body typography
+- logo / identity treatment
+- motion treatment
+- standalone-web notes
+- Rise embed notes
+- Storyline Web Object notes
+- LMS package notes
+
+The current preview applies:
+
+- theme colors
+- heading/body font families
+- layout treatments:
+  - clean cards
+  - editorial
+  - technical dark
+  - minimal
+
+AI action:
+
+```text
+Set design theme
+```
+
+AI now returns both:
+
+```text
+project
+profile
+```
+
+and can refine `profile.presentation.theme`.
+
+Important accuracy boundary:
+
+- theme rules currently affect the Engine/Workbench rendered web experience and travel as portable metadata
+- production exporters that translate those rules into actual Rise embeds, Storyline Web Objects, or LMS packages are future work
+- do not claim we directly edit proprietary Rise/Storyline authoring-tool theme settings
+
+## Scoring rule
+
+Learner-visible scoring is **off by default**.
+
+Project Settings controls:
+
+```text
+No learner score
+Internal only
+Visible to learner
+```
+
+Choice-level score deltas are hidden from normal editing when scoring is `none`.
+
+The previous template behavior that displayed arbitrary values such as:
+
+```text
+Discovery quality 50
+```
+
+must not return unless the project explicitly selects visible scoring.
+
+## Internal IDs
+
+Internal IDs are still required for:
+
+- branch destinations
+- validation
+- stable runtime references
+- project portability
+- future import/export mapping
+
+But they are now **engine-only**.
+
+Removed from normal Workbench editing:
+
+- Internal project ID
+- node IDs
+- response IDs
+- outcome IDs
+- Advanced fields toggle
+
+The only place technical IDs/JSON should normally appear is:
+
+```text
+Export → Developer project data
+```
+
+for troubleshooting/development.
+
+## AI transformation history
+
+Every successful AI action creates a history entry with:
+
+- timestamp
+- action type
+- prompt
+- model
+- change summary
+- review notes
+- before project snapshot
+- after project snapshot
+- before Project Profile
+- after Project Profile
+
+History actions:
+
+- Restore this version
+- Restore before change
+- Edit & rerun
+
+**Edit & rerun** restores the original starting state, places the old prompt back in Ask AI, and lets the user revise it before running again.
+
+History is retained in local Workbench autosave and capped to the most recent 30 AI transformations.
+
+## AI structured-output contract
+
+Private local AI flow:
+
+```text
+source/current project
++ Workbench Project Profile
+        ↓
+authenticated localhost API
+        ↓
+OpenAI Responses API
+        ↓
+strict structured output:
+  project
+  profile
+  changeSummary
+  reviewNotes
+        ↓
+asset-path enforcement
+        ↓
+branch/reference validation
+        ↓
+optional one-pass repair
+        ↓
+Workbench
+```
+
+Requests use:
+
+```text
+store: false
+```
+
+Supported project type today:
+
+```text
+branching-scenario
+```
+
+## Private local security
+
+Private Workbench:
+
+```text
+npm run workbench
+```
+
+Server binds only to:
+
+```text
+127.0.0.1
+```
+
+Implemented:
+
+- first-run password setup
+- PBKDF2-HMAC-SHA256 password hash
+- 600,000 iterations
+- random salt
+- no plaintext password storage
+- Git-ignored `.env.workbench`
+- random session signing secret
+- signed ~8-hour session
+- HttpOnly cookie
+- SameSite=Strict
+- CSRF on modifying API calls
+- login throttling
+- Private settings
+- Sign out
+
+Private settings manages:
+
+- OpenAI API key
+- AI model
+- Workbench password
+
+## Public/private split
+
+```text
+PUBLIC GITHUB PAGES
+→ public-safe demos
+→ generic/manual Engine tools
+→ docs
+→ no confidential-source AI workflow
+
+PRIVATE LOCAL WORKBENCH
+→ password protected
+→ private source files
+→ local OpenAI secret
+→ AI generation/transformation
+```
+
+Do not move confidential workflows to public GitHub Pages.
+
+## Local draft migration
+
+Current storage key:
+
+```text
+lx-learning-project-workbench:v0.3
+```
+
+The Workbench auto-migrates the previous:
+
+```text
+lx-learning-project-workbench:v0.1
+```
+
+draft on first v0.3 load so the UX refactor does not silently discard the user's existing test project.
 
 ## Stable app naming contract
-
-Public display names and implementation identifiers are intentionally separate.
 
 ```text
 workbench        → Learning Project Workbench
@@ -34,121 +355,77 @@ scenario-builder → Scenario Builder
 course-composer  → Course Builder
 ```
 
-The canonical browser registry is:
+Canonical registry:
 
 ```text
 docs/assets/app-registry.js
 ```
 
-Important rules:
+Do not create a duplicate `course-builder/` implementation path.
 
-- `course-composer` remains the stable internal ID and route even though the public name is **Course Builder**.
-- Do not create a duplicate `course-builder/` implementation folder just to match the label.
-- Do not casually rename existing internal routes, storage keys, or integration identifiers when changing display copy.
-- Public HTML should use **Course Builder**; CI rejects the legacy public label `Course Composer`.
-- Every public `docs/**/*.html` page must explicitly include the Engine SVG favicon, ICO fallback, and Safari mask icon. CI discovers future HTML pages automatically.
+## Current deliberate boundaries
 
-## Workbench v0.1
+Not implemented yet:
 
-Public path:
+- persistent Source Template Library
+- saved Theme Library
+- Workbench project ZIP containing source files + interaction + Project Profile + history metadata
+- source files surviving browser reload
+- full Rise published-web Workbench reconstruction
+- full Storyline published-web Workbench reconstruction
+- broader Workbench experience types beyond branching scenarios
+- production Rise embed output
+- production Storyline Web Object output
+- SCORM/xAPI/LMS packaging
+- arbitrary Storyline-style variables/triggers/state parity
+- hosted/private cloud Workbench authentication
 
-```text
-docs/workbench/
-```
+Existing Rise/Storyline inspector/extractor/normalizer foundations remain valuable and should later feed the Workbench rather than be discarded.
 
-First supported project type:
+## Automated guardrails
 
-```text
-branching-scenario
-```
+CI now checks:
 
-### Implemented
+- browser/server JavaScript syntax
+- canonical app naming
+- favicon coverage
+- v0.3 workflow markers
+- AI is not a numbered workflow step
+- Workbench does not expose internal IDs / Advanced fields
+- Project Profile schema exists
+- Theme / History / Project Settings panels exist
+- password hashing / session verification
+- CSRF behavior
+- authenticated private Workbench route
+- mock AI returns both branching-scenario project + Project Profile
+- default learner scoring stays hidden
+- existing component-builder smoke tests
 
-- Start from template
-- Start simple
-- Open existing branching-scenario JSON
-- Built-in source templates:
-  - Customer discovery conversation
-  - Decision practice with coaching
-  - Objection handling conversation
-- Source brief / outline field
-- Add source files or a source folder
-- Read local TXT / MD / CSV / JSON reference content
-- Local image files become selectable in project fields and learner preview
-- Reconstruct JSON into editable project fields
-- Edit scenario title, purpose, instruction, decisions, responses, coaching feedback, destinations, and outcomes
-- Internal IDs hidden behind Advanced fields
-- Continuous flow validation
-- Interactive learner preview
-- Local draft autosave
-- Download interaction JSON
-- AI transformation UI/presets for:
-  - Sanitize for portfolio
-  - Apply another theme
-  - Adapt for another audience
-  - Create a similar version
-- AI execution intentionally disabled until a secure backend is added
+## Next product milestones after v0.3 is QA'd
 
-### Deliberate v0.1 boundaries
-
-- AI generation/transformation is not connected yet
-- OpenAI API key must never be placed in GitHub Pages client JavaScript
-- Source Template Library is not persistent yet
-- Theme Library is not implemented yet
-- Source files are current-session browser objects and do not survive reload
-- PDF/PPT/DOC files can be selected but are not parsed locally in v0.1
-- Only branching-scenario JSON is reconstructed in the Workbench today
-- Project ZIP packaging for the Workbench itself is not yet implemented
-- Rise/Storyline guided Workbench import is future work
-
-## Secure AI architecture — next implementation layer
-
-Target:
-
-```text
-Browser Workbench
-        ↓
-secure backend / serverless route
-        ↓
-OpenAI API
-        ↓
-structured project response
-        ↓
-component schema + branch validation
-        ↓
-editable project + learner preview
-```
-
-Initial AI tasks:
-
-1. Source outline/reference content → populated scenario JSON.
-2. Sanitize confidential/internal information, files, and links while preserving learning structure.
-3. Rebrand using a saved theme.
-4. Adapt for another learner audience.
-5. Use an existing project as a source template and rebuild it around new content/assets.
-
-Use a separate OpenAI API Project/key for Learning Experience Engine rather than placing an existing secret in the public frontend. The same OpenAI organization/account can contain multiple API Projects.
-
-## Next milestones
-
-1. Secure AI API/serverless layer.
-2. Structured AI generation contract + schema validation.
-3. Source Template Library for complete reusable projects.
-4. Theme Library.
-5. Editable Workbench project package containing source brief, source metadata/files, project JSON, and template/theme references.
-6. Guided Rise/Storyline import into the Workbench.
-7. Expand Workbench beyond branching scenarios.
+1. **Source Template Library**
+   - save complete reusable source projects
+   - include content roles, Project Profile, asset roles, and AI generation instructions
+2. **Saved Theme Library**
+   - save/apply/duplicate named brand themes
+   - use Project Profile theme contract
+3. **Workbench project package**
+   - source brief
+   - source metadata/files
+   - interaction JSON
+   - Project Profile
+   - template/theme references
+   - history metadata
+4. **Guided Rise published-web import**
+5. **Guided Storyline published-web import**
+6. Expand beyond branching scenarios
 
 ## UX rule
 
-The user should normally think:
+The user should think:
 
-> Use this source/project/template and turn it into what I need.
+> Use this source/project/template and turn it into the learning experience I need.
 
-Not:
+The user should not need to think:
 
-> Which JSON object, block, node, trigger, or file path do I need to construct?
-
-## Testing
-
-Workbench browser JavaScript syntax, canonical app naming, automatic favicon coverage for all public HTML pages, required Workbench workflow markers, static navigation, and existing component-builder smoke tests are covered by `.github/workflows/component-smoke.yml` and `tests/docs-navigation.test.js`.
+> Which JSON object, node ID, trigger, internal route, or file path do I need to construct?

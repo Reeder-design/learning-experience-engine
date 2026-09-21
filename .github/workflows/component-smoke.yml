@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
     paths:
+      - 'api/**'
+      - 'server/**'
       - 'builders/component-web/**'
       - 'content/demos/components/**'
       - 'docs/index.html'
@@ -16,13 +18,17 @@ on:
       - 'scripts/preview-docs.js'
       - 'schemas/component.schema.json'
       - 'schemas/course.schema.json'
+      - 'schemas/workbench-project-profile.schema.json'
       - 'tests/component-builder.test.js'
       - 'tests/docs-navigation.test.js'
+      - 'tests/workbench-ai.test.js'
       - 'themes/**'
       - 'package.json'
       - '.github/workflows/component-smoke.yml'
   pull_request:
     paths:
+      - 'api/**'
+      - 'server/**'
       - 'builders/component-web/**'
       - 'content/demos/components/**'
       - 'docs/index.html'
@@ -35,8 +41,10 @@ on:
       - 'scripts/preview-docs.js'
       - 'schemas/component.schema.json'
       - 'schemas/course.schema.json'
+      - 'schemas/workbench-project-profile.schema.json'
       - 'tests/component-builder.test.js'
       - 'tests/docs-navigation.test.js'
+      - 'tests/workbench-ai.test.js'
       - 'themes/**'
       - 'package.json'
       - '.github/workflows/component-smoke.yml'
@@ -53,13 +61,14 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Check browser runtime syntax
+      - name: Check browser and server runtime syntax
         run: |
           node --check builders/component-web/runtime.js
           node --check builders/component-web/scenario-runtime.js
           node --check docs/assets/app-registry.js
           node --check docs/assets/id-workbench.js
           node --check docs/workbench/workbench.js
+          node --check docs/workbench/ai-client.js
           node --check docs/component-studio/studio.js
           node --check docs/component-studio/asset-library.js
           node --check docs/component-studio/workflow.js
@@ -70,20 +79,42 @@ jobs:
           node --check docs/course-composer/course-package.js
           node --check docs/scenario-builder/scenario-builder.js
           node --check docs/scenario-builder/scenario-package.js
+          node --check server/workbench-auth.js
+          node --check server/local-config.js
+          node --check server/workbench-ai-core.js
+          node --check api/workbench-ai.js
           node --check scripts/preview-docs.js
 
       - name: Validate static docs navigation and Workbench UX
         run: node tests/docs-navigation.test.js
 
-      - name: Smoke test local docs preview
+      - name: Smoke test password-protected local Workbench
         run: |
-          PREVIEW_NO_OPEN=1 PORT=4173 node scripts/preview-docs.js > /tmp/lx-preview.log 2>&1 &
+          HASH=$(node -e "process.stdout.write(require('./server/workbench-auth').hashPassword('ci-workbench-password'))")
+          WORKBENCH_PASSWORD_HASH="$HASH"           WORKBENCH_SESSION_SECRET="ci-session-secret-0123456789-abcdefghijklmnopqrstuvwxyz"           LX_AI_MOCK=1           PREVIEW_NO_OPEN=1           PORT=4173           node scripts/preview-docs.js > /tmp/lx-preview.log 2>&1 &
           PREVIEW_PID=$!
           trap 'kill $PREVIEW_PID 2>/dev/null || true' EXIT
           sleep 1
+
           curl --fail --silent --show-error http://127.0.0.1:4173/ > /dev/null
           curl --fail --silent --show-error http://127.0.0.1:4173/assets/experience-engine-favicon.svg > /dev/null
           curl --fail --silent --show-error http://127.0.0.1:4173/favicon.ico > /dev/null
 
-      - name: Run component builder smoke tests
+          STATUS=$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:4173/workbench/)
+          test "$STATUS" = "303"
+
+          LOGIN_STATUS=$(curl --silent --output /dev/null --write-out '%{http_code}'             -c /tmp/lx-cookies.txt             -H 'Content-Type: application/x-www-form-urlencoded'             --data 'password=ci-workbench-password'             http://127.0.0.1:4173/api/workbench-login)
+          test "$LOGIN_STATUS" = "303"
+
+          SESSION=$(curl --fail --silent --show-error -b /tmp/lx-cookies.txt http://127.0.0.1:4173/api/workbench-session)
+          CSRF=$(printf '%s' "$SESSION" | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>process.stdout.write(JSON.parse(s).csrf||''))")
+          test -n "$CSRF"
+
+          FORBIDDEN=$(curl --silent --output /dev/null --write-out '%{http_code}'             -b /tmp/lx-cookies.txt             -H 'Content-Type: application/json'             --data '{"mode":"generate","sourcePrompt":"Build a discovery scenario.","reference":[],"assetManifest":[],"files":[]}'             http://127.0.0.1:4173/api/workbench-ai)
+          test "$FORBIDDEN" = "403"
+
+          AI_RESULT=$(curl --fail --silent --show-error             -b /tmp/lx-cookies.txt             -H "X-CSRF-Token: $CSRF"             -H 'Content-Type: application/json'             --data '{"mode":"generate","sourcePrompt":"Build a discovery scenario.","reference":[],"assetManifest":[],"files":[]}'             http://127.0.0.1:4173/api/workbench-ai)
+          printf '%s' "$AI_RESULT" | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const j=JSON.parse(s);if(!j.ok||j.project?.type!=='branching-scenario'||j.profile?.experienceModel!=='published-learning-web')process.exit(1)})"
+
+      - name: Run component and Workbench AI tests
         run: npm test
