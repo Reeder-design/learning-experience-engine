@@ -2,14 +2,14 @@
 
 [![Illustrated cover for the Learning Experience Engine, showing source material moving into an editable learning project and learner preview.](docs/assets/readme-cover.svg)](https://reeder-design.github.io/learning-experience-engine/)
 
-**A workbench for turning source material and reusable patterns into learning experiences.** This is an active prototype. The public Workbench supports hands-on editing and learner preview; its AI action controls are visible but are not connected in the current public version.
+**An active project for turning published learning content into editable, reviewable experiences.** The public page introduces the project. The full Workbench runs locally, where source imports, change review, and learner previews can be developed without exposing private material.
 
-**[Explore the public demo →](https://reeder-design.github.io/learning-experience-engine/)** &nbsp;·&nbsp; **[Open the Workbench →](https://reeder-design.github.io/learning-experience-engine/workbench/)** &nbsp;·&nbsp; **[Read the user guide →](https://reeder-design.github.io/learning-experience-engine/user-guide/)**
+**[View the public project page →](https://reeder-design.github.io/learning-experience-engine/)** &nbsp;·&nbsp; **[See how it fits the portfolio system →](https://reeder-design.github.io/id-portfolio-system/projects/github-workflow/)**
 
-## Try the project
+## Public page · local Workbench
 
-1. Start in the **Learning Project Workbench** with a built-in source template or sample project.
-2. Edit a decision, feedback, or outcome, then use the learner preview to check the experience.
-3. Explore the focused [Scenario](https://reeder-design.github.io/learning-experience-engine/scenario-builder/), [Interaction](https://reeder-design.github.io/learning-experience-engine/component-studio/), and [Course](https://reeder-design.github.io/learning-experience-engine/course-composer/) builders.
+**Public:** The [project landing page](https://reeder-design.github.io/learning-experience-engine/) explains the concept and current direction. The [portfolio's GitHub workflow guide](https://reeder-design.github.io/id-portfolio-system/projects/github-workflow/) shows a portfolio-safe illustration of the local tools.
 
-Use public-safe sample content in the demo. Published Rise and Storyline exports, private project files, and AI credentials belong outside this public repository. For current capabilities, local setup, and architecture, see the [repository guide](docs/repository-guide.md).
+**Local and password-protected:** The full Learning Workbench is used on my computer for source files, AI-assisted change proposals, review, and learner preview. It is not a public web app. Published Rise and Storyline exports, private project files, and AI credentials stay outside this public repository.
+
+For implementation details and the current build status, see the [repository guide](docs/repository-guide.md).
